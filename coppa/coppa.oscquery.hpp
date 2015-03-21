@@ -5,9 +5,9 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 #include <websocketpp/http/request.hpp>
+
 namespace coppa
 {
-
     struct Range
     {
             boost::optional<Variant> min;
@@ -30,30 +30,19 @@ namespace coppa
     };
 
 
-    using OSCQueryParameter = ParameterAdapter<
-    Values,
-    Description,
-    Tags,
-    Alias,
-    RepetitionFilter,
-    Bounds<Variant,
-    StandardComparator<Variant>,
-    StandardComparator<Variant>>>;
+    using OSCQueryParameter =
+    ParameterAdapter<
+        Values,
+        Description,
+        Tags,
+        Alias,
+        RepetitionFilter,
+        Bounds<Variant,
+            StandardComparator<Variant>,
+            StandardComparator<Variant>>>;
 
     using OSCQueryParameterMap = ParameterMapType<OSCQueryParameter>;
 
-    OSCQueryParameterMap filter(const OSCQueryParameterMap& map, std::string addr)
-    {
-        using namespace std;
-        OSCQueryParameterMap newmap;
-        for(const OSCQueryParameter& param : map)
-        {
-            if(boost::starts_with(param.destination, addr))
-                newmap.insert(param);
-        }
-
-        return newmap;
-    }
 
     std::string getJsonTypeString(const OSCQueryParameter& parameter)
     {
@@ -65,7 +54,7 @@ namespace coppa
             {
                 case 0: str_type += "i"; break;
                 case 1: str_type += "f"; break;
-               // case 2: str_type += "B"; break; -> no bool
+                    // case 2: str_type += "B"; break; -> no bool
                 case 3: str_type += "s"; break;
                 case 4: str_type += "b"; break;
             }
@@ -81,7 +70,7 @@ namespace coppa
         {
             case 0: array.add(get<int>(val)); break;
             case 1: array.add(get<float>(val)); break;
-            //case 2: array.add(get<bool>(val)); break;
+                //case 2: array.add(get<bool>(val)); break;
             case 3: array.add(get<std::string>(val)); break;
             case 4: array.add(get<const char*>(val)); break;
         }
@@ -230,7 +219,7 @@ namespace coppa
                 current_map = &current_map->get_for_path<json_map>(token);
             }
 
-           parameterToJson(parameter, current_map);
+            parameterToJson(parameter, current_map);
         }
 
         return localroot;
@@ -288,7 +277,6 @@ namespace coppa
                 server::connection_ptr con = m_server.get_con_from_hdl(hdl);
 
                 std::string requested_path = con->get_uri()->get_resource();
-                std::cout << con->get_request().raw();
                 if(algorithm::contains(requested_path, "?"))
                 {
                     char_separator<char> sep("?");
