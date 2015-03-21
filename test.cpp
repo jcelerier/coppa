@@ -1,43 +1,7 @@
-#include "coppa.hpp"
+#include <coppa/coppa.hpp>
+#include <coppa/coppa.oscquery.hpp>
+
 #include <iostream>
-
-/*
-#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
-
-// 2 kinds of protocols :
-// - query protocol (OSCQuery, Minuit)
-// - data protocol (OSC, MIDI, WebSocket)
-// Query protocol : can be over OSC / WebSocket / plain TCP ?
-// Ex. : Minuit over OSC, Minuit over WebSockets, OSCQuery over WebSockets
-// Both Minuit and OSCQuery allow for "listenability" of a value.
-
-typedef websocketpp::server<websocketpp::config::asio> server;
-
-void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
-{
-        std::cout << msg->get_payload() << std::endl;
-}
-
-int plop()
-{
-    server print_server;
-
-    print_server.set_message_handler(&on_message);
-
-    print_server.init_asio();
-    print_server.listen(9002);
-    print_server.start_accept();
-
-    print_server.run();
-}
-*/
-class OSCQuery
-{
-
-};
-
-
 
 
 class AnAttribute
@@ -56,7 +20,6 @@ class BogusAttribute
 
 int main()
 {
-	//plop();
 	using namespace eggs::variants;
 	using namespace std;
 
@@ -112,7 +75,11 @@ int main()
 	map.insert(aParam);
 	map.insert(anotherParam);
 
+	coppa::OSCQueryServer server(map);
+
 	toJson(map);
+	server.run(9002);
+
 
 	// There is no way to query anything for a remote OSC device, the tree must
 	// come from the local application. Or maybe from a JSON Namespace.
