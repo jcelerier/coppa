@@ -288,10 +288,10 @@ namespace coppa
                 server::connection_ptr con = m_server.get_con_from_hdl(hdl);
 
                 std::string requested_path = con->get_uri()->get_resource();
-                std::cout << requested_path;
-                if(algorithm::contains(requested_path, "#"))
+                std::cout << con->get_request().raw();
+                if(algorithm::contains(requested_path, "?"))
                 {
-                    char_separator<char> sep("#");
+                    char_separator<char> sep("?");
                     tokenizer<char_separator<char>> tokens(requested_path, sep);
 
                     std::string address;
