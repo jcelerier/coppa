@@ -77,7 +77,6 @@ int main()
 
 	coppa::OSCQueryServer server(map);
 
-	toJson(map);
 	server.run(9002);
 
 

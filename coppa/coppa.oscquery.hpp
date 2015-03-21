@@ -4,301 +4,368 @@
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
-
+#include <websocketpp/http/request.hpp>
 namespace coppa
 {
 
-struct Range
-{
-	boost::optional<Variant> min;
-	boost::optional<Variant> max;
-	std::vector<Variant> values;
-};
+    struct Range
+    {
+            boost::optional<Variant> min;
+            boost::optional<Variant> max;
+            std::vector<Variant> values;
+    };
 
-struct OSCQueryValue
-{
-	Variant value;
-	Range range;
-	ClipMode clipMode{ClipMode::None};
-};
+    struct OSCQueryValue
+    {
+            Variant value;
+            Range range;
+            ClipMode clipMode{ClipMode::None};
+    };
 
-class Values
-{
-	coppa_name(Values)
-	public:
-		std::vector<OSCQueryValue> values;
-};
-
-
-
-using OSCQueryParameter = ParameterAdapter<Values,
-										   Description,
-										   Tags,
-										   Alias,
-										   RepetitionFilter,
-										   Bounds<Variant,
-											  StandardComparator<Variant>,
-											  StandardComparator<Variant>>>;
-
-using OSCQueryParameterMap = ParameterMapType<OSCQueryParameter>;
-
-// A ParameterMap can be JSON'd
-json_map toJson(const OSCQueryParameterMap& map)
-{
-	using namespace std;
-	using namespace boost;
-	using namespace eggs::variants;
-	// Root node
-	json_map root;
-	root["description"] = string("root node");
-	root["full_path"] = string("/");
-	root["access"] = 0;
-
-	// Create a tree with the parameters
-	for(const auto& parameter : map)
-	{
-		char_separator<char> sep("/");
-		tokenizer<char_separator<char>> tokens(parameter.destination, sep);
-
-		// Create the required parts of the tree and navigate to the corresponding node
-		auto* current_map = &root;
-		for(const auto& token : tokens)
-		{
-			if(!current_map->has("contents"))
-			{ current_map->set("contents", json_map{}); }
-
-			current_map = &current_map->get_for_path<json_map>("contents");
-
-			if(!current_map->has(token))
-			{ current_map->set(token, json_map{}); }
-
-			current_map = &current_map->get_for_path<json_map>(token);
-		}
-
-		// These attributes are always here
-		current_map->set("full_path", parameter.destination);
-		current_map->set("access", static_cast<int>(parameter.accessMode));
-
-		// Potentially empty attributes :
-		if(!parameter.description.empty())
-		{ current_map->set("description", parameter.description); }
-
-		if(!parameter.tags.empty())
-		{
-			json_array arr;
-			for(const auto& tag : parameter.tags)
-				arr.add(tag);
-
-			current_map->set("tags", arr);
-		}
-
-		// Handling of the types / values
-		if(!parameter.values.empty())
-		{
-			std::string str_type;
-			json_array value_arr;
-			json_array clip_arr;
-			json_array range_arr;
-			for(const auto& oscqvalue : parameter.values)
-			{
-				const auto& value = oscqvalue.value;
-				switch(value.which())
-				{
-					case 0: // int
-						str_type += "i";
-						value_arr.add(get<int>(value));
-						break;
-					case 1: // float
-						str_type += "f";
-						value_arr.add(get<float>(value));
-						break;
-					case 2: // bool : no bool in OSCQuery ?
-						//str_type += "b";
-						//value_arr.add(get<bool>(value));
-						break;
-					case 3: // string
-						str_type += "s";
-						value_arr.add(get<std::string>(value));
-						break;
-					case 4: // generic
-						str_type += "b";
-						value_arr.add(get<const char*>(value));
-						break;
-				}
-
-				switch(oscqvalue.clipMode)
-				{
-					case ClipMode::None: clip_arr.add("None"); break;
-					case ClipMode::Low:  clip_arr.add("Low");  break;
-					case ClipMode::High: clip_arr.add("High"); break;
-					case ClipMode::Both: clip_arr.add("Both"); break;
-				}
-
-				json_array range_subarray;
-				if(!oscqvalue.range.min)
-				{
-					range_subarray.add("null");
-				}
-				else
-				{
-					const auto& minValue = *oscqvalue.range.min;
-					switch(minValue.which())
-					{
-						case 0: range_subarray.add(get<int>(minValue)); break;
-						case 1: range_subarray.add(get<float>(minValue)); break;
-						case 2: // bool : no bool in OSCQuery ?
-							//value_arr.add(get<bool>(minValue));
-							break;
-						case 3: range_subarray.add(get<string>(minValue)); break;
-						case 4: range_subarray.add(get<const char*>(minValue)); break;
-					}
-				}
-
-				if(!oscqvalue.range.max)
-				{
-					range_subarray.add("null");
-				}
-				else
-				{
-					const auto& maxValue = *oscqvalue.range.max;
-					switch(maxValue.which())
-					{
-						case 0: range_subarray.add(get<int>(maxValue)); break;
-						case 1: range_subarray.add(get<float>(maxValue)); break;
-						case 2: // bool : no bool in OSCQuery ?
-							//value_arr.add(get<bool>(maxValue));
-							break;
-						case 3: range_subarray.add(get<string>(maxValue)); break;
-						case 4: range_subarray.add(get<const char*>(maxValue)); break;
-					}
-				}
-
-				if(oscqvalue.range.values.empty())
-				{
-					range_subarray.add("null");
-				}
-				else
-				{
-					json_array range_values_array;
-					for(auto& elt : oscqvalue.range.values)
-					{
-						switch(elt.which())
-						{
-							case 0: range_values_array.add(get<int>(elt)); break;
-							case 1: range_values_array.add(get<float>(elt)); break;
-							case 2: // bool : no bool in OSCQuery ?
-								//value_arr.add(get<bool>(elt));
-								break;
-							case 3: range_values_array.add(get<string>(elt)); break;
-							case 4: range_values_array.add(get<const char*>(elt)); break;
-						}
-					}
-					range_subarray.add(range_values_array);
-				}
-
-				range_arr.add(range_subarray);
-			}
-
-			current_map->set("type", str_type);
-			current_map->set("value", value_arr);
-			current_map->set("clip_mode", clip_arr);
-			current_map->set("range_mode", range_arr);
-		}
-	}
-
-	// 2. For each parameter set its attributes
-	std::cout << root;
-	return root;
-}
+    class Values
+    {
+            coppa_name(Values)
+            public:
+                std::vector<OSCQueryValue> values;
+    };
 
 
+    using OSCQueryParameter = ParameterAdapter<
+    Values,
+    Description,
+    Tags,
+    Alias,
+    RepetitionFilter,
+    Bounds<Variant,
+    StandardComparator<Variant>,
+    StandardComparator<Variant>>>;
 
-class OSCQueryServer
-{
-	OSCQueryParameterMap m_map;
-	public:
+    using OSCQueryParameterMap = ParameterMapType<OSCQueryParameter>;
 
-	using server = websocketpp::server<websocketpp::config::asio>;
-	    void on_http(websocketpp::connection_hdl hdl)
-	    {
-		    server::connection_ptr con = m_server.get_con_from_hdl(hdl);
+    OSCQueryParameterMap filter(const OSCQueryParameterMap& map, std::string addr)
+    {
+        using namespace std;
+        OSCQueryParameterMap newmap;
+        for(const OSCQueryParameter& param : map)
+        {
+            if(boost::starts_with(param.destination, addr))
+                newmap.insert(param);
+        }
 
-		    // Set status to 200 rather than the default error code
-		    con->set_status(websocketpp::http::status_code::ok);
-		    // Set body text to the HTML created above
-		    con->set_body(toJson(m_map).to_string());
-		}
+        return newmap;
+    }
 
-	    OSCQueryServer(OSCQueryParameterMap map):
-			m_map{map}
-	    {
-	        m_server.init_asio();
+    std::string getJsonTypeString(const OSCQueryParameter& parameter)
+    {
+        std::string str_type;
+        for(const auto& oscqvalue : parameter.values)
+        {
+            const auto& value = oscqvalue.value;
+            switch(value.which())
+            {
+                case 0: str_type += "i"; break;
+                case 1: str_type += "f"; break;
+               // case 2: str_type += "B"; break; -> no bool
+                case 3: str_type += "s"; break;
+                case 4: str_type += "b"; break;
+            }
+        }
 
-	        m_server.set_open_handler(websocketpp::lib::bind(&OSCQueryServer::on_open,this,websocketpp::lib::placeholders::_1));
-	        m_server.set_close_handler(websocketpp::lib::bind(&OSCQueryServer::on_close,this,websocketpp::lib::placeholders::_1));
-	        m_server.set_message_handler(websocketpp::lib::bind(&OSCQueryServer::on_message,this,websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
-	        m_server.set_http_handler(websocketpp::lib::bind(&OSCQueryServer::on_http,this,websocketpp::lib::placeholders::_1));
-	    }
+        return str_type;
+    }
 
-	    void on_open(websocketpp::connection_hdl hdl)
-	    {
-	        m_connections.insert(hdl);
-	    }
+    void addValueToJsonArray(json_array& array, const Variant& val)
+    {
+        using namespace eggs::variants;
+        switch(val.which())
+        {
+            case 0: array.add(get<int>(val)); break;
+            case 1: array.add(get<float>(val)); break;
+            //case 2: array.add(get<bool>(val)); break;
+            case 3: array.add(get<std::string>(val)); break;
+            case 4: array.add(get<const char*>(val)); break;
+        }
+    }
 
-	    void on_close(websocketpp::connection_hdl hdl)
-	    {
-	        m_connections.erase(hdl);
-	    }
+    json_array getJsonValueArray(const OSCQueryParameter& parameter)
+    {
+        json_array value_arr;
+        for(const auto& oscqvalue : parameter.values)
+        {
+            addValueToJsonArray(value_arr, oscqvalue.value);
+        }
 
-	    void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
-	    {
-	        for (auto it : m_connections)
-	        {
-	            m_server.send(it,msg);
-	        }
-	    }
+        return value_arr;
+    }
 
+    json_array getJsonClipModeArray(const OSCQueryParameter& parameter)
+    {
+        json_array clip_arr;
+        for(const auto& oscqvalue : parameter.values)
+        {
+            switch(oscqvalue.clipMode)
+            {
+                case ClipMode::None: clip_arr.add("None"); break;
+                case ClipMode::Low:  clip_arr.add("Low");  break;
+                case ClipMode::High: clip_arr.add("High"); break;
+                case ClipMode::Both: clip_arr.add("Both"); break;
+            }
+        }
 
-	    void run(uint16_t port)
-	    {
-	        m_server.listen(port);
-	        m_server.start_accept();
-	        m_server.run();
-	    }
-	private:
-	    typedef std::set<websocketpp::connection_hdl,
-						 std::owner_less<websocketpp::connection_hdl>> con_list;
+        return clip_arr;
+    }
 
-	    server m_server;
-	    con_list m_connections;
-};
+    json_array getJsonRangeArray(const OSCQueryParameter& parameter)
+    {
+        json_array range_arr;
+        for(const auto& oscqvalue : parameter.values)
+        {
+            json_array range_subarray;
+            if(!oscqvalue.range.min)
+            { range_subarray.add("null"); }
+            else
+            { addValueToJsonArray(range_subarray, *oscqvalue.range.min); }
 
-/*
-class OSCQueryServer
-{
-	using server = websocketpp::server<websocketpp::config::asio>;
+            if(!oscqvalue.range.max)
+            { range_subarray.add("null"); }
+            else
+            { addValueToJsonArray(range_subarray, *oscqvalue.range.max); }
 
-	public:
-		void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
-		{
-			std::cout << msg->get_payload() << std::endl;
-		}
+            if(oscqvalue.range.values.empty())
+            { range_subarray.add("null"); }
+            else
+            {
+                json_array range_values_array;
+                for(auto& elt : oscqvalue.range.values)
+                {
+                    addValueToJsonArray(range_values_array, elt);
+                }
+                range_subarray.add(range_values_array);
+            }
 
-		void serve()
-		{
-		    server print_server;
+            range_arr.add(range_subarray);
+        }
 
-		    print_server.set_message_handler(std::bind(&OSCQueryServer::on_message,
-													   this,
-													   std::placeholders::_1,
-													   std::placeholders::_2));
+        return range_arr;
+    }
 
-		    print_server.init_asio();
-		    print_server.listen(9002);
-		    print_server.start_accept();
+    json_array getJsonTags(const OSCQueryParameter& parameter)
+    {
+        json_array arr;
+        for(const auto& tag : parameter.tags)
+            arr.add(tag);
 
-		    print_server.run();
-		}
+        return arr;
+    }
 
-};*/
+    void parameterToJson(const OSCQueryParameter& parameter,
+                         json_map* current_map)
+    {
+        using namespace std;
+        using namespace boost;
+        using namespace eggs::variants;
+
+        // These attributes are always here
+        current_map->set("full_path", parameter.destination);
+        current_map->set("access", static_cast<int>(parameter.accessMode));
+
+        // Potentially empty attributes :
+        // Description
+        if(!parameter.description.empty())
+        {
+            current_map->set("description", parameter.description);
+        }
+
+        // Tags
+        if(!parameter.tags.empty())
+        {
+            current_map->set("tags", getJsonTags(parameter));
+        }
+
+        // Handling of the types / values
+        if(!parameter.values.empty())
+        {
+            current_map->set("type", getJsonTypeString(parameter));
+            current_map->set("value", getJsonValueArray(parameter));
+            current_map->set("clipmode", getJsonClipModeArray(parameter));
+            current_map->set("range", getJsonRangeArray(parameter));
+        }
+    }
+
+    // A ParameterMap can be JSON'd
+    json_map toJson(const OSCQueryParameterMap& map, std::string root)
+    {
+        using namespace std;
+        using namespace boost;
+        using namespace eggs::variants;
+        // Root node
+        json_map localroot;
+
+        // Create a tree with the parameters
+        for(const auto& parameter : filter(map, root))
+        {
+            auto trunked_dest = parameter.destination;
+
+            // /a/b/c
+            // root = /a
+            // trunked = /b/c
+            if(root != "/")
+                trunked_dest.erase(0, root.length());
+
+            char_separator<char> sep("/");
+            tokenizer<char_separator<char>> tokens(trunked_dest, sep);
+
+            // Create the required parts of the tree and navigate to the corresponding node
+            auto* current_map = &localroot;
+            for(const auto& token : tokens)
+            {
+                if(!current_map->has("contents"))
+                { current_map->set("contents", json_map{}); }
+
+                current_map = &current_map->get_for_path<json_map>("contents");
+
+                if(!current_map->has(token))
+                { current_map->set(token, json_map{}); }
+
+                current_map = &current_map->get_for_path<json_map>(token);
+            }
+
+           parameterToJson(parameter, current_map);
+        }
+
+        return localroot;
+    }
+
+    class OSCQueryServer
+    {
+            OSCQueryParameterMap m_map;
+        public:
+            std::string getMethod(std::string address, std::string method)
+            {
+                const auto& parameter = *m_map.get<0>().find(address);
+                json_map map;
+
+                if(method == "value")
+                {
+                    map.set("value", getJsonValueArray(parameter));
+                }
+                else if(method == "range")
+                {
+                    map.set("range", getJsonRangeArray(parameter));
+                }
+                else if(method == "clipmode")
+                {
+                    map.set("clipmode", getJsonClipModeArray(parameter));
+                }
+                else if(method == "access")
+                {
+                    map.set("access", static_cast<int>(parameter.accessMode));
+                }
+                else if(method == "type")
+                {
+                    map.set("type", getJsonTypeString(parameter));
+                }
+                else if(method == "description")
+                {
+                    map.set("description", parameter.description);
+                }
+                else if(method == "tags")
+                {
+                    map.set("value", getJsonTags(parameter));
+                }
+                else if(method == "full_path")
+                {
+                    map.set("full_path", parameter.destination);
+                }
+
+                return map.to_string();
+            }
+
+            using server = websocketpp::server<websocketpp::config::asio>;
+            void on_http(websocketpp::connection_hdl hdl)
+            {
+                using namespace boost;
+                server::connection_ptr con = m_server.get_con_from_hdl(hdl);
+
+                std::string requested_path = con->get_uri()->get_resource();
+                std::cout << requested_path;
+                if(algorithm::contains(requested_path, "#"))
+                {
+                    char_separator<char> sep("#");
+                    tokenizer<char_separator<char>> tokens(requested_path, sep);
+
+                    std::string address;
+                    std::string method;
+                    int i = 0;
+                    for(auto& token : tokens)
+                    {
+                        if(i++ == 0) address = token;
+                        else method = token;
+                    }
+                    std::cout << address << " " << method << std::endl;
+
+                    con->set_body(getMethod(address, method));
+                }
+                else
+                {
+                    con->set_body(toJson(m_map, requested_path).to_string());
+                }
+
+                con->set_status(websocketpp::http::status_code::ok);
+            }
+
+            OSCQueryServer(OSCQueryParameterMap map):
+                m_map{map}
+            {
+                OSCQueryParameter root;
+                root.description = std::string("root node");
+                root.destination = std::string("/");
+                root.accessMode = AccessMode::None;
+                m_map.insert(root);
+
+                m_server.init_asio();
+
+                m_server.set_open_handler(websocketpp::lib::bind(&OSCQueryServer::on_open,this,websocketpp::lib::placeholders::_1));
+                m_server.set_close_handler(websocketpp::lib::bind(&OSCQueryServer::on_close,this,websocketpp::lib::placeholders::_1));
+                m_server.set_message_handler(websocketpp::lib::bind(&OSCQueryServer::on_message,this,websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
+                m_server.set_http_handler(websocketpp::lib::bind(&OSCQueryServer::on_http,this,websocketpp::lib::placeholders::_1));
+            }
+
+            ~OSCQueryServer()
+            {
+            }
+
+            void on_open(websocketpp::connection_hdl hdl)
+            {
+                m_connections.insert(hdl);
+            }
+
+            void on_close(websocketpp::connection_hdl hdl)
+            {
+                m_connections.erase(hdl);
+            }
+
+            void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg)
+            {
+                for (auto it : m_connections)
+                {
+                    m_server.send(it,msg);
+                }
+            }
+
+            void run(uint16_t port)
+            {
+                m_server.listen(port);
+                m_server.start_accept();
+                m_server.run();
+            }
+
+        private:
+            typedef std::set<websocketpp::connection_hdl,
+            std::owner_less<websocketpp::connection_hdl>> con_list;
+
+            server m_server;
+            con_list m_connections;
+    };
+
 }
