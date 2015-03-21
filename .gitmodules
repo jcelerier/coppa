@@ -1,0 +1,9 @@
+[submodule "variant"]
+	path = variant
+	url = https://github.com/eggs-cpp/variant
+[submodule "jeayeson"]
+	path = jeayeson
+	url = https://github.com/jeaye/jeayeson
+[submodule "websocketpp"]
+	path = websocketpp
+	url = https://github.com/zaphoyd/websocketpp
