@@ -146,10 +146,26 @@ namespace coppa
                 }
 
                 void add(const Parameter& parameter)
-                { m_map.insert(parameter); }
+                {
+                    m_map.insert(parameter);
+                    auto addMessage = JSONFormat::insertParameterMessage(parameter);
+
+                    for(auto& client : m_clients)
+                    {
+                        m_server.sendMessage(client, addMessage);
+                    }
+                }
 
                 void remove(const std::string& path)
-                { m_map.get<0>().erase(path); }
+                {
+                    m_map.get<0>().erase(path);
+
+                    auto removeMessage =  JSONFormat::removePathMessage(path);
+                    for(auto& client : m_clients)
+                    {
+                        m_server.sendMessage(client, removeMessage);
+                    }
+                }
 
                 template<typename Attribute>
                 void update(std::string path, const Attribute& val)
@@ -158,18 +174,13 @@ namespace coppa
                     attr = val;
                     for(auto& client : m_clients)
                     {
-                        for(const auto& str : client.listenedPaths())
-                        {
-                            if(str == path)
-                            {
-                                // If the attribute is the value, it should go by the data protocol (OSC)
-                                // Else, it should go by the query protocol (WebSockets)
-                                updateRemoteAttribute(client,
-                                                      m_map.get<0>().find(path),
-                                                      attr);
-                                break; // It can be only once
-                            }
-                        }
+                        // If the attribute is the value, it should go by the data protocol (OSC)
+                        // Else, it should go by the query protocol (WebSockets)
+                        updateRemoteAttribute(client,
+                                              m_map.get<0>().find(path),
+                                              attr);
+                        break; // It can be only once
+
                     }
                 }
 

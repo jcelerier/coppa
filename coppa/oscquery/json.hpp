@@ -21,6 +21,16 @@ namespace coppa
                     return attributeToJson(std::forward<Args>(args)...).to_string();
                 }
 
+                static std::string insertParameterMessage(const Parameter&)
+                {
+                    return {};
+                }
+
+                static std::string removePathMessage(const std::string& )
+                {
+                    return {};
+                }
+
             private:
                 static std::string getJsonTypeString(const Parameter& parameter)
                 {
