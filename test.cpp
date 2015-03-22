@@ -1,5 +1,5 @@
 #include <coppa/coppa.hpp>
-#include <coppa/coppa.oscquery.hpp>
+#include <coppa/oscquery/device.hpp>
 
 #include <iostream>
 
@@ -73,9 +73,6 @@ void simpleTest()
     map.insert(aParam);
     map.insert(anotherParam);
 
-    coppa::oscquery::WebSocketServer server(map);
-
-    server.run(9002);
 
 }
 
@@ -114,7 +111,7 @@ void deviceTest()
 {
     using namespace coppa::oscquery;
 
-    LocalDevice dev;
+    LocalDevice<WebSocketServer> dev;
     Parameter aParam;
     aParam.destination = "/da/da";
 

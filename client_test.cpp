@@ -1,4 +1,4 @@
-#include <coppa/coppa.oscquery.hpp>
+#include <coppa/oscquery/oscquery.hpp>
 
 
 int main()
@@ -7,6 +7,9 @@ int main()
     RemoteDevice dev("http://127.0.0.1:9002/");
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     dev.update();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    dev.listenAddress("/da/do", true);
 
     while(true)
     { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
