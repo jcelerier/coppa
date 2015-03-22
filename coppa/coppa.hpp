@@ -10,52 +10,40 @@
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
-#define coppa_name(theName) public: static constexpr const char * name{ #theName }; private:
+#define coppa_name(theName) static constexpr const char * name{ #theName };
 
 namespace coppa
 {
-
 template<typename ValueType>
-class Value
+struct SimpleValue
 {
-    coppa_name(Value);
-
-    public:
-        ValueType value;
+    coppa_name(SimpleValue);
+    ValueType value;
 };
 
-class Tags
+using Tag = std::string;
+struct Tags
 {
     coppa_name(Tags);
-
-    public:
-        using Tag = std::string;
-        std::vector<Tag> tags;
+    std::vector<Tag> tags;
 };
 
-class Alias
+struct Alias
 {
     coppa_name(Alias);
-
-    public:
-        std::string alias;
+    std::string alias;
 };
 
-class Description
+struct Description
 {
     coppa_name(Description);
-
-    public:
-        std::string description;
+    std::string description;
 };
 
-
-class RepetitionFilter
+struct RepetitionFilter
 {
     coppa_name(RepetitionFilter);
-
-    public:
-        bool repetitionFilter;
+    bool repetitionFilter;
 };
 
 
@@ -66,12 +54,8 @@ struct Interval
     std::pair<ValueType, ValueType> range;
 };
 
-template<typename ValueType>
-using Enum = std::vector<ValueType>;
-enum class BoundingMode
-{
-    Free, Clip, Wrap, Fold
-};
+template<typename ValueType> using Enum = std::vector<ValueType>;
+enum class BoundingMode { Free, Clip, Wrap, Fold };
 
 template<typename ValueType>
 using DomainType = std::vector<eggs::variant<Interval<ValueType>, Enum<ValueType>>>;
@@ -81,9 +65,9 @@ template<typename DomainValueType,
          typename EqComparator>
 class Bounds
 {
-    coppa_name(Bounds);
-
     public:
+        coppa_name(Bounds);
+
         DomainType<DomainValueType> domain;
         BoundingMode lower_bound = BoundingMode::Free;
         BoundingMode upper_bound = BoundingMode::Free;
@@ -91,9 +75,10 @@ class Bounds
         template<typename ValueType>
         bool valueIsInBounds(ValueType val)
         {
+            using namespace eggs::variants;
             for(auto&& subdomain : domain)
             {
-                if(const auto& interval = eggs::variants::get<Interval<DomainValueType>>(subdomain))
+                if(const auto& interval = get<Interval<DomainValueType>>(subdomain))
                 {
                     if(InfComparator::operatorInf(interval.range.first, val))
                     {
@@ -101,7 +86,7 @@ class Bounds
                 }
                 else
                 {
-                    const auto& enumeration = eggs::variants::get<Enum<DomainValueType>>(subdomain);
+                    const auto& enumeration = get<Enum<DomainValueType>>(subdomain);
                     for(auto enum_val : enumeration)
                     {
                         if(EqComparator::operatorEq(val, enum_val))
@@ -117,24 +102,13 @@ template<class ValueType>
 class StandardComparator
 {
     static bool operatorInf(const ValueType& lhs, const ValueType& rhs)
-    {
-        return lhs < rhs;
-    }
+    { return lhs < rhs; }
     static bool operatorEq(const ValueType& lhs, const ValueType& rhs)
-    {
-        return lhs == rhs;
-    }
+    { return lhs == rhs; }
 };
 
-enum class AccessMode { None = 0,
-                        Get = 1,
-                        Set = 2,
-                        Both = 3 };
-
-enum class ClipMode { None,
-                      Low,
-                      High,
-                      Both };
+enum class AccessMode { None = 0, Get = 1, Set = 2, Both = 3 };
+enum class ClipMode { None, Low, High, Both };
 
 class ParameterBase
 {
@@ -143,12 +117,9 @@ class ParameterBase
         virtual std::vector<std::string> attributes() const noexcept = 0;
         virtual bool hasAttribute(const std::string& attr) const noexcept = 0;
 
-        // Need to ask before to know the available attributes
         template<typename Attribute>
         Attribute* get_dyn()
-        {
-            return dynamic_cast<Attribute*>(this);
-        }
+        { return dynamic_cast<Attribute*>(this); }
 
         // Destination
         std::string destination;
@@ -164,6 +135,13 @@ class Attributes : public Args...
 {
     public:
         std::array<const char*, sizeof...(Args)> m_attributes{Args::name...};
+
+        template<typename Attribute> static constexpr bool has() noexcept
+        { return std::is_base_of<Attribute, Attributes>::value; }
+
+        // No need to ask before in this case
+        template<typename Attribute> Attribute& get() noexcept
+        { return static_cast<Attribute&>(*this); }
 };
 
 template<typename... Args>
@@ -187,27 +165,13 @@ class ParameterAdapter : public ParameterBase, public Attributes<Args...>
                         end(Attributes<Args...>::m_attributes), attr)
                     != end(Attributes<Args...>::m_attributes);
         }
-
-        template<typename Attribute>
-        static constexpr bool has() noexcept
-        {
-            return std::is_base_of<Attribute, ParameterAdapter>::value;
-        }
-
-        // No need to ask before in this case
-        template<typename Attribute>
-        Attribute& get()
-        {
-            return static_cast<Attribute&>(*this);
-        }
 };
 
 using Generic = const char*;
 using Variant = eggs::variant<int, float, bool, std::string, Generic>;
 
 
-
-using MinuitParameter = ParameterAdapter<Value<Variant>,
+using MinuitParameter = ParameterAdapter<SimpleValue<Variant>,
                                          Tags,
                                          Alias,
                                          RepetitionFilter,
@@ -243,12 +207,4 @@ auto filter(const ParameterMapType_T& map, std::string addr)
     return newmap;
 }
 
-
-class Device
-{
-    // The device updates the query server if there is one, and if it has changed.
-    // The device can be updated by :
-    //  - local changes
-    //  - remote changes
-};
 }
