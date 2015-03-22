@@ -24,4 +24,5 @@ In a separate build folder :
 
 ## Running a test server
 
-    ./coppa_test
+    ./coppa_test # Server
+    ./client_test # Client
