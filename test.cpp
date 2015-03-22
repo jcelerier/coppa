@@ -16,7 +16,7 @@ struct BogusAttribute
         int b;
 };
 
-int main()
+void simpleTest()
 {
     using namespace eggs::variants;
     using namespace std;
@@ -77,7 +77,10 @@ int main()
 
     server.run(9002);
 
+}
 
+void oldTest()
+{
     // There is no way to query anything for a remote OSC device, the tree must
     // come from the local application. Or maybe from a JSON Namespace.
     /*
@@ -105,5 +108,50 @@ int main()
 
     // Can make a tree from an impl (ex. : midi)
     // OSC : local
+}
+
+void deviceTest()
+{
+    using namespace coppa::oscquery;
+
+    LocalDevice dev;
+    Parameter aParam;
+    aParam.destination = "/da/da";
+
+    Parameter bParam;
+    bParam.destination = "/plop/plip/plap";
+    bParam.values.push_back({std::string("Why yes young chap"),
+                             {{}, {}, {}},
+                             coppa::ClipMode::None});
+
+    Parameter cParam;
+    cParam.destination = "/plop";
+
+    Parameter anotherParam;
+    anotherParam.destination = "/da/do";
+    anotherParam.values.push_back({5, // Value
+                                  {{}, {}, {4, 5, 6}}, // Range
+                                  coppa::ClipMode::Both}); // ClipMode
+
+    anotherParam.values.push_back({std::string("plip")});
+    anotherParam.values.push_back({3.45f,  // Value
+                                  {coppa::Variant(0.0f), // Range min
+                                   coppa::Variant(5.5f), // Range max
+                                   {} // Range values
+                                  } // Range
+                                  });
+
+    dev.add(aParam);
+    dev.add(bParam);
+    dev.add(cParam);
+    dev.add(anotherParam);
+
+    dev.expose();
+}
+
+int main()
+{
+    deviceTest();
+
     return 0;
 }

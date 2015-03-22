@@ -192,12 +192,12 @@ using ParameterMapType = bmi::multi_index_container<
     >
 >;
 
-// Get all the parameters whose addres begins with addr
-template<typename ParameterMapType_T>
-auto filter(const ParameterMapType_T& map, std::string addr)
+// Get all the parameters whose address begins with addr
+template<typename MapType>
+auto filter(const MapType& map, std::string addr)
 {
     using namespace std;
-    ParameterMapType_T newmap;
+    MapType newmap;
     for(const auto& param : map)
     {
         if(boost::starts_with(param.destination, addr))
@@ -206,5 +206,7 @@ auto filter(const ParameterMapType_T& map, std::string addr)
 
     return newmap;
 }
+
+// TODO rebase with new root
 
 }
