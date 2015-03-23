@@ -97,15 +97,6 @@ namespace coppa
                     else
                     {
                         response = JSONFormat::marshallParameterMap(m_map, request);
-                        /* TODO
-                        if(requested_path == "/")
-                        {
-                            json_map device_map;
-                            device_map.set("name", "Pretty Device Name");
-                            device_map.set("port", 12345);
-
-                            map.set("device_parameters", device_map);
-                        }*/
                     }
 
                     return response;
@@ -119,10 +110,8 @@ namespace coppa
                     [&] (typename QueryServer::connection_handler hdl)
                     {
                         m_clients.emplace_back(hdl);
-                        // get local ip from the point of view of the client
 
-                        //auto con = m_server.get_con_from_hdl(hdl);
-                        // Send the client a message with the OSC ip / port
+                        // Send the client a message with the OSC port
                         m_server.sendMessage(hdl, JSONFormat::deviceInfo(m_receiver.port()));
                     },
                     // Close handler
@@ -205,6 +194,7 @@ namespace coppa
         // Cases : fully static (midi), non-queryable (pure osc), queryable (minuit, oscquery)
         class RemoteDevice
         {
+                mutable std::mutex m_map_mutex;
                 OscSender m_sender;
                 ParameterMap m_map;
                 WebSocketClient m_client{
@@ -216,18 +206,20 @@ namespace coppa
 
                 void onMessage(WebSocketClient::connection_handler hdl, const std::string& message)
                 {
-                    json_map map{ message };
-                    if(map.find("osc_port") != map.end())
+                    json_map obj{ message };
+                    if(obj.find("osc_port") != obj.end())
                     {
-                        int port = map.get<int>("osc_port");
+                        int port = obj.get<int>("osc_port");
                         m_sender = OscSender{m_serverURI, port};
                     }
                     else
                     {
-
-                        m_map = JSONRead::toMap(message);
-
-                        // Parse json
+                        // Parse json. For now only the whole namespace.
+                        auto newMap = JSONRead::toMap(message);
+                        {
+                            std::lock_guard<std::mutex> lock(m_map_mutex);
+                            m_map = std::move(newMap);
+                        }
                     }
                 }
 
@@ -247,22 +239,27 @@ namespace coppa
                 // Get the local value
                 Parameter get(const std::string& address) const
                 {
+                    std::lock_guard<std::mutex> lock(m_map_mutex);
                     return *m_map.get<0>().find(address);
                 }
 
                 ParameterMap map() const
-                { return m_map; }
+                {
+                    std::lock_guard<std::mutex> lock(m_map_mutex);
+                    return m_map;
+                }
 
                 // Network operations
                 void set(const std::string& address, Values&& val)
                 {
+                    std::cout << address << " wants to be set" << std::endl;
                     // Update local and send a message via OSC
                     // Parameter must be settable
                     auto param = get(address);
-                    if(param.accessmode == AccessMode::Set || param.accessmode == AccessMode::Both)
+                    if(param.accessmode == AccessMode::Set
+                    || param.accessmode == AccessMode::Both)
                     {
                         m_sender.send(osc::MessageGenerator()(address, val.values));
-
                     }
                 }
 

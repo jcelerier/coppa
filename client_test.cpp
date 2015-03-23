@@ -8,12 +8,17 @@ int main()
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     dev.update();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    //std::this_thread::sleep_for(std::chrono::seconds(1));
+
     dev.listenAddress("/da/do", true);
 
     while(true)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        for(auto& elt : dev.map().get<0>())
+        {
+            std::cout << elt.destination << std::endl;
+        }
         if(dev.has("/da/da"))
             dev.set("/da/da", Values{{1}});
     }

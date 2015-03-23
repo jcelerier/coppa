@@ -82,8 +82,11 @@ namespace coppa
                         return;
 
                     websocketpp::lib::error_code ec;
+
+                    std::cout << "bump ";
                     m_client.send(m_hdl, request, websocketpp::frame::opcode::text, ec);
 
+                    std::cout << "bimp ";
                     if (ec)
                     {
                         m_client.get_alog().write(websocketpp::log::alevel::app,
