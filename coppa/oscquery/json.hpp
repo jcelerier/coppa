@@ -5,27 +5,186 @@ namespace coppa
 {
     namespace oscquery
     {
+        class BadRequestException: public std::domain_error
+        {
+            public:
+                BadRequestException():
+                    std::domain_error{"Bad request"} { }
+
+
+                BadRequestException(const std::string& message):
+                    std::domain_error{"Bad request : " + message} { }
+        };
+
         class JSONRead
         {
             public:
+
+
+                static ParameterMap toMap(const std::string& message)
+                {
+                    json_map obj{message};
+                    ParameterMap map;
+
+                    // TODO put outside
+                    try {
+                        readObject(obj, map);
+                    }
+                    catch(BadRequestException& req) {
+                        throw BadRequestException{message};
+                    }
+
+                    return map;
+                }
+
+                static auto jsonToTags(const json_array& arr)
+                {
+                    std::vector<Tag> tags;
+                    for(const auto& elt : arr)
+                    {
+                        if(elt.get_type() != json_value::type::string)
+                            throw BadRequestException{};
+
+                        tags.push_back(elt.get<std::string>());
+                    }
+
+                    return tags;
+                }
+
+                static std::string jsonToDescription(const json_value& val)
+                {
+                    if(val.get_type() != json_value::type::string)
+                        throw BadRequestException{};
+
+                    return val.as<std::string>();
+                }
+
+                static auto jsonToValueArray(const json_array& json_vals)
+                {
+                    std::vector<Variant> vec;
+                    for(const json_value& val : json_vals)
+                    {
+                        switch(val.get_type())
+                        {
+                            case json_value::type::integer:
+                                vec.push_back(int(val.get<int>()));
+                                break;
+                            case json_value::type::real:
+                                vec.push_back(float(val.get<double>()));
+                                break;
+                            case json_value::type::boolean:
+                                //vec.values.push_back(int(val.get<int>()));
+                                break;
+                            case json_value::type::string:
+                                vec.push_back(val.get<std::string>());
+                                break;
+                                // TODO blob
+                            default:
+                                break;
+                        }
+                    }
+
+                    return vec;
+                }
+
+                static auto jsonToClipModeArray(const json_array& json_clipmodes)
+                {
+                    std::vector<ClipMode> vec;
+                    for(const json_value& value : json_clipmodes)
+                    {
+                        std::string text = value.get<std::string>();
+                             if(text == "None") vec.push_back(ClipMode::None);
+                        else if(text == "Low")  vec.push_back(ClipMode::Low);
+                        else if(text == "High") vec.push_back(ClipMode::High);
+                        else if(text == "Both") vec.push_back(ClipMode::Both);
+                        else
+                        {
+                            // todo throw bad_request;
+                        }
+                    }
+
+                    return vec;
+                }
+
+                static auto jsonToRangeArray(const json_array& json_ranges)
+                {
+                    std::vector<Range> ranges;
+                    auto jsonValueToVariant = [] (const json_value& val)
+                    {
+                        switch(val.get_type())
+                        {
+                            case json_value::type::integer:
+                                return Variant{int(val.get<int>())};
+                            case json_value::type::real:
+                                return Variant{float(val.get<float>())};
+                            case json_value::type::boolean:
+                                return Variant{bool(val.get<bool>())};
+                            case json_value::type::string:
+                                return Variant{val.get<std::string>()};
+                            case json_value::type::null:
+                                return Variant{};
+                            default:
+                                return Variant{};
+                                // todo throw bad_request;
+                                // TODO blob
+                        }
+
+                    };
+
+                    for(const json_value& range_val : json_ranges)
+                    {
+                        Range range;
+                        json_array range_arr = range_val.as<json_array>();
+                        if(range_arr.size() == 3)
+                        {
+                            range.min = jsonValueToVariant(range_arr.get(0));
+                            range.max = jsonValueToVariant(range_arr.get(1));
+
+                            if(range_arr.get(2).get_type() == json_value::type::array)
+                            {
+                                for(const json_value& enum_val : range_arr.get<json_array>(2))
+                                {
+                                    range.values.push_back(jsonValueToVariant(enum_val));
+                                }
+                            }
+                            else
+                            {
+                                // todo throw bad_request;
+                            }
+                        }
+                        else
+                        {
+                            // todo throw bad_request;
+                        }
+
+                        ranges.push_back(range);
+                    }
+
+                    return ranges;
+                }
+
                 static void readObject(const json_map obj, ParameterMap& map)
                 {
                     // If it's a real parameter
                     if(obj.find("full_path") != obj.end())
                     {
                         Parameter p;
+
+                        // Destination
                         p.destination = obj.get<std::string>("full_path");
+
+                        // Description
                         if(obj.find("description") != obj.end())
                         {
-                            p.description = obj.get<std::string>("description");
+                            p.description = jsonToDescription(obj.get("description"));
                         }
 
+                        // Tags
                         if(obj.find("tags") != obj.end())
                         {
-                            json_array json_tags = obj.get<json_array>("tags");
-                            for(auto&& elt : json_tags)
-                                p.tags.push_back(elt.get<std::string>());
+                            p.tags = jsonToTags(obj.get<json_array>("tags"));
                         }
+
                         if(obj.find("access") != obj.end())
                         {
                             p.accessmode = static_cast<AccessMode>(obj.get<int>("access"));
@@ -33,132 +192,14 @@ namespace coppa
 
                         if(obj.find("value") != obj.end())
                         {
-                            json_array json_vals = obj.get<json_array>("value");
-                            for(json_value val : json_vals)
-                            {
-                                switch(val.get_type())
-                                {
-                                    case json_value::type::integer:
-                                        p.values.push_back(int(val.get<int>()));
-                                        break;
-                                    case json_value::type::real:
-                                        p.values.push_back(float(val.get<double>()));
-                                        break;
-                                    case json_value::type::boolean:
-                                        //p.values.values.push_back(int(val.get<int>()));
-                                        break;
-                                    case json_value::type::string:
-                                        p.values.push_back(val.get<std::string>());
-                                        break;
-                                        // TODO blob
-                                }
-                            }
+                            // Value
+                            p.values = jsonToValueArray(obj.get<json_array>("value"));
 
-                            // If there is value, there is also range and clipmode
-                            json_array json_ranges = obj.get<json_array>("range");
-                            for(json_value range_val : json_ranges)
-                            {
-                                Range range;
-                                json_array range_arr = range_val.as<json_array>();
-                                // 1 sub-array per value
-                                int i = 0;
-                                for (auto&& it = range_arr.begin(); it != range_arr.end(); it++, i++)
-                                {
-                                    json_value val = *it;
-                                    switch(i)
-                                    {
-                                        case 0:
-                                        {
-                                            switch(val.get_type())
-                                            {
-                                                case json_value::type::integer:
-                                                    range.min = Variant(int(val.get<int>()));
-                                                    break;
-                                                case json_value::type::real:
-                                                    range.min = Variant(float(val.get<double>()));
-                                                    break;
-                                                case json_value::type::boolean:
-                                                    break;
-                                                case json_value::type::string:
-                                                    range.min = Variant(val.get<std::string>());
-                                                    break;
-                                                    // TODO blob
-                                            }
-                                            break;
-                                        }
-                                        case 1:
-                                        {
-                                            switch(val.get_type())
-                                            {
-                                                case json_value::type::integer:
-                                                    range.max = Variant(int(val.get<int>()));
-                                                    break;
-                                                case json_value::type::real:
-                                                    range.max = Variant(float(val.get<double>()));
-                                                    break;
-                                                case json_value::type::boolean:
-                                                    break;
-                                                case json_value::type::string:
-                                                    range.max = Variant(val.get<std::string>());
-                                                    break;
-                                                    // TODO blob
-                                            }
-                                            break;
-                                        }
-                                        case 2:
-                                        {
-                                            if(val.get_type() == json_value::type::array)
-                                            {
-                                                auto enum_arr = val.as<json_array>();
-                                                for(json_value enum_val : enum_arr)
-                                                {
-                                                    switch(enum_val.get_type())
-                                                    {
-                                                        case json_value::type::integer:
-                                                            range.values.push_back(int(enum_val.get<int>()));
-                                                            break;
-                                                        case json_value::type::real:
-                                                            range.values.push_back(float(enum_val.get<float>()));
-                                                            break;
-                                                        case json_value::type::boolean:
-                                                            //range.values.push_back(int(val.get<int>()));
-                                                            break;
-                                                        case json_value::type::string:
-                                                            range.values.push_back(enum_val.get<std::string>());
-                                                            break;
-                                                            // TODO blob
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                p.ranges.push_back(range);
-                            }
+                            // Range
+                            p.ranges = jsonToRangeArray(obj.get<json_array>("range"));
 
                             // Clipmode
-                            json_array json_clipmodes = obj.get<json_array>("clipmode");
-                            for(json_value value : json_clipmodes)
-                            {
-                                std::string text = value.get<std::string>();
-                                if(text == "None")
-                                {
-                                    p.clipmodes.push_back(ClipMode::None);
-                                }
-                                else if(text == "Low")
-                                {
-                                    p.clipmodes.push_back(ClipMode::Low);
-                                }
-                                else if(text == "High")
-                                {
-                                    p.clipmodes.push_back(ClipMode::High);
-                                }
-                                else if(text == "Both")
-                                {
-                                    p.clipmodes.push_back(ClipMode::Both);
-                                }
-                            }
+                            p.clipmodes = jsonToClipModeArray(obj.get<json_array>("clipmode"));
                         }
 
                         map.insert(p);
@@ -174,16 +215,6 @@ namespace coppa
                             readObject(contents.get<json_map>(key), map);
                         }
                     }
-                }
-
-                static ParameterMap toMap(const std::string& message)
-                {
-                    json_map obj{message};
-                    ParameterMap map;
-
-                    readObject(obj, map);
-
-                    return map;
                 }
         };
 

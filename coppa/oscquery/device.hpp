@@ -224,7 +224,65 @@ namespace coppa
                     }
                     else if(obj.find("path_changed") != obj.end())
                     {
+                        //
                         std::string path = obj.get<std::string>("path_changed");
+
+                        // A small lambda to modify the parameter map easily with locking
+                        auto modifyParameter = [=] (auto&& modifier)
+                        {
+                            auto& param_index = m_map.get<0>();
+                            decltype(auto) param = param_index.find(path);
+                            {
+                                std::lock_guard<std::mutex> lock(m_map_mutex);
+                                param_index.modify(param, modifier);
+                            }
+                        };
+
+                        // Description
+                        if(obj.find("description") != obj.end())
+                        {
+                            modifyParameter([&] (Parameter& p) { p.description = obj.get<std::string>("description"); });
+                        }
+
+                        // Tags
+                        if(obj.find("tags") != obj.end())
+                        {
+                            std::vector<Tag> tags;
+                            for(json_value tag : obj.get<json_array>("tags"))
+                            {
+                                if(tag.get_type() == json_value::type::string)
+                                {
+                                    tags.push_back(tag.get<std::string>());
+                                }
+                            }
+                            modifyParameter([&] (Parameter& p) { p.tags = tags; });
+                        }
+
+                        // Range
+
+                        // Access
+                        if(obj.find("description") != obj.end())
+                        {
+                            modifyParameter([&] (Parameter& p) { p.accessmode = static_cast<AccessMode>(obj.get<int>("access")); });
+                        }
+
+                        // Clip mode
+                        if(obj.find("clipmode") != obj.end())
+                        {
+                            /* TODO
+                            std::vector<ClipMode> clipmodes;
+                            for(json_value cm : obj.get<json_array>("clipmode"))
+                            {
+                                if(cm.get_type() == json_value::type::string)
+                                {
+                                    clipmodes.push_back(cm.get<int>());
+                                }
+                            }
+                            modifyParameter([&] (Parameter& p) { p.clipmodes = clipmodes; });
+                            */
+                        }
+
+                        // Value
                         if(obj.find("value") != obj.end()) // TODO for all attributes
                         {
                             std::vector<Variant> newVals;
@@ -238,12 +296,7 @@ namespace coppa
                                 }
                                 // TODO etc...
                             }
-                            auto& param_index = m_map.get<0>();
-                            decltype(auto) param = param_index.find(path);
-                            {
-                                std::lock_guard<std::mutex> lock(m_map_mutex);
-                                param_index.modify(param, [=] (Parameter& p) { p.values = newVals; });
-                            }
+                            modifyParameter([&] (Parameter& p) { p.values = newVals; });
                         }
                     }
                     else
