@@ -1,7 +1,8 @@
-# coppa
 ![coppa 
 logo](https://github.com/jcelerier/coppa/blob/master/logo_new.jpg) 
 Common Protocols for Parameters
+
+The API is not yet stable.
 
 ## Requirements
 
@@ -26,5 +27,5 @@ In a separate build folder :
 
 ## Running a test server
 
-    ./coppa_test # Server
+    ./server_test # Server
     ./client_test # Client
