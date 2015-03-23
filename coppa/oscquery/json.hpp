@@ -41,6 +41,7 @@ namespace coppa
                     return map.to_string();
                 }
 
+            private:
                 static constexpr const char* attributeToKey(const Values& ) { return "value"; }
                 static constexpr const char* attributeToKey(const Ranges& ) { return "range"; }
                 static constexpr const char* attributeToKey(const ClipModes& ) { return "clipmode"; }
@@ -55,8 +56,6 @@ namespace coppa
                 static auto attributeToJson(const Description& val) { return val.description; }
                 static auto attributeToJson(const Tags& val) { return getJsonTags(val); }
 
-
-            private:
                 static std::string getJsonTypeString(const Parameter& parameter)
                 {
                     std::string str_type;

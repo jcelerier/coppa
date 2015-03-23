@@ -150,6 +150,20 @@ void deviceTest()
     dev.add(bParam);
     dev.add(cParam);
     dev.add(anotherParam);
+    std::thread aThread([&] ()
+    {
+        int i = 0;
+
+        coppa::oscquery::Values v;
+        v.values.push_back(0);
+        while(true)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            v.values[0] = i++;
+            dev.update("/da/do", v);
+        }
+    });
 
     dev.expose();
 }

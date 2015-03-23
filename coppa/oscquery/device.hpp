@@ -173,11 +173,13 @@ namespace coppa
                 template<typename Attribute>
                 void update(const std::string& path, const Attribute& val)
                 {
-                    auto& attr = m_map.get<0>().find(path)->template get<Attribute>();
-                    attr = val;
+                    auto& param_index = m_map.get<0>();
+                    decltype(auto) param = param_index.find(path);
+                    param_index.modify(param, [=] (Parameter& p) { static_cast<Attribute&>(p) = val; });
+
                     for(auto& client : m_clients)
                     {
-                        updateRemoteAttribute(client, path, attr);
+                        updateRemoteAttribute(client, path, val);
                     }
                 }
 

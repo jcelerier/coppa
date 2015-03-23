@@ -82,6 +82,9 @@ namespace coppa
             // No need to ask before in this case
             template<typename Attribute> Attribute& get() noexcept
             { return static_cast<Attribute&>(*this); }
+
+            template<typename Attribute> const Attribute& get() const noexcept
+            { return static_cast<const Attribute&>(*this); }
     };
 
     template<typename... Args>
