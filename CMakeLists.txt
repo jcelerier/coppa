@@ -17,7 +17,7 @@ endif()
 file(GLOB_RECURSE COPPA_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/coppa/*.hpp")
 
 add_executable(server_test
-    "${CMAKE_CURRENT_SOURCE_DIR}/test.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/server_test.cpp"
      ${COPPA_HEADERS})
 
 if(${CMAKE_MINOR_VERSION} GREATER 0)

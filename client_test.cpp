@@ -3,19 +3,20 @@
 
 int main()
 {
+    using namespace std;
     using namespace coppa::oscquery;
     RemoteDevice dev("http://127.0.0.1:9002/");
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    this_thread::sleep_for(chrono::milliseconds(100));
     dev.update();
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    this_thread::sleep_for(chrono::seconds(1));
 
-    std::cerr <<  dev.map().get<0>().size() << std::endl;
+    cerr <<  dev.map().get<0>().size() << endl;
 
     // We enable listening on this address
     if(dev.has("/da/do"))
     {
-        std::cout << "Listening on /da/do" << std::endl;
+        cout << "Listening on /da/do" << endl;
         dev.listenAddress("/da/do", true);
     }
 
@@ -23,20 +24,23 @@ int main()
     int i = 0;
     while(true)
     {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        this_thread::sleep_for(chrono::seconds(1));
 
         auto theMap = dev.map();
-        std::cout << "\n\nCurrent addresses: " << std::endl;
+        cout << endl << "Current addresses: " << endl;
+
+        // Print the real parameters in the tree
         for(auto&& elt : theMap.get<0>())
         {
-            std::cout << elt.destination << std::endl;
+            cout << elt.destination << endl;
         }
 
+        // We update a value on the remote device
         Values vals;
         vals.values.push_back(i++);
         if(dev.has("/da/da"))
         {
-            std::cerr << "Setting /da/da to " << i  << std::endl;
+            cout << "Setting /da/da to " << i << endl;
             dev.set("/da/da", vals);
         }
     }

@@ -89,6 +89,7 @@ namespace coppa
                         }
                         else
                         {
+                            std::lock_guard<std::mutex> lock(m_map_mutex);
                             response = JSONFormat::marshallAttribute(
                                            *m_map.get<0>().find(path),
                                            method);
@@ -96,12 +97,15 @@ namespace coppa
                     }
                     else
                     {
+                        std::lock_guard<std::mutex> lock(m_map_mutex);
                         response = JSONFormat::marshallParameterMap(m_map, request);
                     }
 
                     return response;
                 }
 
+
+                mutable std::mutex m_map_mutex;
                 ParameterMap m_map;
                 std::vector<RemoteClient> m_clients;
                 QueryServer m_server
@@ -143,6 +147,7 @@ namespace coppa
 
                 void add(const Parameter& parameter)
                 {
+                    std::lock_guard<std::mutex> lock(m_map_mutex);
                     m_map.insert(parameter);
                     auto addMessage = JSONFormat::insertParameterMessage(parameter);
 
@@ -154,6 +159,7 @@ namespace coppa
 
                 void remove(const std::string& path)
                 {
+                    std::lock_guard<std::mutex> lock(m_map_mutex);
                     m_map.get<0>().erase(path);
 
                     auto removeMessage =  JSONFormat::removePathMessage(path);
@@ -166,6 +172,7 @@ namespace coppa
                 template<typename Attribute>
                 void update(const std::string& path, const Attribute& val)
                 {
+                    std::lock_guard<std::mutex> lock(m_map_mutex);
                     auto& param_index = m_map.get<0>();
                     decltype(auto) param = param_index.find(path);
                     param_index.modify(param, [=] (Parameter& p) { static_cast<Attribute&>(p) = val; });
