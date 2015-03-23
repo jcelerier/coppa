@@ -9,4 +9,4 @@
 	url = https://github.com/zaphoyd/websocketpp
 [submodule "oscpack"]
 	path = oscpack
-	url = https://github.com/svn2github/oscpack.git
+	url = https://github.com/jcelerier/oscpack.git
