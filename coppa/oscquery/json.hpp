@@ -10,28 +10,33 @@ namespace coppa
             public:
             static void readObject(const json_map obj, ParameterMap& map)
             {
+                std::cout << obj.to_string() << std::endl << std::endl;
                 if(obj.find("full_path") != obj.end())
                 { // It's a real parameter
                     Parameter p;
                     p.destination = obj.get<std::string>("full_path");
                     if(obj.find("description") != obj.end())
                     {
+                        std::cout << "Description" << std::endl;
                         p.description = obj.get<std::string>("description");
                     }
 
                     if(obj.find("tags") != obj.end())
                     {
+                        std::cout << "Tags" << std::endl;
                         json_array json_tags = obj.get<json_array>("tags");
                         for(auto&& elt : json_tags)
                             p.tags.push_back(elt.get<std::string>());
                     }
                     if(obj.find("access") != obj.end())
                     {
-                       p.accessmode = static_cast<AccessMode>(obj.get<int>("description"));
+                        std::cout << "Access" << std::endl;
+                       p.accessmode = static_cast<AccessMode>(obj.get<int>("access"));
                     }
 
                     if(obj.find("value") != obj.end())
                     {
+                        std::cout << "Value" << std::endl;
                         json_array json_vals = obj.get<json_array>("value");
                         for(json_value val : json_vals)
                         {
@@ -53,9 +58,9 @@ namespace coppa
                             }
                         }
 
-                        // If there is value, there is also range and clipmode
-                        Ranges param_ranges;
 
+                        std::cout << "Range" << std::endl;
+                        // If there is value, there is also range and clipmode
                         json_array json_ranges = obj.get<json_array>("range");
                         for(json_value range_val : json_ranges)
                         {
@@ -70,6 +75,7 @@ namespace coppa
                                 {
                                     case 0:
                                     {
+                                        std::cout << 0 << " ";
                                         switch(val.get_type())
                                         {
                                             case json_value::type::integer:
@@ -89,6 +95,7 @@ namespace coppa
                                     }
                                     case 1:
                                     {
+                                        std::cout << 1 << " ";
                                         switch(val.get_type())
                                         {
                                             case json_value::type::integer:
@@ -108,24 +115,28 @@ namespace coppa
                                     }
                                     case 2:
                                     {
-                                        auto enum_arr = val.as<json_array>();
-                                        for(json_value enum_val : enum_arr)
+                                        std::cout << 2 << " ";
+                                        if(val.get_type() == json_value::type::array)
                                         {
-                                            switch(enum_val.get_type())
+                                            auto enum_arr = val.as<json_array>();
+                                            for(json_value enum_val : enum_arr)
                                             {
-                                                case json_value::type::integer:
-                                                    range.values.push_back(int(enum_val.get<int>()));
-                                                    break;
-                                                case json_value::type::real:
-                                                    range.values.push_back(float(enum_val.get<double>()));
-                                                    break;
-                                                case json_value::type::boolean:
-                                                    //range.values.push_back(int(val.get<int>()));
-                                                    break;
-                                                case json_value::type::string:
-                                                    range.values.push_back(enum_val.get<std::string>());
-                                                    break;
-                                                    // TODO blob
+                                                switch(enum_val.get_type())
+                                                {
+                                                    case json_value::type::integer:
+                                                        range.values.push_back(int(enum_val.get<int>()));
+                                                        break;
+                                                    case json_value::type::real:
+                                                        range.values.push_back(float(enum_val.get<float>()));
+                                                        break;
+                                                    case json_value::type::boolean:
+                                                        //range.values.push_back(int(val.get<int>()));
+                                                        break;
+                                                    case json_value::type::string:
+                                                        range.values.push_back(enum_val.get<std::string>());
+                                                        break;
+                                                        // TODO blob
+                                                }
                                             }
                                         }
                                     }
@@ -136,7 +147,8 @@ namespace coppa
                         }
 
                         // Clipmode
-                        ClipModes param_clipmodes;
+
+                        std::cout << "Clipmode" << std::endl;
                         json_array json_clipmodes = obj.get<json_array>("clipmode");
                         for(json_value value : json_clipmodes)
                         {
@@ -180,14 +192,7 @@ namespace coppa
                 json_map obj{message};
                 ParameterMap map;
 
-                // Recursively go into the "contents" leaves
-                // If their access mode != none, they are real parameters
-
-                // 1. Process the current map's values
-                // 2. For each key in contents, repeat
                 readObject(obj, map);
-
-
 
                 return map;
             }
@@ -318,17 +323,17 @@ namespace coppa
                     {
                         json_array range_subarray;
                         if(!range.min)
-                        { range_subarray.add("null"); }
+                        { range_subarray.add(json_value::null_t{}); }
                         else
                         { addValueToJsonArray(range_subarray, *range.min); }
 
                         if(!range.max)
-                        { range_subarray.add("null"); }
+                        { range_subarray.add(json_value::null_t{}); }
                         else
                         { addValueToJsonArray(range_subarray, *range.max); }
 
                         if(range.values.empty())
-                        { range_subarray.add("null"); }
+                        { range_subarray.add(json_value::null_t{}); }
                         else
                         {
                             json_array range_values_array;
