@@ -45,6 +45,12 @@ namespace coppa
             std::string description;
     };
     enum class AccessMode { None = 0, Get = 1, Set = 2, Both = 3 };
+    struct Access
+    {
+            coppa_name(AccessMode)
+            AccessMode accessmode;
+    };
+
     enum class ClipMode { None, Low, High, Both };
 
     class ParameterBase
@@ -62,9 +68,6 @@ namespace coppa
             std::string destination;
             const std::string& getDestination() const
             { return destination; }
-
-            // Access mode
-            AccessMode accessMode{AccessMode::None};
     };
 
     template<typename... Args>

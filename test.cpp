@@ -42,7 +42,7 @@ void simpleTest()
     flop.description = "coucou";
     cout << endl
          << flop.get<coppa::Description>().description << " "
-         << get<int>(flop.values[0].value) << " "
+         << get<int>(flop.values[0]) << " "
          << endl;
 
     if(flop.hasAttribute("Description"))
@@ -59,17 +59,22 @@ void simpleTest()
     aParam.destination = "/da/da";
     coppa::oscquery::Parameter anotherParam;
     anotherParam.destination = "/da/do";
-    anotherParam.values.push_back({5, // Value
-                                  {{}, {}, {4, 5, 6}}, // Range
-                                  coppa::ClipMode::Both}); // ClipMode
+    anotherParam.values.push_back(5); // Value
+    anotherParam.ranges.push_back({{}, {}, {4, 5, 6}}); // Range
+    anotherParam.clipmodes.push_back(coppa::ClipMode::Both); // ClipMode
+
     anotherParam.values.push_back({std::string("plip")});
-    anotherParam.values.push_back({3.45f,  // Value
-                                  {coppa::Variant(0.0f), // Range min
+    anotherParam.ranges.push_back({{}, {}, {}}); // Range
+    anotherParam.clipmodes.push_back(coppa::ClipMode::None); // ClipMode
+
+    anotherParam.values.push_back(3.45f);  // Value
+    anotherParam.ranges.push_back({coppa::Variant(0.0f), // Range min
                                    coppa::Variant(5.5f), // Range max
                                    {} // Range values
-                                  } // Range
-                                  });
-    anotherParam.accessMode = coppa::AccessMode::Both;
+                                  }); // Range
+    anotherParam.clipmodes.push_back(coppa::ClipMode::None);
+
+    anotherParam.accessmode = coppa::AccessMode::Both;
 
     coppa::oscquery::ParameterMap map;
     map.insert(aParam);
@@ -119,26 +124,27 @@ void deviceTest()
 
     Parameter bParam;
     bParam.destination = "/plop/plip/plap";
-    bParam.values.push_back({std::string("Why yes young chap"),
-                             {{}, {}, {}},
-                             coppa::ClipMode::None});
+    addValue(bParam,
+             std::string("Why yes young chap"),
+             {{}, {}, {}},
+             coppa::ClipMode::None);
 
     Parameter cParam;
     cParam.destination = "/plop";
 
     Parameter anotherParam;
     anotherParam.destination = "/da/do";
-    anotherParam.values.push_back({5, // Value
-                                  {{}, {}, {4, 5, 6}}, // Range
-                                  coppa::ClipMode::Both}); // ClipMode
+    addValue(anotherParam, 5, // Value
+                           {{}, {}, {4, 5, 6}}, // Range
+                           coppa::ClipMode::Both); // ClipMode
 
-    anotherParam.values.push_back({std::string("plip")});
-    anotherParam.values.push_back({3.45f,  // Value
-                                  {coppa::Variant(0.0f), // Range min
-                                   coppa::Variant(5.5f), // Range max
-                                   {} // Range values
-                                  } // Range
-                                  });
+    addValue(anotherParam, std::string("plip"));
+    addValue(anotherParam, 3.45f,  // Value
+                            {coppa::Variant(0.0f), // Range min
+                             coppa::Variant(5.5f), // Range max
+                             {} // Range values
+                            } // Range
+            );
 
     dev.add(aParam);
     dev.add(bParam);
@@ -159,7 +165,7 @@ void parameterTest()
 
 int main()
 {
-    parameterTest();
+    deviceTest();
 
     return 0;
 }

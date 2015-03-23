@@ -1,6 +1,6 @@
 #pragma once
 #include <jeayeson/jeayeson.hpp>
-
+#include <coppa/oscquery/parameter.hpp>
 namespace coppa
 {
     namespace oscquery
@@ -31,13 +31,37 @@ namespace coppa
                     return {};
                 }
 
+                template<typename Attribute>
+                static std::string attributeChangedMessage(const std::string& path, const Attribute& attr)
+                {
+                    // TODO what if type changed?
+                    json_map map;
+                    map["path_changed"] = path;
+                    map[attributeToKey(attr)] = attributeToJson(attr);
+                    return map.to_string();
+                }
+
+                static constexpr const char* attributeToKey(const Values& ) { return "value"; }
+                static constexpr const char* attributeToKey(const Ranges& ) { return "range"; }
+                static constexpr const char* attributeToKey(const ClipModes& ) { return "clipmode"; }
+                static constexpr const char* attributeToKey(const Access& ) { return "access"; }
+                static constexpr const char* attributeToKey(const Description& ) { return "description"; }
+                static constexpr const char* attributeToKey(const Tags& ) { return "tags"; }
+
+                static auto attributeToJson(const Values& val) { return getJsonValueArray(val); }
+                static auto attributeToJson(const Ranges& val) { return getJsonRangeArray(val); }
+                static auto attributeToJson(const ClipModes& val) { return getJsonClipModeArray(val); }
+                static auto attributeToJson(const Access& val) { return static_cast<int>(val.accessmode); }
+                static auto attributeToJson(const Description& val) { return val.description; }
+                static auto attributeToJson(const Tags& val) { return getJsonTags(val); }
+
+
             private:
                 static std::string getJsonTypeString(const Parameter& parameter)
                 {
                     std::string str_type;
-                    for(const auto& oscqvalue : parameter.values)
+                    for(const auto& value : parameter.values)
                     {
-                        const auto& value = oscqvalue.value;
                         switch(value.which())
                         {
                             case 0: str_type += "i"; break;
@@ -64,23 +88,23 @@ namespace coppa
                     }
                 }
 
-                static json_array getJsonValueArray(const Parameter& parameter)
+                static json_array getJsonValueArray(const Values& values)
                 {
                     json_array value_arr;
-                    for(const auto& oscqvalue : parameter.values)
+                    for(const auto& value : values.values)
                     {
-                        addValueToJsonArray(value_arr, oscqvalue.value);
+                        addValueToJsonArray(value_arr, value);
                     }
 
                     return value_arr;
                 }
 
-                static json_array getJsonClipModeArray(const Parameter& parameter)
+                static json_array getJsonClipModeArray(const ClipModes& clipmodes)
                 {
                     json_array clip_arr;
-                    for(const auto& oscqvalue : parameter.values)
+                    for(const auto& clipmode : clipmodes.clipmodes)
                     {
-                        switch(oscqvalue.clipMode)
+                        switch(clipmode)
                         {
                             case ClipMode::None: clip_arr.add("None"); break;
                             case ClipMode::Low:  clip_arr.add("Low");  break;
@@ -92,28 +116,28 @@ namespace coppa
                     return clip_arr;
                 }
 
-                static json_array getJsonRangeArray(const Parameter& parameter)
+                static json_array getJsonRangeArray(const Ranges& ranges)
                 {
                     json_array range_arr;
-                    for(const auto& oscqvalue : parameter.values)
+                    for(const auto& range : ranges.ranges)
                     {
                         json_array range_subarray;
-                        if(!oscqvalue.range.min)
+                        if(!range.min)
                         { range_subarray.add("null"); }
                         else
-                        { addValueToJsonArray(range_subarray, *oscqvalue.range.min); }
+                        { addValueToJsonArray(range_subarray, *range.min); }
 
-                        if(!oscqvalue.range.max)
+                        if(!range.max)
                         { range_subarray.add("null"); }
                         else
-                        { addValueToJsonArray(range_subarray, *oscqvalue.range.max); }
+                        { addValueToJsonArray(range_subarray, *range.max); }
 
-                        if(oscqvalue.range.values.empty())
+                        if(range.values.empty())
                         { range_subarray.add("null"); }
                         else
                         {
                             json_array range_values_array;
-                            for(auto& elt : oscqvalue.range.values)
+                            for(auto& elt : range.values)
                             {
                                 addValueToJsonArray(range_values_array, elt);
                             }
@@ -126,10 +150,10 @@ namespace coppa
                     return range_arr;
                 }
 
-                static json_array getJsonTags(const Parameter& parameter)
+                static json_array getJsonTags(const Tags& tags)
                 {
                     json_array arr;
-                    for(const auto& tag : parameter.tags)
+                    for(const auto& tag : tags.tags)
                         arr.add(tag);
 
                     return arr;
@@ -146,13 +170,13 @@ namespace coppa
                     else if(method == "clipmode")
                     { map.set("clipmode", getJsonClipModeArray(parameter)); }
                     else if(method == "access")
-                    { map.set("access", static_cast<int>(parameter.accessMode)); }
+                    { map.set("access", static_cast<int>(parameter.accessmode)); }
                     else if(method == "type")
                     { map.set("type", getJsonTypeString(parameter)); }
                     else if(method == "description")
                     { map.set("description", parameter.description); }
                     else if(method == "tags")
-                    { map.set("value", getJsonTags(parameter)); }
+                    { map.set("tags", getJsonTags(parameter)); }
                     else if(method == "full_path")
                     { map.set("full_path", parameter.destination); }
 
@@ -168,7 +192,7 @@ namespace coppa
 
                     // These attributes are always here
                     obj.set("full_path", parameter.destination);
-                    obj.set("access", static_cast<int>(parameter.accessMode));
+                    obj.set("access", static_cast<int>(parameter.accessmode));
 
                     // Potentially empty attributes :
                     // Description

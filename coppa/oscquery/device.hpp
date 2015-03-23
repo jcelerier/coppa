@@ -1,5 +1,7 @@
 #pragma once
 #include <coppa/oscquery/websockets.hpp>
+#include <coppa/osc/oscreceiver.hpp>
+#include <coppa/osc/oscsender.hpp>
 #include <unordered_set>
 
 namespace coppa
@@ -10,6 +12,7 @@ namespace coppa
         // Local device : websockets query server, osc socket (?), OSCQueryParameterMap
 
         // todo If there are two clients and one changes the value, the other must be updated.
+        // If the value is changed locally, the clients must be updated
         template<typename QueryServer>
         class LocalDevice
         {
@@ -40,10 +43,9 @@ namespace coppa
                 };
 
                 template<typename Attribute>
-                void updateRemoteAttribute(const RemoteClient& clt, Parameter& param, const Attribute& attr)
+                void updateRemoteAttribute(const RemoteClient& clt, const std::string& path, const Attribute& attr)
                 {
-                    std::string message;
-                    // todo Make a path_changed json object.
+                    std::string message = JSONFormat::attributeChangedMessage(path, attr);
 
                     m_server.sendMessage(clt, message);
                 }
@@ -135,13 +137,14 @@ namespace coppa
                     }
                 };
 
+                OscReceiver m_receiver{1234};
             public:
                 LocalDevice()
                 {
                     Parameter root;
                     root.description = std::string("root node");
                     root.destination = std::string("/");
-                    root.accessMode = AccessMode::None;
+                    root.accessmode = AccessMode::None;
                     m_map.insert(root);
                 }
 
@@ -168,19 +171,13 @@ namespace coppa
                 }
 
                 template<typename Attribute>
-                void update(std::string path, const Attribute& val)
+                void update(const std::string& path, const Attribute& val)
                 {
                     auto& attr = m_map.get<0>().find(path)->template get<Attribute>();
                     attr = val;
                     for(auto& client : m_clients)
                     {
-                        // If the attribute is the value, it should go by the data protocol (OSC)
-                        // Else, it should go by the query protocol (WebSockets)
-                        updateRemoteAttribute(client,
-                                              m_map.get<0>().find(path),
-                                              attr);
-                        break; // It can be only once
-
+                        updateRemoteAttribute(client, path, attr);
                     }
                 }
 
