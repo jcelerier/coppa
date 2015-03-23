@@ -1,6 +1,7 @@
 ![coppa 
 logo](https://github.com/jcelerier/coppa/blob/master/logo_new.jpg) 
-Common Protocols for Parameters
+
+# Common Protocols for Parameters
 
 The API is not yet stable.
 
