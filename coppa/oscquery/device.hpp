@@ -206,19 +206,48 @@ namespace coppa
 
                 void onMessage(WebSocketClient::connection_handler hdl, const std::string& message)
                 {
+                    if(message.empty())
+                        return;
+
                     json_map obj{ message };
                     if(obj.find("osc_port") != obj.end())
                     {
                         int port = obj.get<int>("osc_port");
                         m_sender = OscSender{m_serverURI, port};
                     }
+                    else if(obj.find("path_changed") != obj.end())
+                    {
+                        std::string path = obj.get<std::string>("path_changed");
+                        if(obj.find("value") != obj.end()) // TODO for all attributes
+                        {
+                            std::vector<Variant> newVals;
+                            for(json_value val : obj.get<json_array>("value"))
+                            {
+                                if(val.get_type() == json_value::type::integer)
+                                {
+                                    newVals.push_back(int(val.get<int>()));
+
+                                    std::cout << path << " was set to " << val.get<int>() << std::endl;
+                                }
+                                // TODO etc...
+                            }
+                            auto& param_index = m_map.get<0>();
+                            decltype(auto) param = param_index.find(path);
+                            {
+                                std::lock_guard<std::mutex> lock(m_map_mutex);
+                                param_index.modify(param, [=] (Parameter& p) { p.values = newVals; });
+                            }
+                        }
+                    }
                     else
                     {
+                        std::cout << "Message: " << message << std::endl;
+
                         // Parse json. For now only the whole namespace.
                         auto newMap = JSONRead::toMap(message);
                         {
                             std::lock_guard<std::mutex> lock(m_map_mutex);
-                            m_map = std::move(newMap);
+                            m_map = newMap;
                         }
                     }
                 }
@@ -230,7 +259,7 @@ namespace coppa
 
                 }
 
-                bool has(const std::string& address)
+                bool has(const std::string& address) const
                 {
                     decltype(auto) index = m_map.get<0>();
                     return index.find(address) != end(index);
@@ -250,9 +279,8 @@ namespace coppa
                 }
 
                 // Network operations
-                void set(const std::string& address, Values&& val)
+                void set(const std::string& address, const Values& val)
                 {
-                    std::cout << address << " wants to be set" << std::endl;
                     // Update local and send a message via OSC
                     // Parameter must be settable
                     auto param = get(address);

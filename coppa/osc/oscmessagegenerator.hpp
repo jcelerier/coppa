@@ -32,13 +32,9 @@ namespace osc
             template <typename... T>
             const osc::OutboundPacketStream&  operator()(const std::string& name, const T&... args)
             {
-                std::cerr << "Message sent: " << name;
-
                 p.Clear();
                 p << osc::BeginBundleImmediate << osc::BeginMessage( name.c_str() );
                 subfunc(args...);
-
-                std::cerr << std::endl;
 
                 return p;
             }
@@ -46,7 +42,6 @@ namespace osc
             const osc::OutboundPacketStream&  operator()(const std::string& name,
                                                          const std::vector<coppa::Variant>& values)
             {
-                std::cerr << "Message sent: " << name;
                 using namespace eggs::variants;
 
                 p.Clear();
@@ -69,8 +64,6 @@ namespace osc
                     }
                 }
 
-                std::cerr << std::endl;
-
                 return p;
             }
 
@@ -88,7 +81,6 @@ namespace osc
             template <typename Arg1, typename... Args>
             void subfunc(Arg1&& arg1, Args&&... args)
             {
-                //std::cerr << " " << arg1;
                 p << arg1;
                 subfunc(args...);
             }

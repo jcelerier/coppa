@@ -32,7 +32,6 @@ class OscSender: public OscSenderInterface
 
         virtual void send(const osc::OutboundPacketStream& m) override
         {
-            std::cerr << "to : " << _ip << ":" << _port << std::endl;
             transmitSocket->Send( m.Data(), m.Size() );
         }
 
