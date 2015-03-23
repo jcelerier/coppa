@@ -2,6 +2,7 @@
 #include <coppa/oscquery/websockets.hpp>
 #include <coppa/osc/oscreceiver.hpp>
 #include <coppa/osc/oscsender.hpp>
+#include <coppa/osc/oscmessagegenerator.hpp>
 #include <unordered_set>
 
 namespace coppa
@@ -31,9 +32,9 @@ namespace coppa
                         // For performance's sake, it would be better
                         // to revert this and have a table of client id's associated to each listened parameters.
                         void addListenedPath(const std::string& path)
-                        { m_listened.insert(path); std::cout << path << " added\n";}
+                        { m_listened.insert(path); }
                         void removeListenedPath(const std::string& path)
-                        { m_listened.erase(path);  std::cout << path << " removed\n";}
+                        { m_listened.erase(path); }
 
                         const auto& listenedPaths() const noexcept
                         { return m_listened; }
@@ -118,7 +119,11 @@ namespace coppa
                     [&] (typename QueryServer::connection_handler hdl)
                     {
                         m_clients.emplace_back(hdl);
-                        std::cout << "client added\n";
+                        // get local ip from the point of view of the client
+
+                        //auto con = m_server.get_con_from_hdl(hdl);
+                        // Send the client a message with the OSC ip / port
+                        m_server.sendMessage(hdl, JSONFormat::deviceInfo(m_receiver.port()));
                     },
                     // Close handler
                     [&] (typename QueryServer::connection_handler hdl)
@@ -127,7 +132,6 @@ namespace coppa
                        if(it != end(m_clients))
                        {
                            m_clients.erase(it);
-                           std::cout << "client removed\n";
                        }
                     },
                     // Message handler
@@ -201,13 +205,43 @@ namespace coppa
         // Cases : fully static (midi), non-queryable (pure osc), queryable (minuit, oscquery)
         class RemoteDevice
         {
+                OscSender m_sender;
                 ParameterMap m_map;
-                WebSocketClient m_client;
+                WebSocketClient m_client{
+                    [&] (auto&&... args)
+                    { onMessage(std::forward<decltype(args)>(args)...); }
+                };
+
+                std::string m_serverURI;
+
+                void onMessage(WebSocketClient::connection_handler hdl, const std::string& message)
+                {
+                    json_map map{ message };
+                    if(map.find("osc_port") != map.end())
+                    {
+                        int port = map.get<int>("osc_port");
+                        m_sender = OscSender{m_serverURI, port};
+                    }
+                    else
+                    {
+
+                        m_map = JSONRead::toMap(message);
+
+                        // Parse json
+                    }
+                }
 
             public:
-                RemoteDevice(std::string uri)
+                RemoteDevice(const std::string& uri):
+                    m_serverURI{m_client.connect(uri)}
                 {
-                    m_client.connect(uri);
+
+                }
+
+                bool has(const std::string& address)
+                {
+                    decltype(auto) index = m_map.get<0>();
+                    return index.find(address) != end(index);
                 }
 
                 // Get the local value
@@ -220,28 +254,33 @@ namespace coppa
                 { return m_map; }
 
                 // Network operations
-                template<typename Val>
-                void set(const std::string& address, Val&& val) const
+                void set(const std::string& address, Values&& val)
                 {
-                    // Update local and send a message
+                    // Update local and send a message via OSC
                     // Parameter must be settable
+                    auto param = get(address);
+                    if(param.accessmode == AccessMode::Set || param.accessmode == AccessMode::Both)
+                    {
+                        m_sender.send(osc::MessageGenerator()(address, val.values));
+
+                    }
                 }
 
                 // Ask for an update of a part of the namespace
                 void update(const std::string& root = "/")
                 {
-                    m_client.send_request(root);
+                    m_client.sendMessage(root);
                 }
 
                 // Ask for an update of a single attribute
                 void updateAttribute(const std::string& address, const std::string& attribute)
                 {
-                    m_client.send_request(address + "?" + attribute);
+                    m_client.sendMessage(address + "?" + attribute);
                 }
 
                 void listenAddress(const std::string& address, bool b)
                 {
-                    m_client.send_request(address + "?listen=" + (b? "true" : "false"));
+                    m_client.sendMessage(address + "?listen=" + (b? "true" : "false"));
                 }
         };
     }

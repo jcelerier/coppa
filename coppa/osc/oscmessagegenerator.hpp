@@ -1,8 +1,7 @@
 #pragma once
-#include <vector>
-#include <string>
+#include <coppa/coppa.hpp>
 #include <oscpack/osc/OscOutboundPacketStream.h>
-
+#include <cstring>
 namespace osc
 {
     class MessageGenerator
@@ -38,6 +37,37 @@ namespace osc
                 p.Clear();
                 p << osc::BeginBundleImmediate << osc::BeginMessage( name.c_str() );
                 subfunc(args...);
+
+                std::cerr << std::endl;
+
+                return p;
+            }
+
+            const osc::OutboundPacketStream&  operator()(const std::string& name,
+                                                         const std::vector<coppa::Variant>& values)
+            {
+                std::cerr << "Message sent: " << name;
+                using namespace eggs::variants;
+
+                p.Clear();
+                p << osc::BeginBundleImmediate << osc::BeginMessage( name.c_str() );
+                for(const auto& val : values)
+                {
+                    switch(val.which())
+                    {
+                        case 0:  p << get<int>(val); break;
+                        case 1:  p << get<float>(val); break;
+                            //case 2: array.add(get<bool>(val)); break;
+                        case 3:  p << osc::Symbol(get<std::string>(val).c_str()); break;
+                        case 4:
+                        {
+                            const char* str = get<const char*>(val);
+                            osc::Blob b(str, std::strlen(str)); // todo : use Generic instead and convert to hex / base64
+                            p << b;
+                            break;
+                        }
+                    }
+                }
 
                 std::cerr << std::endl;
 

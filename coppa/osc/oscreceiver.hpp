@@ -32,12 +32,6 @@ class OscReceiver
             _runThread = std::thread(&UdpListeningReceiveSocket::Run, socket.get());
         }
 
-        template<typename... K>
-        void setConnectionHandler(K&&... args)
-        {
-            _impl.setConnectionHandler(std::forward<K>(args)...);
-        }
-
         template<typename T, class C>
         void addHandler(const std::string &s, T&& theMember, C&& theObject)
         {

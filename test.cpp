@@ -121,6 +121,8 @@ void deviceTest()
     LocalDevice<WebSocketServer> dev;
     Parameter aParam;
     aParam.destination = "/da/da";
+    addValue(aParam, 42, {{}, {}, {}});
+    aParam.accessmode = coppa::AccessMode::Set;
 
     Parameter bParam;
     bParam.destination = "/plop/plip/plap";
@@ -134,6 +136,7 @@ void deviceTest()
 
     Parameter anotherParam;
     anotherParam.destination = "/da/do";
+    anotherParam.accessmode = coppa::AccessMode::Both;
     addValue(anotherParam, 5, // Value
                            {{}, {}, {4, 5, 6}}, // Range
                            coppa::ClipMode::Both); // ClipMode
@@ -143,13 +146,13 @@ void deviceTest()
                             {coppa::Variant(0.0f), // Range min
                              coppa::Variant(5.5f), // Range max
                              {} // Range values
-                            } // Range
-            );
+                            });
 
     dev.add(aParam);
     dev.add(bParam);
     dev.add(cParam);
     dev.add(anotherParam);
+    /*
     std::thread aThread([&] ()
     {
         int i = 0;
@@ -164,6 +167,7 @@ void deviceTest()
             dev.update("/da/do", v);
         }
     });
+    */
 
     dev.expose();
 }

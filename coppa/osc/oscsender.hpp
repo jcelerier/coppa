@@ -17,6 +17,8 @@ class OscSenderInterface
 class OscSender: public OscSenderInterface
 {
     public:
+        OscSender() = default;
+        OscSender& operator=(const OscSender&) = default;
         OscSender(const std::string& ip, const int port):
             transmitSocket{std::make_shared<UdpTransmitSocket>(IpEndpointName(ip.c_str(), port))},
             _ip(ip),
@@ -27,7 +29,6 @@ class OscSender: public OscSenderInterface
         virtual ~OscSender() = default;
         OscSender(OscSender&&) = default;
         OscSender(const OscSender&) = delete;
-        OscSender& operator=(const OscSender&) = delete;
 
         virtual void send(const osc::OutboundPacketStream& m) override
         {

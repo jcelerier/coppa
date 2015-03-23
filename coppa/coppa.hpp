@@ -48,7 +48,7 @@ namespace coppa
     struct Access
     {
             coppa_name(AccessMode)
-            AccessMode accessmode;
+            AccessMode accessmode{};
     };
 
     enum class ClipMode { None, Low, High, Both };

@@ -12,7 +12,11 @@ int main()
     dev.listenAddress("/da/do", true);
 
     while(true)
-    { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if(dev.has("/da/da"))
+            dev.set("/da/da", Values{{1}});
+    }
 
     return 0;
 }

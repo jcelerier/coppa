@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <coppa/oscquery/parameter.hpp>
 #include <coppa/oscquery/json.hpp>
 
@@ -22,18 +22,23 @@ namespace coppa
                 typedef websocketpp::client<websocketpp::config::asio_client> client;
                 typedef websocketpp::lib::lock_guard<websocketpp::lib::mutex> scoped_lock;
 
-                WebSocketClient() :
-                    m_open(false),
-                    m_done(false)
-                {
-                    using namespace websocketpp::lib;
-                    using namespace std::placeholders;
+                using connection_handler = websocketpp::connection_hdl;
 
+                template<typename MessageHandler>
+                WebSocketClient(MessageHandler&& messageHandler) :
+                    m_open{false},
+                    m_done{false}
+                {
                     m_client.clear_access_channels(websocketpp::log::alevel::all);
                     m_client.init_asio();
 
-                    m_client.set_open_handler(bind(&WebSocketClient::on_open, this, ::_1));
-                    m_client.set_message_handler(bind(&WebSocketClient::on_message, this, ::_1, ::_2));
+                    m_client.set_open_handler([=] (websocketpp::connection_hdl hdl)
+                    {
+                        scoped_lock guard(m_lock);
+                        m_open = true;
+                    });
+                    m_client.set_message_handler([=] (connection_handler hdl, client::message_ptr msg)
+                    { messageHandler(hdl, msg->get_payload()); });
                 }
 
                 ~WebSocketClient()
@@ -45,17 +50,6 @@ namespace coppa
                         asio_thread.join();
                 }
 
-                void on_open(websocketpp::connection_hdl hdl)
-                {
-                    scoped_lock guard(m_lock);
-                    m_open = true;
-                }
-
-                void on_message(websocketpp::connection_hdl hdl, client::message_ptr msg)
-                {
-                    std::cout << std::endl << std::endl << msg->get_payload() << std::endl << std::endl;
-                }
-
                 void stop()
                 {
                     scoped_lock guard(m_lock);
@@ -63,7 +57,7 @@ namespace coppa
                     m_open = false;
                 }
 
-                void connect(const std::string & uri)
+                std::string connect(const std::string & uri)
                 {
                     websocketpp::lib::error_code ec;
                     auto con = m_client.get_connection(uri, ec);
@@ -71,7 +65,7 @@ namespace coppa
                     {
                         m_client.get_alog().write(websocketpp::log::alevel::app,
                                                   "Get Connection Error: " + ec.message());
-                        return;
+                        return "";
                     }
 
                     m_hdl = con->get_handle();
@@ -79,9 +73,10 @@ namespace coppa
 
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     asio_thread = websocketpp::lib::thread{&client::run, &m_client};
+                    return con->get_host();
                 }
 
-                void send_request(const std::string& request)
+                void sendMessage(const std::string& request)
                 {
                     if(!m_open)
                         return;
@@ -123,11 +118,14 @@ namespace coppa
                     m_server.set_close_handler(closeHandler);
 
                     m_server.set_message_handler([=] (con_hdl hdl, server::message_ptr msg)
-                    { sendMessage(hdl, messageHandler(hdl, msg->get_payload())); });
+                    {
+                        sendMessage(hdl, messageHandler(hdl, msg->get_payload()));
+                    });
 
                     m_server.set_http_handler([=] (con_hdl hdl)
                     {
                         server::connection_ptr con = m_server.get_con_from_hdl(hdl);
+
                         con->set_body(messageHandler(hdl, con->get_uri()->get_resource()));
                         con->set_status(websocketpp::http::status_code::ok);
                     });
