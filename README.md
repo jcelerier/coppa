@@ -1,5 +1,7 @@
 # coppa
-![coppa logo](https://github.com/jcelerier/coppa/blob/master/logo.png) Common Protocol for Parameters
+![coppa 
+logo](https://github.com/jcelerier/coppa/blob/master/logo_new.jpg) 
+Common Protocols for Parameters
 
 ## Requirements
 

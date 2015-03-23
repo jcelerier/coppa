@@ -28,13 +28,7 @@ namespace coppa
         using Parameter = ParameterAdapter<
                             Values,
                             Description,
-                            Tags,
-                            Alias,
-                            RepetitionFilter,
-                            Bounds<
-                                Variant,
-                                StandardComparator<Variant>,
-                                StandardComparator<Variant>>>;
+                            Tags>;
 
         using ParameterMap = ParameterMapType<Parameter>;
     }

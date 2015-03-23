@@ -7,3 +7,6 @@
 [submodule "websocketpp"]
 	path = websocketpp
 	url = https://github.com/zaphoyd/websocketpp
+[submodule "oscpack"]
+	path = oscpack
+	url = https://github.com/svn2github/oscpack.git

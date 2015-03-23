@@ -1,6 +1,7 @@
 #include <coppa/coppa.hpp>
 #include <coppa/oscquery/device.hpp>
 
+
 #include <iostream>
 
 
@@ -38,14 +39,15 @@ void simpleTest()
     }
 
     flop.values = {{5}};
+    flop.description = "coucou";
     cout << endl
-         << flop.get<coppa::RepetitionFilter>().repetitionFilter << " "
+         << flop.get<coppa::Description>().description << " "
          << get<int>(flop.values[0].value) << " "
          << endl;
 
-    if(flop.hasAttribute("RepetitionFilter"))
+    if(flop.hasAttribute("Description"))
     {
-        cout << "OK: " << flop.get_dyn<coppa::RepetitionFilter>()->repetitionFilter << endl;
+        cout << "OK: " << flop.get_dyn<coppa::Description>()->description << endl;
     }
 
     if(flop.hasAttribute("A"))
@@ -146,9 +148,18 @@ void deviceTest()
     dev.expose();
 }
 
+void parameterTest()
+{
+    /*
+    coppa::oscquery::Parameter param;
+    param.Description::set("dada");
+    param.get<coppa::Description>().get();
+    */
+}
+
 int main()
 {
-    deviceTest();
+    parameterTest();
 
     return 0;
 }

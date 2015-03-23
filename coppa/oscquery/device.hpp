@@ -10,7 +10,7 @@ namespace coppa
         // Local device : websockets query server, osc socket (?), OSCQueryParameterMap
 
         // todo If there are two clients and one changes the value, the other must be updated.
-        template<typename QueryServer> // use using connection_handler in WebSocketServer
+        template<typename QueryServer>
         class LocalDevice
         {
                 class RemoteClient
@@ -43,7 +43,7 @@ namespace coppa
                 void updateRemoteAttribute(const RemoteClient& clt, Parameter& param, const Attribute& attr)
                 {
                     std::string message;
-                    // Make a path_changed json object.
+                    // todo Make a path_changed json object.
 
                     m_server.sendMessage(clt, message);
                 }
@@ -199,6 +199,7 @@ namespace coppa
         };
 
 
+        // Cases : fully static (midi), non-queryable (pure osc), queryable (minuit, oscquery)
         class RemoteDevice
         {
                 ParameterMap m_map;
@@ -220,9 +221,11 @@ namespace coppa
                 { return m_map; }
 
                 // Network operations
-                void set(const std::string& address) const
+                template<typename Val>
+                void set(const std::string& address, Val&& val) const
                 {
                     // Update local and send a message
+                    // Parameter must be settable
                 }
 
                 // Ask for an update of a part of the namespace
