@@ -3,6 +3,7 @@
 #include <coppa/oscquery/parameter.hpp>
 #include <boost/bimap.hpp>
 #include <boost/assign.hpp>
+#include <mutex>
 namespace coppa
 {
 namespace oscquery
@@ -24,13 +25,166 @@ enum class MessageType
 
 class JSONRead
 {
+    using val_t = json_value::type;
+
+    static constexpr void json_assert(bool val)
+    { if(!val) throw BadRequestException{}; }
+
+    static const auto& valToString(const json_value& val)
+    {
+      json_assert(val.is(val_t::string));
+      return val.as<std::string>();
+    }
+    static const auto& valToArray(const json_value& val)
+    {
+      json_assert(val.is(val_t::array));
+      return val.as<json_array>();
+    }
+    static const auto& valToMap(const json_value& val)
+    {
+      json_assert(val.is(val_t::map));
+      return val.as<json_map>();
+    }
+    static int valToInt(const json_value& val)
+    {
+      json_assert(val.is(val_t::integer));
+      return val.as<int>();
+    }
+
+    static auto jsonToTags(const json_value& val)
+    {
+      std::vector<Tag> tags;
+      for(const auto& elt : valToArray(val))
+        tags.push_back(valToString(elt));
+
+      return tags;
+    }
+
+    static auto jsonToAccessMode(const json_value& val)
+    {
+      return static_cast<AccessMode>(valToInt(val));
+    }
+
+    static auto jsonToVariant(const json_value& val)
+    {
+      switch(val.get_type())
+      {
+        case val_t::integer: return Variant{int(val.get<int>())};
+        case val_t::real:    return Variant{float(val.get<float>())};
+        case val_t::boolean: return Variant{bool(val.get<bool>())};
+        case val_t::string:  return Variant{val.get<std::string>()};
+        case val_t::null:    return Variant{};
+        default: throw BadRequestException{};
+          // TODO blob
+      }
+    }
+
+    static auto jsonToVariantArray(const json_value& val)
+    {
+      std::vector<Variant> v;
+      for(const auto& val : valToArray(val))
+        v.push_back(jsonToVariant(val));
+
+      // TODO : error-checking with the "types"
+
+      return v;
+    }
+
+    static auto jsonToClipModeArray(const json_value& val)
+    {
+      static const boost::bimap<std::string, ClipMode> clipmodeMap =
+          boost::assign::list_of<boost::bimap<std::string, ClipMode>::relation>
+         ("None", ClipMode::None)
+         ("Low",  ClipMode::Low)
+         ("High", ClipMode::High)
+         ("Both", ClipMode::Both);
+
+      std::vector<ClipMode> vec;
+      for(const json_value& value : valToArray(val))
+      {
+        auto it = clipmodeMap.left.find(valToString(value));
+        if(it == end(clipmodeMap.left))
+          throw BadRequestException{};
+
+        vec.push_back(it->second);
+      }
+
+      return vec;
+    }
+
+    static auto jsonToRangeArray(const json_value& val)
+    {
+      std::vector<Range> ranges;
+      for(const json_value& range_val : valToArray(val))
+      {
+        auto range_arr = valToArray(range_val);
+        if(range_arr.size() != 3)
+          throw BadRequestException{};
+
+        Range range;
+        range.min = jsonToVariant(range_arr.get(0));
+        range.max = jsonToVariant(range_arr.get(1));
+        auto thirdElement = range_arr.get(2);
+        if(thirdElement.is(val_t::array))
+        {
+          for(const auto& enum_val : valToArray(thirdElement))
+            range.values.push_back(jsonToVariant(enum_val));
+        }
+        else
+        {
+          json_assert(range_arr.get(2).is(val_t::null));
+        }
+
+        ranges.push_back(range);
+      }
+
+      return ranges;
+    }
+
+
+    static void readObject(const json_map& obj, ParameterMap& map)
+    {
+      // If it's a real parameter
+      if(obj.find("full_path") != obj.end())
+      {
+        Parameter p;
+        p.destination = valToString(obj.get("full_path"));
+
+        auto mapper = [&] (const std::string& name, auto& member, auto&& method)
+        {
+          if(obj.find(name) != obj.end()) member = method(obj.get(name));
+        };
+
+        mapper("description", p.description, &JSONRead::valToString);
+        mapper("tags",        p.tags,        &JSONRead::jsonToTags);
+        mapper("access",      p.accessmode , &JSONRead::jsonToAccessMode);
+
+        if(obj.find("value") != obj.end())
+        {
+          mapper("value",    p.values,    &JSONRead::jsonToVariantArray);
+          mapper("range",    p.ranges,    &JSONRead::jsonToRangeArray);
+          mapper("clipmode", p.clipmodes, &JSONRead::jsonToClipModeArray);
+        }
+
+        map.insert(p);
+      }
+
+      // Recurse on the children
+      if(obj.find("contents") != obj.end())
+      {
+        // contents is a json_map where each child is a key / json_map
+        for(const auto& val : valToMap(obj.get("contents")).get_values())
+        {
+          readObject(valToMap(val), map);
+        }
+      }
+    }
+
   public:
     static int getPort(const std::string& message)
     {
       const json_map obj{ message };
-
-      if(obj.get("osc_port").get_type() != json_value::type::integer)
-        throw BadRequestException{};
+      json_assert(obj.get("osc_port").is(val_t::integer));
 
       return obj.get<int>("osc_port");
     }
@@ -50,10 +204,11 @@ class JSONRead
       return MessageType::Namespace; // TODO More checks needed
     }
 
-    static ParameterMap toMap(const std::string& message)
+    template<typename Map>
+    static auto parseNamespace(const std::string& message)
     {
       json_map obj{message};
-      ParameterMap map;
+      Map map;
 
       try {
         readObject(obj, map);
@@ -65,196 +220,31 @@ class JSONRead
       return map;
     }
 
-    static auto jsonToTags(const json_value& val)
+    template<typename Map>
+    static void parsePathChanged(Map& map, const std::string& message)
     {
-      if(val.get_type() != json_value::type::array)
-        throw BadRequestException{};
-
-      const auto& arr = val.get<json_array>();
-      std::vector<Tag> tags;
-      for(const auto& elt : arr)
+      json_map obj{message};
+      std::string path = JSONRead::valToString(obj.get("path_changed"));
+      auto getter = [] (auto&& member) { return [&] (auto&& p) -> auto& { return p.*member; }; };
+      auto mapper = [&] (const std::string& name, auto&& getter, auto&& method)
       {
-        if(elt.get_type() != json_value::type::string)
-          throw BadRequestException{};
-
-        tags.push_back(elt.get<std::string>());
-      }
-
-      return tags;
-    }
-
-    static std::string jsonToString(const json_value& val)
-    {
-      if(val.get_type() != json_value::type::string)
-        throw BadRequestException{};
-
-      return val.as<std::string>();
-    }
-
-    static auto jsonToAccessMode(const json_value& val)
-    {
-      if(val.get_type() != json_value::type::integer)
-        throw BadRequestException{};
-
-      return  static_cast<AccessMode>(val.as<int>());
-    }
-
-    static auto jsonToValueArray(const json_value& val)
-    {
-      using val_t = json_value::type;
-
-      if(val.get_type() != json_value::type::array)
-        throw BadRequestException{};
-
-      const auto& json_vals = val.get<json_array>();
-      std::vector<Variant> v;
-      for(const auto& val : json_vals)
-      {
-        switch(val.get_type())
-        {
-          case val_t::integer: v.push_back(int(val.get<int>())); break;
-          case val_t::real:    v.push_back(float(val.get<double>())); break;
-          case val_t::string:  v.push_back(val.get<std::string>());break;
-
-          case val_t::boolean:
-          default:
-            break;
-            // TODO blob
-        }
-      }
-
-      return v;
-    }
-
-    static auto jsonToClipModeArray(const json_value& val)
-    {
-      static const boost::bimap<std::string, ClipMode> clipmodeMap =
-          boost::assign::list_of<boost::bimap<std::string, ClipMode>::relation>
-         ("None", ClipMode::None)
-         ("Low", ClipMode::Low)
-         ("High", ClipMode::High)
-         ("Both", ClipMode::Both);
-
-      if(val.get_type() != json_value::type::array)
-        throw BadRequestException{};
-
-      const auto& json_clipmodes = val.get<json_array>();
-      std::vector<ClipMode> vec;
-      for(const json_value& value : json_clipmodes)
-      {
-        if(value.get_type() != json_value::type::string)
-          throw BadRequestException{};
-
-        auto it = clipmodeMap.left.find(value.get<std::string>());
-        if(it == end(clipmodeMap.left))
-          throw BadRequestException{};
-
-        vec.push_back(it->second);
-      }
-
-      return vec;
-    }
-
-    static auto jsonToRangeArray(const json_value& val)
-    {
-      if(val.get_type() != json_value::type::array)
-        throw BadRequestException{};
-
-      const auto& json_ranges = val.get<json_array>();
-      std::vector<Range> ranges;
-      auto jsonValueToVariant = [] (const json_value& aValue)
-      {
-        switch(aValue.get_type())
-        {
-          case json_value::type::integer: return Variant{int(aValue.get<int>())};
-          case json_value::type::real:    return Variant{float(aValue.get<float>())};
-          case json_value::type::boolean: return Variant{bool(aValue.get<bool>())};
-          case json_value::type::string:  return Variant{aValue.get<std::string>()};
-          case json_value::type::null:    return Variant{};
-          default: throw BadRequestException{};
-            // TODO blob
-        }
+        if(obj.find(name) != obj.end())
+          map.update(path, [&] (Parameter& p) { getter(p) = method(obj.get(name)); });
       };
 
-      for(const json_value& range_val : json_ranges)
-      {
-        if(range_val.get_type() != json_value::type::array)
-          throw BadRequestException{};
-
-        json_array range_arr = range_val.as<json_array>();
-        if(range_arr.size() != 3)
-          throw BadRequestException{};
-
-        Range range;
-        range.min = jsonValueToVariant(range_arr.get(0));
-        range.max = jsonValueToVariant(range_arr.get(1));
-
-        if(range_arr.get(2).get_type() == json_value::type::array)
-        {
-          for(const json_value& enum_val : range_arr.get<json_array>(2))
-            range.values.push_back(jsonValueToVariant(enum_val));
-        }
-        else if(range_arr.get(2).get_type() != json_value::type::null)
-        {
-          throw BadRequestException{};
-        }
-
-        ranges.push_back(range);
-      }
-
-      return ranges;
-    }
-
-    static void readObject(const json_map& obj, ParameterMap& map)
-    {
-      // If it's a real parameter
-      if(obj.find("full_path") != obj.end())
-      {
-        Parameter p;
-
-        p.destination = jsonToString(obj.get("full_path"));
-
-        if(obj.find("description") != obj.end())
-          p.description = jsonToString(obj.get("description"));
-
-        if(obj.find("tags") != obj.end())
-          p.tags = jsonToTags(obj.get("tags"));
-
-        if(obj.find("access") != obj.end())
-          p.accessmode = jsonToAccessMode(obj.get("access"));
-
-        if(obj.find("value") != obj.end())
-        {
-          p.values = jsonToValueArray(obj.get("value"));
-          p.ranges = jsonToRangeArray(obj.get("range"));
-          p.clipmodes = jsonToClipModeArray(obj.get("clipmode"));
-        }
-
-        map.insert(p);
-      }
-
-      // Recurse on the children
-      if(obj.find("contents") != obj.end())
-      {
-        // contents is a json_map where each child is a key / json_map
-        if(obj.get("contents").get_type() != json_value::type::map)
-          throw BadRequestException{};
-
-        json_map contents = obj.get<json_map>("contents");
-        for(auto key : contents.get_keys())
-        {
-          if(contents.get(key).get_type() != json_value::type::map)
-            throw BadRequestException{};
-
-          readObject(contents.get<json_map>(key), map);
-        }
-      }
+      mapper("description", getter(&Parameter::description), &JSONRead::valToString);
+      mapper("tags",        getter(&Parameter::tags),        &JSONRead::jsonToTags);
+      mapper("access",      getter(&Parameter::accessmode),  &JSONRead::jsonToAccessMode);
+      mapper("value",       getter(&Parameter::values),      &JSONRead::jsonToVariantArray);
+      mapper("range",       getter(&Parameter::ranges),      &JSONRead::jsonToRangeArray);
+      mapper("clipmode",    getter(&Parameter::clipmodes),   &JSONRead::jsonToClipModeArray);
     }
 };
 
 
 class JSONFormat
 {
+    using val_t = json_value::type;
   public:
     // Format interface
     template<typename... Args>

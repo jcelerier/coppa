@@ -9,6 +9,54 @@ namespace coppa
 {
 namespace oscquery
 {
+
+class LockedParameterMap
+{
+    ParameterMap m_map;
+    mutable std::mutex m_map_mutex;
+
+  public:
+    LockedParameterMap()
+    {
+    }
+
+    LockedParameterMap& operator=(ParameterMap&& map)
+    {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
+      m_map = std::move(map);
+      return *this;
+    }
+
+    bool has(const std::string& address) const
+    {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
+      decltype(auto) index = m_map.get<0>();
+      return index.find(address) != end(index);
+    }
+
+    Parameter get(const std::string& address) const
+    {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
+      return *m_map.get<0>().find(address);
+    }
+
+    operator ParameterMap () const
+    {
+      return m_map;
+    }
+
+    template<typename Updater>
+    void update(const std::string& address, Updater&& updater)
+    {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
+      auto& param_index = m_map.get<0>();
+      decltype(auto) param = param_index.find(address);
+      {
+        param_index.modify(param, updater);
+      }
+    }
+};
+
 // Separate the protocol (websockets), its serialization format OSCQueryJsonFormat
 // Local device : websockets query server, osc socket (?), OSCQueryParameterMap
 
@@ -201,9 +249,8 @@ class LocalDevice
 // Cases : fully static (midi), non-queryable (pure osc), queryable (minuit, oscquery)
 class RemoteDevice
 {
-    mutable std::mutex m_map_mutex;
     OscSender m_sender;
-    ParameterMap m_map;
+    LockedParameterMap m_map;
     WebSocketClient m_client{
       [&] (auto&&... args)
       { onMessage(std::forward<decltype(args)>(args)...); }
@@ -225,62 +272,18 @@ class RemoteDevice
         case MessageType::PathAdded:
           break;
         case MessageType::PathRemoved:
-
           // TODO differentiate between removing a parameter,
           // and removing a whole part of the tree
 
           break;
         case MessageType::PathChanged:
+          // Pass the map for modification
+          JSONRead::parsePathChanged(m_map, message);
           break;
         default:
+          m_map = JSONRead::parseNamespace<ParameterMap>(message);
           break;
-          // namespace ?
-          //throw BadRequestException{};
       }
-
-
-      json_map obj{ message };
-      if(obj.find("path_changed") != obj.end())
-      {
-        std::string path = JSONRead::jsonToString(obj.get("path_changed"));
-
-        // A small lambda to modify the parameter map easily with locking
-        auto mapper = [&] (const std::string& name, auto&& getter, auto&& method)
-        {
-          if(obj.find(name) != obj.end())
-          {
-            auto& param_index = m_map.get<0>();
-            decltype(auto) param = param_index.find(path);
-            {
-              std::lock_guard<std::mutex> lock(m_map_mutex);
-              param_index.modify(param, [&] (Parameter& p) { getter(p) = method(obj.get(name)); });
-            }
-          }
-          else
-          {
-            throw BadRequestException{};
-          }
-        };
-
-        mapper("description", [] (auto&& p) -> auto& { return p.description; }, &JSONRead::jsonToString);
-        mapper("tags", [] (auto&& p) -> auto& { return p.tags; }, &JSONRead::jsonToTags);
-        mapper("value", [] (auto&& p) -> auto& { return p.values; }, &JSONRead::jsonToValueArray);
-        mapper("range", [] (auto&& p) -> auto& { return p.ranges; }, &JSONRead::jsonToRangeArray);
-        mapper("clipmode", [] (auto&& p) -> auto& { return p.clipmodes; }, &JSONRead::jsonToClipModeArray);
-        mapper("access", [] (auto&& p) -> auto& { return p.accessmode; }, &JSONRead::jsonToAccessMode);
-      }
-      else
-      {
-        std::cout << "Message: " << message << std::endl;
-
-        // Parse json. For now only the whole namespace.
-        auto newMap = JSONRead::toMap(message);
-        {
-          std::lock_guard<std::mutex> lock(m_map_mutex);
-          m_map = std::move(newMap);
-        }
-      }
-
     }
     catch(BadRequestException& e)
     {
@@ -296,21 +299,17 @@ class RemoteDevice
 
     bool has(const std::string& address) const
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      decltype(auto) index = m_map.get<0>();
-      return index.find(address) != end(index);
+      return m_map.has(address);
     }
 
     // Get the local value
     Parameter get(const std::string& address) const
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      return *m_map.get<0>().find(address);
+      return m_map.get(address);
     }
 
     ParameterMap map() const
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
       return m_map;
     }
 
@@ -330,6 +329,7 @@ class RemoteDevice
     // Ask for an update of a part of the namespace
     void update(const std::string& root = "/")
     {
+      // Should be part of the query protocol abstraction
       m_client.sendMessage(root);
     }
 
