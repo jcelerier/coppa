@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <coppa/oscquery/parameter.hpp>
-#include <coppa/oscquery/json.hpp>
+#include <coppa/oscquery/json/parser.hpp>
+#include <coppa/oscquery/json/writer.hpp>
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/config/asio_no_tls_client.hpp>

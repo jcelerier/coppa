@@ -66,7 +66,7 @@ class LockedParameterMap
       return *m_map.template get<0>().find(address);
     }
 
-    constexpr operator Map() const
+    operator Map() const
     {
       std::lock_guard<std::mutex> lock(m_map_mutex);
       return m_map;

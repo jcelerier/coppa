@@ -11,42 +11,81 @@ namespace coppa
 namespace oscquery
 {
 
-// Cases : fully static (midi), non-queryable (pure osc), queryable (minuit, oscquery)
-class RemoteDevice
+template<typename QueryProtocolClient, typename Parser>
+class RemoteQueryClient
 {
-    OscSender m_sender;
-    LockedParameterMap<ParameterMap> m_map;
-    WebSocketClient m_client{
-      [&] (auto&&... args)
-      { onMessage(std::forward<decltype(args)>(args)...); }
-    };
+    QueryProtocolClient m_client;
 
     std::string m_serverURI;
 
-    void onMessage(WebSocketClient::connection_handler hdl, const std::string& message)
-    try
+  public:
+    template<typename ParseHandler>
+    RemoteQueryClient(const std::string& uri, ParseHandler&& handler):
+      m_client{[&] (typename QueryProtocolClient::connection_handler hdl, const std::string& message)
     {
       if(message.empty())
         return;
+      handler(message);
+    }},
+            m_serverURI{m_client.connect(uri)}
+    {
+    }
 
-      switch(JSONParser::messageType(message))
+    // Ask for an update of a part of the namespace
+    void update(const std::string& root = "/")
+    {
+      // Should be part of the query protocol abstraction
+      m_client.sendMessage(root);
+    }
+
+    // Ask for an update of a single attribute
+    void updateAttribute(const std::string& address, const std::string& attribute)
+    {
+      m_client.sendMessage(address + "?" + attribute);
+    }
+
+    void listenAddress(const std::string& address, bool b)
+    {
+      m_client.sendMessage(address + "?listen=" + (b? "true" : "false"));
+    }
+
+};
+
+// Cases : fully static (midi), non-queryable (pure osc), queryable (minuit, oscquery)
+template<
+    typename MapType,
+    typename Parser,
+    typename DataProtocolSender,
+    typename QueryProtocolClient>
+class RemoteDevice : public QueryProtocolClient
+{
+    void on_queryServerMessage(const std::string& message)
+    try
+    {
+      switch(Parser::messageType(message))
       {
         case MessageType::Device:
-          m_sender = OscSender{m_serverURI, JSONParser::getPort(message)};
+          // DeviceHandler
+          //m_sender = OscSender{m_serverURI, JSONParser::getPort(message)};
           break;
+
         case MessageType::PathAdded:
+          // PathAdded handler
           break;
+
         case MessageType::PathRemoved:
           // TODO differentiate between removing a parameter,
           // and removing a whole part of the tree
 
           break;
+
         case MessageType::PathChanged:
-          // Pass the map for modification
-          JSONParser::parsePathChanged(m_map, message);
+          // Pass the map for modificationr
+          Parser::parsePathChanged(m_map, message);
           break;
+
         default:
-          m_map = JSONParser::parseNamespace<ParameterMap>(message);
+          m_map = Parser::template parseNamespace<ParameterMap>(message);
           break;
       }
     }
@@ -57,7 +96,7 @@ class RemoteDevice
 
   public:
     RemoteDevice(const std::string& uri):
-      m_serverURI{m_client.connect(uri)}
+      QueryProtocolClient{uri, [&] (const std::string& mess) { on_queryServerMessage(mess); }}
     {
 
     }
@@ -91,23 +130,9 @@ class RemoteDevice
       }
     }
 
-    // Ask for an update of a part of the namespace
-    void update(const std::string& root = "/")
-    {
-      // Should be part of the query protocol abstraction
-      m_client.sendMessage(root);
-    }
-
-    // Ask for an update of a single attribute
-    void updateAttribute(const std::string& address, const std::string& attribute)
-    {
-      m_client.sendMessage(address + "?" + attribute);
-    }
-
-    void listenAddress(const std::string& address, bool b)
-    {
-      m_client.sendMessage(address + "?listen=" + (b? "true" : "false"));
-    }
+  private:
+    OscSender m_sender;
+    LockedParameterMap<ParameterMap> m_map;
 };
 }
 }
