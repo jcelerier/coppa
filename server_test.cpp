@@ -1,4 +1,4 @@
-#include <coppa/oscquery/oscquery.hpp>
+#include <coppa/oscquery/device/local.hpp>
 
 int main()
 {
@@ -11,7 +11,7 @@ int main()
     Parameter aParam;
     aParam.destination = "/da/da";
     addValue(aParam, 42, {{}, {}, {}});
-    aParam.accessmode = coppa::AccessMode::Set;
+    aParam.accessmode = coppa::Access::Mode::Set;
     aParam.tags = {{"wow", "much tag"}};
 
     Parameter bParam;
@@ -27,7 +27,7 @@ int main()
 
     Parameter anotherParam;
     anotherParam.destination = "/da/do";
-    anotherParam.accessmode = coppa::AccessMode::Both;
+    anotherParam.accessmode = coppa::Access::Mode::Both;
     addValue(anotherParam, 5, // Value
                            {{}, {}, {4, 5, 6}}, // Range
                            coppa::ClipMode::Both); // ClipMode

@@ -1,4 +1,4 @@
-#include <coppa/oscquery/oscquery.hpp>
+#include <coppa/oscquery/device/remote.hpp>
 
 
 int main()
