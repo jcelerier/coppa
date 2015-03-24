@@ -23,7 +23,7 @@ enum class MessageType
   Namespace, Device, PathChanged, PathAdded, PathRemoved
 };
 
-class JSONRead
+class JSONParser
 {
     using val_t = json_value::type;
 
@@ -155,15 +155,15 @@ class JSONRead
           if(obj.find(name) != obj.end()) member = method(obj.get(name));
         };
 
-        mapper("description", p.description, &JSONRead::valToString);
-        mapper("tags",        p.tags,        &JSONRead::jsonToTags);
-        mapper("access",      p.accessmode , &JSONRead::jsonToAccessMode);
+        mapper("description", p.description, &JSONParser::valToString);
+        mapper("tags",        p.tags,        &JSONParser::jsonToTags);
+        mapper("access",      p.accessmode , &JSONParser::jsonToAccessMode);
 
         if(obj.find("value") != obj.end())
         {
-          mapper("value",    p.values,    &JSONRead::jsonToVariantArray);
-          mapper("range",    p.ranges,    &JSONRead::jsonToRangeArray);
-          mapper("clipmode", p.clipmodes, &JSONRead::jsonToClipModeArray);
+          mapper("value",    p.values,    &JSONParser::jsonToVariantArray);
+          mapper("range",    p.ranges,    &JSONParser::jsonToRangeArray);
+          mapper("clipmode", p.clipmodes, &JSONParser::jsonToClipModeArray);
         }
 
         map.insert(p);
@@ -192,14 +192,10 @@ class JSONRead
     static MessageType messageType(const std::string& message)
     {
       const json_map obj{ message };
-      if(obj.find("osc_port") != obj.end())
-        return MessageType::Device;
-      if(obj.find("path_added") != obj.end())
-        return MessageType::PathAdded;
-      if(obj.find("path_removed") != obj.end())
-        return MessageType::PathRemoved;
-      if(obj.find("path_changed") != obj.end())
-        return MessageType::PathChanged;
+      if(obj.find("osc_port") != obj.end())     return MessageType::Device;
+      if(obj.find("path_added") != obj.end())   return MessageType::PathAdded;
+      if(obj.find("path_removed") != obj.end()) return MessageType::PathRemoved;
+      if(obj.find("path_changed") != obj.end()) return MessageType::PathChanged;
 
       return MessageType::Namespace; // TODO More checks needed
     }
@@ -224,7 +220,7 @@ class JSONRead
     static void parsePathChanged(Map& map, const std::string& message)
     {
       json_map obj{message};
-      std::string path = JSONRead::valToString(obj.get("path_changed"));
+      std::string path = JSONParser::valToString(obj.get("path_changed"));
       auto getter = [] (auto&& member) { return [&] (auto&& p) -> auto& { return p.*member; }; };
       auto mapper = [&] (const std::string& name, auto&& getter, auto&& method)
       {
@@ -232,12 +228,12 @@ class JSONRead
           map.update(path, [&] (Parameter& p) { getter(p) = method(obj.get(name)); });
       };
 
-      mapper("description", getter(&Parameter::description), &JSONRead::valToString);
-      mapper("tags",        getter(&Parameter::tags),        &JSONRead::jsonToTags);
-      mapper("access",      getter(&Parameter::accessmode),  &JSONRead::jsonToAccessMode);
-      mapper("value",       getter(&Parameter::values),      &JSONRead::jsonToVariantArray);
-      mapper("range",       getter(&Parameter::ranges),      &JSONRead::jsonToRangeArray);
-      mapper("clipmode",    getter(&Parameter::clipmodes),   &JSONRead::jsonToClipModeArray);
+      mapper("description", getter(&Parameter::description), &JSONParser::valToString);
+      mapper("tags",        getter(&Parameter::tags),        &JSONParser::jsonToTags);
+      mapper("access",      getter(&Parameter::accessmode),  &JSONParser::jsonToAccessMode);
+      mapper("value",       getter(&Parameter::values),      &JSONParser::jsonToVariantArray);
+      mapper("range",       getter(&Parameter::ranges),      &JSONParser::jsonToRangeArray);
+      mapper("clipmode",    getter(&Parameter::clipmodes),   &JSONParser::jsonToClipModeArray);
     }
 };
 
