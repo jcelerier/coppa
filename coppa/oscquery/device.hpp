@@ -212,92 +212,62 @@ class RemoteDevice
     std::string m_serverURI;
 
     void onMessage(WebSocketClient::connection_handler hdl, const std::string& message)
+    try
     {
       if(message.empty())
         return;
 
-      json_map obj{ message };
-      if(obj.find("osc_port") != obj.end())
+      switch(JSONRead::messageType(message))
       {
-        int port = obj.get<int>("osc_port");
-        m_sender = OscSender{m_serverURI, port};
+        case MessageType::Device:
+          m_sender = OscSender{m_serverURI, JSONRead::getPort(message)};
+          break;
+        case MessageType::PathAdded:
+          break;
+        case MessageType::PathRemoved:
+
+          // TODO differentiate between removing a parameter,
+          // and removing a whole part of the tree
+
+          break;
+        case MessageType::PathChanged:
+          break;
+        default:
+          break;
+          // namespace ?
+          //throw BadRequestException{};
       }
-      else if(obj.find("path_changed") != obj.end())
+
+
+      json_map obj{ message };
+      if(obj.find("path_changed") != obj.end())
       {
-        //
-        std::string path = obj.get<std::string>("path_changed");
+        std::string path = JSONRead::jsonToString(obj.get("path_changed"));
 
         // A small lambda to modify the parameter map easily with locking
-        auto modifyParameter = [=] (auto&& modifier)
+        auto mapper = [&] (const std::string& name, auto&& getter, auto&& method)
         {
-          auto& param_index = m_map.get<0>();
-          decltype(auto) param = param_index.find(path);
+          if(obj.find(name) != obj.end())
           {
-            std::lock_guard<std::mutex> lock(m_map_mutex);
-            param_index.modify(param, modifier);
+            auto& param_index = m_map.get<0>();
+            decltype(auto) param = param_index.find(path);
+            {
+              std::lock_guard<std::mutex> lock(m_map_mutex);
+              param_index.modify(param, [&] (Parameter& p) { getter(p) = method(obj.get(name)); });
+            }
+          }
+          else
+          {
+            throw BadRequestException{};
           }
         };
 
-        // Description
-        if(obj.find("description") != obj.end())
-        {
-          modifyParameter([&] (Parameter& p) { p.description = obj.get<std::string>("description"); });
-        }
-
-        // Tags
-        if(obj.find("tags") != obj.end())
-        {
-          std::vector<Tag> tags;
-          for(json_value tag : obj.get<json_array>("tags"))
-          {
-            if(tag.get_type() == json_value::type::string)
-            {
-              tags.push_back(tag.get<std::string>());
-            }
-          }
-          modifyParameter([&] (Parameter& p) { p.tags = tags; });
-        }
-
-        // Range
-
-        // Access
-        if(obj.find("description") != obj.end())
-        {
-          modifyParameter([&] (Parameter& p) { p.accessmode = static_cast<AccessMode>(obj.get<int>("access")); });
-        }
-
-        // Clip mode
-        if(obj.find("clipmode") != obj.end())
-        {
-          /* TODO
-                            std::vector<ClipMode> clipmodes;
-                            for(json_value cm : obj.get<json_array>("clipmode"))
-                            {
-                                if(cm.get_type() == json_value::type::string)
-                                {
-                                    clipmodes.push_back(cm.get<int>());
-                                }
-                            }
-                            modifyParameter([&] (Parameter& p) { p.clipmodes = clipmodes; });
-                            */
-        }
-
-        // Value
-        if(obj.find("value") != obj.end()) // TODO for all attributes
-        {
-          std::vector<Variant> newVals;
-          for(json_value val : obj.get<json_array>("value"))
-          {
-            if(val.get_type() == json_value::type::integer)
-            {
-              newVals.push_back(int(val.get<int>()));
-
-              std::cout << path << " was set to " << val.get<int>() << std::endl;
-            }
-            // TODO etc...
-          }
-          modifyParameter([&] (Parameter& p) { p.values = newVals; });
-        }
+        mapper("description", [] (auto&& p) -> auto& { return p.description; }, &JSONRead::jsonToString);
+        mapper("tags", [] (auto&& p) -> auto& { return p.tags; }, &JSONRead::jsonToTags);
+        mapper("value", [] (auto&& p) -> auto& { return p.values; }, &JSONRead::jsonToValueArray);
+        mapper("range", [] (auto&& p) -> auto& { return p.ranges; }, &JSONRead::jsonToRangeArray);
+        mapper("clipmode", [] (auto&& p) -> auto& { return p.clipmodes; }, &JSONRead::jsonToClipModeArray);
+        mapper("access", [] (auto&& p) -> auto& { return p.accessmode; }, &JSONRead::jsonToAccessMode);
       }
       else
       {
@@ -307,9 +277,14 @@ class RemoteDevice
         auto newMap = JSONRead::toMap(message);
         {
           std::lock_guard<std::mutex> lock(m_map_mutex);
-          m_map = newMap;
+          m_map = std::move(newMap);
         }
       }
+
+    }
+    catch(BadRequestException& e)
+    {
+      std::cerr << "Error while parsing: " << e.what() << "  ==>  " << message;
     }
 
   public:
@@ -321,6 +296,7 @@ class RemoteDevice
 
     bool has(const std::string& address) const
     {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
       decltype(auto) index = m_map.get<0>();
       return index.find(address) != end(index);
     }

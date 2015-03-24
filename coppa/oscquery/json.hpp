@@ -17,23 +17,49 @@ class BadRequestException: public std::domain_error
       std::domain_error{"Bad request : " + message} { }
 };
 
+enum class MessageType
+{
+  Namespace, Device, PathChanged, PathAdded, PathRemoved
+};
+
 class JSONRead
 {
   public:
+    static int getPort(const std::string& message)
+    {
+      const json_map obj{ message };
 
+      if(obj.get("osc_port").get_type() != json_value::type::integer)
+        throw BadRequestException{};
+
+      return obj.get<int>("osc_port");
+    }
+
+    static MessageType messageType(const std::string& message)
+    {
+      const json_map obj{ message };
+      if(obj.find("osc_port") != obj.end())
+        return MessageType::Device;
+      if(obj.find("path_added") != obj.end())
+        return MessageType::PathAdded;
+      if(obj.find("path_removed") != obj.end())
+        return MessageType::PathRemoved;
+      if(obj.find("path_changed") != obj.end())
+        return MessageType::PathChanged;
+
+      return MessageType::Namespace; // TODO More checks needed
+    }
 
     static ParameterMap toMap(const std::string& message)
     {
       json_map obj{message};
       ParameterMap map;
 
-      // TODO put outside
       try {
         readObject(obj, map);
       }
       catch(BadRequestException& req) {
-        std::cout << message;
-        return ParameterMap{};
+        throw BadRequestException{message};
       }
 
       return map;
@@ -65,12 +91,12 @@ class JSONRead
       return val.as<std::string>();
     }
 
-    static int jsonToInteger(const json_value& val)
+    static auto jsonToAccessMode(const json_value& val)
     {
       if(val.get_type() != json_value::type::integer)
         throw BadRequestException{};
 
-      return val.as<int>();
+      return  static_cast<AccessMode>(val.as<int>());
     }
 
     static auto jsonToValueArray(const json_value& val)
@@ -195,7 +221,7 @@ class JSONRead
           p.tags = jsonToTags(obj.get("tags"));
 
         if(obj.find("access") != obj.end())
-          p.accessmode = static_cast<AccessMode>(jsonToInteger(obj.get("access")));
+          p.accessmode = jsonToAccessMode(obj.get("access"));
 
         if(obj.find("value") != obj.end())
         {
@@ -490,6 +516,3 @@ class JSONFormat
 };
 }
 }
-
-
-
