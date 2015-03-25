@@ -3,7 +3,7 @@ logo](https://github.com/jcelerier/coppa/blob/master/logo_new.jpg)
 
 # Common Protocols for Parameters
 
-The API is not yet stable.
+The API is not yet stable. This aims to provide an example of a possible implementation of the OSCQuery protocol, in the most generic possible way to allowto easily adapt to specification changes.
 
 ## Requirements
 
@@ -24,7 +24,7 @@ The API is not yet stable.
 In a separate build folder : 
 
     $ cmake -DCMAKE_CXX_COMPILER=[at least clang-3.6] [coppa folder]
-    $ make
+    $ make -j4
 
 ## Running a test server
 
