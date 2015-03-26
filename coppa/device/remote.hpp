@@ -25,23 +25,19 @@ class RemoteQueryClient
     {
     }
 
+    bool connected() const
+    { return m_client.connected(); }
+
     // Ask for an update of a part of the namespace
     void update(const std::string& root = "/")
-    {
-      // Should be part of the query protocol abstraction
-      m_client.sendMessage(root);
-    }
+    { m_client.sendMessage(root); }
 
     // Ask for an update of a single attribute
     void updateAttribute(const std::string& address, const std::string& attribute)
-    {
-      m_client.sendMessage(address + "?" + attribute);
-    }
+    { m_client.sendMessage(address + "?" + attribute); }
 
     void listenAddress(const std::string& address, bool b)
-    {
-      m_client.sendMessage(address + "?listen=" + (b? "true" : "false"));
-    }
+    { m_client.sendMessage(address + "?listen=" + (b? "true" : "false")); }
 
     const std::string uri() const
     { return m_serverURI; }
@@ -109,6 +105,7 @@ class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
         case MessageType::Device:
           // DeviceHandler
           RemoteMapBase::connect(QueryProtocolClient::uri(), Parser::getPort(message));
+          if(onConnect) onConnect();
           break;
 
         case MessageType::PathAdded:
@@ -122,16 +119,18 @@ class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
           break;
 
         case MessageType::PathChanged:
-          // Pass the map for modificationr
+          // Pass the map for modification
           Parser::parsePathChanged(RemoteMapBase::safeMap(), message);
+          if(onUpdate) onUpdate();
           break;
 
         default:
           RemoteMapBase::replace(Parser::template parseNamespace<MapType>(message));
+          if(onUpdate) onUpdate();
           break;
       }
     }
-    catch(std::runtime_error& e)
+    catch(std::exception& e)
     {
       std::cerr << "Error while parsing: " << e.what() << "  ==>  " << message;
     }
@@ -142,6 +141,9 @@ class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
     {
 
     }
+
+    std::function<void()> onConnect;
+    std::function<void()> onUpdate;
 
 };
 

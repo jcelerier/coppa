@@ -78,9 +78,7 @@ class LockedParameterMap
       std::lock_guard<std::mutex> lock(m_map_mutex);
       auto& param_index = m_map.template get<0>();
       decltype(auto) param = param_index.find(address);
-      {
-        param_index.modify(param, updater);
-      }
+      param_index.modify(param, updater);
     }
 };
 

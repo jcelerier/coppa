@@ -51,6 +51,9 @@ namespace coppa
                         asio_thread.join();
                 }
 
+                bool connected() const
+                { return m_open; }
+
                 void stop()
                 {
                     scoped_lock guard(m_lock);

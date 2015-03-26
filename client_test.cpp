@@ -6,7 +6,9 @@ int main()
     using namespace std;
     using namespace coppa::oscquery;
     RemoteDevice dev("http://127.0.0.1:9002/");
-    this_thread::sleep_for(chrono::milliseconds(100));
+    while(!dev.connected())
+      this_thread::sleep_for(chrono::milliseconds(100));
+
     dev.update();
 
     this_thread::sleep_for(chrono::seconds(1));

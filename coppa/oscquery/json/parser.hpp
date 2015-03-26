@@ -218,6 +218,7 @@ class JSONParser
     {
       json_map obj{message};
       std::string path = JSONParser::valToString(obj.get("path_changed"));
+      json_assert(map.has(path));
       auto getter = [] (auto&& member) { return [&] (auto&& p) -> auto& { return p.*member; }; };
       auto mapper = [&] (const std::string& name, auto&& getter, auto&& method)
       {
