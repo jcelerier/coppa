@@ -1,28 +1,21 @@
 #pragma once
 #include <oscpack/ip/UdpSocket.h>
 #include <oscpack/osc/OscOutboundPacketStream.h>
+#include <coppa/osc/oscmessagegenerator.hpp>
 
 #include <string>
 #include <iostream>
 #include <memory>
 
-class OscSenderInterface
-{
-    public:
-        virtual void send(const osc::OutboundPacketStream&) = 0;
-        virtual ~OscSenderInterface() = default;
-};
-
-// Faire simple et multicast,
-class OscSender: public OscSenderInterface
+class OscSender
 {
     public:
         OscSender() = default;
         OscSender& operator=(const OscSender&) = default;
         OscSender(const std::string& ip, const int port):
-            transmitSocket{std::make_shared<UdpTransmitSocket>(IpEndpointName(ip.c_str(), port))},
-            _ip(ip),
-            _port(port)
+            m_socket{std::make_shared<UdpTransmitSocket>(IpEndpointName(ip.c_str(), port))},
+            m_ip(ip),
+            m_port(port)
         {
         }
 
@@ -30,16 +23,22 @@ class OscSender: public OscSenderInterface
         OscSender(OscSender&&) = default;
         OscSender(const OscSender&) = delete;
 
-        virtual void send(const osc::OutboundPacketStream& m) override
+        void send(const osc::OutboundPacketStream& m)
         {
-            transmitSocket->Send( m.Data(), m.Size() );
+            m_socket->Send( m.Data(), m.Size() );
         }
 
-        std::string ip() { return _ip; }
-        int port() { return _port; }
+        template<typename... Args>
+        void send(std::string address, Args&&... args)
+        {
+            send(osc::MessageGenerator()(address, std::forward<Args>(args)...));
+        }
+
+        const std::string& ip() const { return m_ip; }
+        int port() const { return m_port; }
 
     private:
-        std::shared_ptr<UdpTransmitSocket> transmitSocket;
-        std::string _ip;
-        int _port;
+        std::shared_ptr<UdpTransmitSocket> m_socket;
+        std::string m_ip;
+        int m_port;
 };

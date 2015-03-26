@@ -5,7 +5,7 @@ int main()
 {
     using namespace std;
     using namespace coppa::oscquery;
-    RemoteDevice<ParameterMap, JSONParser, OscSender, RemoteQueryClient<WebSocketClient, JSONParser>> dev("http://127.0.0.1:9002/");
+    RemoteDevice dev("http://127.0.0.1:9002/");
     this_thread::sleep_for(chrono::milliseconds(100));
     dev.update();
 

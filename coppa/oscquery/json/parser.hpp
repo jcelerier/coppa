@@ -1,6 +1,7 @@
 #pragma once
 #include <jeayeson/jeayeson.hpp>
 #include <coppa/oscquery/parameter.hpp>
+#include <coppa/device/messagetype.hpp>
 #include <boost/bimap.hpp>
 #include <boost/assign.hpp>
 
@@ -17,11 +18,6 @@ class BadRequestException: public std::domain_error
 
     BadRequestException(const std::string& message):
       std::domain_error{"Bad request : " + message} { }
-};
-
-enum class MessageType
-{
-  Namespace, Device, PathChanged, PathAdded, PathRemoved
 };
 
 class JSONParser
