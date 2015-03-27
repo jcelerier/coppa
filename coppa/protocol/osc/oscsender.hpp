@@ -1,7 +1,7 @@
 #pragma once
 #include <oscpack/ip/UdpSocket.h>
 #include <oscpack/osc/OscOutboundPacketStream.h>
-#include <coppa/osc/oscmessagegenerator.hpp>
+#include <coppa/protocol/osc/oscmessagegenerator.hpp>
 
 #include <string>
 #include <iostream>

@@ -1,8 +1,8 @@
 #pragma once
 #include <coppa/oscquery/websockets.hpp>
-#include <coppa/osc/oscreceiver.hpp>
-#include <coppa/osc/oscsender.hpp>
-#include <coppa/osc/oscmessagegenerator.hpp>
+#include <coppa/protocol/osc/oscreceiver.hpp>
+#include <coppa/protocol/osc/oscsender.hpp>
+#include <coppa/protocol/osc/oscmessagegenerator.hpp>
 #include <unordered_set>
 #include <coppa/oscquery/json/writer.hpp>
 

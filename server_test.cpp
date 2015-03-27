@@ -1,11 +1,12 @@
 #include <coppa/oscquery/device/local.hpp>
+#include <coppa/protocol/websockets/server.hpp>
 
 int main()
 {
     using namespace coppa::oscquery;
 
     // Create a device
-    LocalDevice<WebSocketServer> dev;
+    LocalDevice<coppa::WebSocketServer> dev;
 
     // Create some parameters
     Parameter aParam;
