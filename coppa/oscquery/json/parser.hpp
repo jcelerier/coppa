@@ -24,7 +24,7 @@ class JSONParser
 {
     using val_t = json_value::type;
 
-    static constexpr void json_assert(bool val)
+    static void json_assert(bool val)
     { if(!val) throw BadRequestException{}; }
 
     static const auto& valToString(const json_value& val)
@@ -76,10 +76,10 @@ class JSONParser
       }
     }
 
-    static auto jsonToVariantArray(const json_value& val)
+    static auto jsonToVariantArray(const json_value& json_val)
     {
       std::vector<Variant> v;
-      for(const auto& val : valToArray(val))
+      for(const auto& val : valToArray(json_val))
         v.push_back(jsonToVariant(val));
 
       // TODO : error-checking with the "types"

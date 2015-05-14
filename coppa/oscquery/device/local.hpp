@@ -209,7 +209,7 @@ class LocalDevice
       // Message handler
       [&] (typename QueryServer::connection_handler hdl, const std::string& message)
       {
-        return generateReply(hdl, message);
+        return this->generateReply(hdl, message);
       }
     };
 
