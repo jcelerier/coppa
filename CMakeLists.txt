@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 project(Coppa)
 
 find_package(Boost REQUIRED COMPONENTS system)
+find_package(Threads REQUIRED)
 add_subdirectory(oscpack)
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
@@ -25,10 +26,9 @@ if(${CMAKE_MINOR_VERSION} GREATER 0)
     set_property(TARGET server_test PROPERTY CXX_STANDARD 14)
 endif()
 
-target_link_libraries(server_test "${Boost_LIBRARIES}" oscpack)
+target_link_libraries(server_test "${Boost_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)
 
 
-find_package(Threads REQUIRED)
 add_executable(client_test
     "${CMAKE_CURRENT_SOURCE_DIR}/client_test.cpp"
      ${COPPA_HEADERS})

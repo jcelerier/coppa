@@ -4,7 +4,74 @@
 #include <coppa/protocol/osc/oscsender.hpp>
 #include <coppa/protocol/osc/oscmessagegenerator.hpp>
 #include <unordered_set>
+#include <map>
 #include <coppa/oscquery/json/writer.hpp>
+
+class BadRequest : public std::runtime_error
+{
+  public:
+    using std::runtime_error::runtime_error;
+};
+
+class ParseUrl
+{
+  public:
+    template<typename Mapper>
+    static std::string parse(const std::string& request, Mapper&& mapper)
+    {
+      using namespace boost;
+      using namespace std;
+      auto invalid_request = [&] ()
+      {
+        cerr << "Invalid request: " << request << endl;
+        return "";
+      };
+
+      // First split the "?" part
+      vector<string> uri_tokens;
+      split(uri_tokens, request, is_any_of("?"));
+
+      string path = uri_tokens.at(0);
+      map<string, string> arguments_map;
+
+      if(uri_tokens.size() > 1)
+      {
+        if(uri_tokens.size() > 2)
+        {
+          return invalid_request();
+        }
+
+        auto arguments = uri_tokens.at(1);
+
+        // Then, split the &-separated arguments
+        vector<string> argument_tokens;
+        split(argument_tokens, arguments, is_any_of("&"));
+
+        // Finally, split these arguments at '=' at put them in a map
+        for(const auto& arg : argument_tokens)
+        {
+          vector<string> map_tokens;
+          split(map_tokens, arg, is_any_of("="));
+
+          switch(map_tokens.size())
+          {
+            case 2:
+              arguments_map.insert({map_tokens.front(), map_tokens.back()});
+              break;
+            case 1:
+              arguments_map.insert({map_tokens.front(), ""});
+              break;
+            default:
+              return invalid_request();
+              break;
+          }
+        }
+      }
+
+      return mapper(path, arguments_map);
+    }
+
+};
 
 namespace coppa
 {
@@ -25,7 +92,8 @@ class LocalDevice
         std::unordered_set<std::string> m_listened;
 
       public:
-        RemoteClient(typename QueryServer::connection_handler handler):
+        RemoteClient(
+            typename QueryServer::connection_handler handler):
           m_handler{handler} { }
 
         operator typename QueryServer::connection_handler() const
@@ -41,69 +109,78 @@ class LocalDevice
         const auto& listenedPaths() const noexcept
         { return m_listened; }
 
-        bool operator==(const typename QueryServer::connection_handler& h) const
+        bool operator==(
+            const typename QueryServer::connection_handler& h) const
         { return !m_handler.expired() && m_handler.lock() == h.lock(); }
     };
 
     template<typename Attribute>
-    void updateRemoteAttribute(const RemoteClient& clt, const std::string& path, const Attribute& attr)
+    void updateRemoteAttribute(
+        const RemoteClient& clt,
+        const std::string& path,
+        const Attribute& attr)
     {
       std::string message = JSONFormat::attributeChangedMessage(path, attr);
 
       m_server.sendMessage(clt, message);
     }
 
-    std::string generateReply(typename QueryServer::connection_handler hdl,
-                              const std::string& request)
+    std::string generateReply(
+        typename QueryServer::connection_handler hdl,
+        const std::string& request)
     {
-      using namespace boost;
-      std::string response;
-      if(algorithm::contains(request, "?"))
+      using namespace std;
+      return ParseUrl::parse(
+            request,
+            [&] (const string& path, const std::map<string, string>& parameters)
       {
-        std::vector<std::string> tokens;
-        boost::split(tokens, request, boost::is_any_of("?"));
-        if(tokens.size() != 2)
+        // Here we handle the url elements relative to oscquery
+        if(parameters.size() == 0)
         {
-          std::cerr << "Invalid request: " << request << std::endl;
-          return "";
-        }
-
-        auto path = tokens.at(0);
-        auto method = tokens.at(1);
-        if(algorithm::contains(method, "listen"))
-        {
-          std::vector<std::string> listen_tokens;
-          boost::split(listen_tokens, method, boost::is_any_of("="));
-          auto it = std::find(std::begin(m_clients), std::end(m_clients), hdl);
-          if(it == std::end(m_clients))
-            return "";
-
-          if(listen_tokens.size() != 2)
-          {
-            std::cerr << "Invalid request: " << request << std::endl;
-            return "";
-          }
-
-          if(listen_tokens.at(1) == "true")
-            it->addListenedPath(path);
-          else
-            it->removeListenedPath(path);
+          std::lock_guard<std::mutex> lock(m_map_mutex);
+          return JSONFormat::marshallParameterMap(m_map, path);
         }
         else
         {
-          std::lock_guard<std::mutex> lock(m_map_mutex);
-          response = JSONFormat::marshallAttribute(
-                       *m_map.get<0>().find(path),
-                       method);
-        }
-      }
-      else
-      {
-        std::lock_guard<std::mutex> lock(m_map_mutex);
-        response = JSONFormat::marshallParameterMap(m_map, request);
-      }
+          // Listen
+          auto listen_it = parameters.find("listen");
+          if(listen_it != end(parameters))
+          {
+            // First we find for a corresponding client
+            auto it = find(begin(m_clients), end(m_clients), hdl);
+            if(it == std::end(m_clients))
+              return std::string{};
 
-      return response;
+            // Then we enable / disable listening
+            if(listen_it->second == "true")
+            {
+              it->addListenedPath(path);
+            }
+            else if(listen_it->second == "false")
+            {
+              it->removeListenedPath(path);
+            }
+            else
+            {
+              throw BadRequest("");
+            }
+          }
+
+          // All the value-less parameters
+          for(const auto& elt : parameters)
+          {
+            if(elt.second.empty())
+            {
+              std::lock_guard<std::mutex> lock(m_map_mutex);
+              return JSONFormat::marshallAttribute(
+                           *m_map.get<0>().find(path),
+                           path);
+            }
+          }
+        }
+
+        return std::string{};
+      });
     }
 
 
