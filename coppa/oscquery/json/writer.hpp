@@ -102,6 +102,7 @@ class JSONFormat
     static json_array getJsonValueArray(const Values& values)
     {
       json_array value_arr;
+
       for(const auto& value : values.values)
       {
         addValueToJsonArray(value_arr, value);
@@ -166,7 +167,9 @@ class JSONFormat
     {
       json_array arr;
       for(const auto& tag : tags.tags)
+      {
         arr.add(tag);
+      }
 
       return arr;
     }

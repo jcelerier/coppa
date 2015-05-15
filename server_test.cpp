@@ -13,7 +13,7 @@ int main()
     aParam.destination = "/da/da";
     addValue(aParam, 42, {{}, {}, {}});
     aParam.accessmode = coppa::Access::Mode::Set;
-    aParam.tags = {{"wow", "much tag"}};
+    aParam.tags = {"wow", "much tag"};
 
     Parameter bParam;
     bParam.destination = "/plop/plip/plap";

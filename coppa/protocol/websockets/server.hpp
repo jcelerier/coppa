@@ -31,7 +31,8 @@ class WebSocketServer
       {
         server::connection_ptr con = m_server.get_con_from_hdl(hdl);
 
-        con->set_body(messageHandler(hdl, con->get_uri()->get_resource()));
+        con->replace_header("Content-Type", "application/json; charset=utf-8");
+        con->set_body(messageHandler(hdl, con->get_uri()->get_resource()) + "\0");
         con->set_status(websocketpp::http::status_code::ok);
       });
     }
