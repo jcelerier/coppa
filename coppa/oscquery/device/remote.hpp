@@ -24,6 +24,5 @@ class RemoteDevice : public QueryRemoteDevice<
       SettableMap::set(addr, val.values);
     }
 };
-
 }
 }

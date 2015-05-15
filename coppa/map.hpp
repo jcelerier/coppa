@@ -41,12 +41,21 @@ template<typename Map>
 class SimpleParameterMap
 {
     Map m_map;
+    static auto makeRootNode()
+    {
+      typename Map::value_type root;
+      root.description = std::string("root node");
+      root.destination = std::string("/");
+      root.accessmode = Access::Mode::None;
+      return root;
+    }
 
   public:
     using map_type = Map;
     using size_type = typename Map::size_type;
 
-    constexpr SimpleParameterMap() = default;
+    constexpr SimpleParameterMap()
+    { add(makeRootNode()); }
 
     SimpleParameterMap& operator=(Map&& map)
     {
@@ -63,39 +72,25 @@ class SimpleParameterMap
 
     template<typename Key>
     auto get(Key&& address) const
-    {
-      return *m_map.template get<0>().find(address);
-    }
+    { return *m_map.template get<0>().find(address); }
 
     operator const Map&() const
-    {
-      return m_map;
-    }
+    { return m_map; }
 
     const auto& map_impl() const
-    {
-      return static_cast<const Map&>(*this);
-    }
+    { return static_cast<const Map&>(*this); }
 
     auto& operator[](size_type i) const
-    {
-      return m_map.template get<1>()[i];
-    }
+    { return m_map.template get<1>()[i]; }
 
     auto size() const
-    {
-      return m_map.size();
-    }
+    { return m_map.size(); }
 
     auto begin() const
-    {
-      return m_map.begin();
-    }
+    { return m_map.begin(); }
 
     auto end() const
-    {
-      return m_map.end();
-    }
+    { return m_map.end(); }
 
     template<typename Key, typename Updater>
     auto update(Key&& address, Updater&& updater)
@@ -107,9 +102,7 @@ class SimpleParameterMap
 
     template<typename Element>
     auto add(Element&& e)
-    {
-      m_map.insert(e);
-    }
+    { m_map.insert(e); }
 
     template<typename Key>
     auto remove(Key&& k)
@@ -118,6 +111,12 @@ class SimpleParameterMap
       for(auto&& elt : filter(*this, k))
       {
         m_map.template get<0>().erase(elt.destination);
+      }
+
+      // If the root node was removed we reinstate it
+      if(size() == 0)
+      {
+        add(makeRootNode());
       }
     }
 
@@ -141,6 +140,28 @@ class LockedParameterMap
     using map_type = Map;
     constexpr LockedParameterMap() = default;
 
+    operator const Map&() const
+    { return m_map; }
+
+    operator Map&()
+    { return m_map; }
+
+    auto& operator[](typename Map::size_type i) const
+    { return m_map[i]; }
+
+    auto size() const
+    { return m_map.size(); }
+
+    auto& unsafeMap()
+    { return static_cast<Map&>(*this); }
+
+    const auto& unsafeMap() const
+    { return static_cast<const Map&>(*this); }
+
+    auto mapCopy() const
+    { return static_cast<const Map&>(this); }
+
+
     template<typename Map_T>
     LockedParameterMap& operator=(Map_T&& map)
     {
@@ -163,67 +184,31 @@ class LockedParameterMap
       return m_map.get(address);
     }
 
-    operator const Map&() const
-    {
-      return m_map;
-    }
-
-    auto& operator[](typename Map::size_type i) const
-    {
-      return m_map[i];
-    }
-
-    auto size() const
-    {
-      return m_map.size();
-    }
-
-    auto begin() const
-    {
-      return m_map.begin();
-    }
-
-    auto end() const
-    {
-      return m_map.end();
-    }
-
-    const auto& unsafeMap() const
-    {
-      return static_cast<const Map&>(*this);
-    }
-
     template<typename Key, typename Updater>
-    auto update(Key&& address, Updater&& updater)
+    void update(Key&& address, Updater&& updater)
     {
-      std::unique_lock<std::mutex> lock(m_map_mutex);
+      std::lock_guard<std::mutex> lock(m_map_mutex);
       m_map.update(address, updater);
-
-      return lock;
     }
 
     template<typename Element>
-    auto add(Element&& e)
+    void add(Element&& e)
     {
-      std::unique_lock<std::mutex> lock(m_map_mutex);
+      std::lock_guard<std::mutex> lock(m_map_mutex);
       m_map.add(e);
-
-      return lock;
     }
 
     template<typename Key>
-    auto remove(Key&& k)
+    void remove(Key&& k)
     {
-      std::unique_lock<std::mutex> lock(m_map_mutex);
+      std::lock_guard<std::mutex> lock(m_map_mutex);
       m_map.remove(k);
-
-      return lock;
     }
 
     template<typename Map_T>
     void merge(Map_T&& other)
     {
-      std::unique_lock<std::mutex> lock(m_map_mutex);
+      std::lock_guard<std::mutex> lock(m_map_mutex);
       m_map.merge(other);
     }
 };

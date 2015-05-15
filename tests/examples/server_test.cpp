@@ -65,11 +65,10 @@ int main()
   dev.add(anotherParam);
 
   std::cerr << "Size: " << dev.map().size() << std::endl;
-  std::cerr << "Size: " << dev.map().begin()->destination << std::endl;
 
 
   std::mutex test_mutex;
-  /*
+
   // A thread that will periodically update a value.
   std::thread valueUpdateThread([&] ()
   {
@@ -83,10 +82,13 @@ int main()
       std::lock_guard<std::mutex> lock(test_mutex);
 
       v.values[0] = i++;
-      dev.update("/da/do", v);
+      if(dev.map().has("da/do"))
+        dev.update("/da/do", v);
+      else
+        return;
     }
   });
-  */
+
 
 
   // A thread that will periodically add a parameter.
@@ -94,10 +96,11 @@ int main()
   {
     while(true)
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(400));
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
       std::lock_guard<std::mutex> lock(test_mutex);
 
-      auto randompath = dev.map().get<1>()[rand() % dev.map().get<1>().size()].destination;
+      auto size = dev.map().size();
+      auto randompath = dev.map()[rand() % size].destination;
       Parameter p;
 
       // TODO empty names should not be allowed by ParameterMap
@@ -116,10 +119,11 @@ int main()
   {
     while(true)
     {
-      std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::this_thread::sleep_for(std::chrono::milliseconds(400));
       std::lock_guard<std::mutex> lock(test_mutex);
 
-      auto randompath = dev.map().get<1>()[rand() % dev.map().get<1>().size()].destination;
+      auto size = dev.map().size();
+      auto randompath = dev.map()[rand() % size].destination;
 
       // Note : we should not be able to remove the root
       // (or if we do, it juste replaces it with an empty root).

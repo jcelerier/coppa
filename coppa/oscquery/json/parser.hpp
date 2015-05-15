@@ -192,7 +192,7 @@ class JSONParser
     static MessageType messageType(const std::string& message)
     {
       const json_map obj{ message };
-           if(obj.find("osc_port") != obj.end())     return MessageType::Device;
+      if(obj.find("osc_port") != obj.end())     return MessageType::Device;
       else if(obj.find("path_added") != obj.end())   return MessageType::PathAdded;
       else if(obj.find("path_removed") != obj.end()) return MessageType::PathRemoved;
       else if(obj.find("path_changed") != obj.end()) return MessageType::PathChanged;
@@ -229,6 +229,7 @@ class JSONParser
       json_map obj{message};
       std::string path = JSONParser::valToString(obj.get("path_changed"));
       json_assert(map.has(path));
+
       /* Replace the whole sub-namespace */
       std::cout << "TODO parsePathChanged" << std::endl;
     }
@@ -244,9 +245,9 @@ class JSONParser
     static void parsePathRemoved(Map& map, const std::string& message)
     {
       json_map obj{message};
-      std::string path = JSONParser::valToString(obj.get("path_changed"));
-      json_assert(map.has(path));
 
+      auto path = JSONParser::valToString(obj.get("path_removed"));
+      json_assert(map.has(path));
       map.remove(path);
     }
 

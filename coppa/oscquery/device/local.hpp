@@ -176,14 +176,6 @@ class LocalDevice
       });
     }
 
-    void setupRootNode()
-    { // TODO find the right place for the root node ?
-      Parameter root;
-      root.description = std::string("root node");
-      root.destination = std::string("/");
-      root.accessmode = Access::Mode::None;
-      m_map.add(root);
-    }
 
   public:
     const auto& clients() const
@@ -197,7 +189,6 @@ class LocalDevice
 
     LocalDevice()
     {
-      setupRootNode();
       // TODO Add osc message handlers to update the tree.
     }
 
@@ -208,12 +199,7 @@ class LocalDevice
 
     void remove(const std::string& path)
     {
-      auto lock = m_map.remove(path);
-      // If the root node was removed we reinstate it
-      if(path == "/")
-      {
-        setupRootNode();
-      }
+      m_map.remove(path);
     }
 
     template<typename Attribute>
@@ -320,8 +306,8 @@ class SynchronizingLocalDevice
     Parameter get(const std::string& address) const
     { return m_device.get(address); }
 
-    const ParameterMap& map() const
-    { return m_device.map().unsafeMap(); }
+    const auto& map() const
+    { return m_device.map(); }
 
     void expose()
     { m_device.expose(); }
