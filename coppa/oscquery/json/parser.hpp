@@ -223,15 +223,27 @@ class JSONParser
     }
 
 
+    // Same syntax that attribute_changed; do the same for path_added / path_removed.
     template<typename Map>
     static void parsePathChanged(Map& map, const std::string& message)
     {
+      // TODO test this
+      std::cout << std::endl << "PathChanged" << message << std::endl;
       json_map obj{message};
-      std::string path = JSONParser::valToString(obj.get("path_changed"));
-      json_assert(map.has(path));
+      auto path_changed = obj.get<json_map>("path_changed");
 
-      /* Replace the whole sub-namespace */
-      std::cout << "TODO parsePathChanged" << std::endl;
+      // 1. Search for the paths
+      for(const auto& path : path_changed.get_keys())
+      {
+        json_assert(map.has(path));
+        auto path_obj = path_changed.get<json_map>(path);
+
+        // 2. Remove the existing path
+        map.remove(valToString(path_obj.get("full_path")));
+
+        // 3. Replace it
+        readObject(path_obj, map); // TODO harmonize arguments order
+      }
     }
 
     template<typename BaseMapType, typename Map>
@@ -254,6 +266,7 @@ class JSONParser
     template<typename Map>
     static void parseAttributeChanged(Map& map, const std::string& message)
     {
+      // TODO test this
       std::cout << std::endl << "AttributeChanged" << message << std::endl;
       json_map obj{message};
       auto attr_changed = obj.get<json_map>("attribute_changed");

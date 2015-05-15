@@ -126,7 +126,7 @@ class JSONFormat
       static const boost::bimap<std::string, ClipMode> clipmodeMap =
           boost::assign::list_of<boost::bimap<std::string, ClipMode>::relation>
           ("None", ClipMode::None)
-          ("Low", ClipMode::Low)
+          ("Low",  ClipMode::Low)
           ("High", ClipMode::High)
           ("Both", ClipMode::Both);
 

@@ -127,10 +127,10 @@ class LocalDevice
             request,
             [&] (const string& path, const std::map<string, string>& parameters)
       {
+        std::lock_guard<std::mutex> lock(m_map_mutex);
         // Here we handle the url elements relative to oscquery
         if(parameters.size() == 0)
         {
-          std::lock_guard<std::mutex> lock(m_map_mutex);
           return JSONFormat::marshallParameterMap(m_map.unsafeMap(), path);
         }
         else
@@ -164,7 +164,6 @@ class LocalDevice
           {
             if(elt.second.empty())
             {
-              std::lock_guard<std::mutex> lock(m_map_mutex);
               return JSONFormat::marshallAttribute(
                            m_map.unsafeMap().get(path),
                            path);
