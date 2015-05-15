@@ -7,7 +7,8 @@ The API is not yet stable. This aims to provide an example of a possible impleme
 
 ## Requirements
 
-* An up-to-date C++14 compiler (So far, only tested with clang-3.6)
+* An up-to-date C++14 compiler (So far, only tested with clang-3.6; building 
+works with GCC-5.1 but it crashes at runtime)
 * Boost
 * CMake
 

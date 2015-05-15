@@ -13,7 +13,7 @@ int main()
 
     this_thread::sleep_for(chrono::seconds(1));
 
-    cerr <<  dev.map().get<0>().size() << endl;
+    cerr <<  dev.map().size() << endl;
 
     // We enable listening on this address
     if(dev.has("/da/do"))
@@ -32,7 +32,7 @@ int main()
         cout << endl << "Current addresses: " << endl;
 
         // Print the real parameters in the tree
-        for(auto&& elt : theMap.get<0>())
+        for(auto&& elt : theMap)
         {
             cout << elt.destination << endl;
         }

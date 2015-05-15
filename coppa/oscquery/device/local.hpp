@@ -13,8 +13,9 @@ class BadRequest : public std::runtime_error
     using std::runtime_error::runtime_error;
 };
 
-class ParseUrl
+class QueryParser
 {
+    // The query are similar to the GET part of an http request.
   public:
     template<typename Mapper>
     static std::string parse(const std::string& request, Mapper&& mapper)
@@ -78,6 +79,35 @@ namespace coppa
 namespace oscquery
 {
 
+
+template<typename QueryServer>
+class RemoteClient
+{
+    typename QueryServer::connection_handler m_handler;
+    std::unordered_set<std::string> m_listened;
+
+  public:
+    RemoteClient(
+        typename QueryServer::connection_handler handler):
+      m_handler{handler} { }
+
+    operator typename QueryServer::connection_handler() const
+    { return m_handler; }
+
+    // For performance's sake, it would be better
+    // to revert this and have a table of client id's associated to each listened parameters.
+    void addListenedPath(const std::string& path)
+    { m_listened.insert(path); }
+    void removeListenedPath(const std::string& path)
+    { m_listened.erase(path); }
+
+    const auto& listenedPaths() const noexcept
+    { return m_listened; }
+
+    bool operator==(
+        const typename QueryServer::connection_handler& h) const
+    { return !m_handler.expired() && m_handler.lock() == h.lock(); }
+};
 // Separate the protocol (websockets), its serialization format OSCQueryJsonFormat
 // Local device : websockets query server, osc socket (?), OSCQueryParameterMap
 
@@ -86,51 +116,14 @@ namespace oscquery
 template<typename QueryServer>
 class LocalDevice
 {
-    class RemoteClient
-    {
-        typename QueryServer::connection_handler m_handler;
-        std::unordered_set<std::string> m_listened;
-
-      public:
-        RemoteClient(
-            typename QueryServer::connection_handler handler):
-          m_handler{handler} { }
-
-        operator typename QueryServer::connection_handler() const
-        { return m_handler; }
-
-        // For performance's sake, it would be better
-        // to revert this and have a table of client id's associated to each listened parameters.
-        void addListenedPath(const std::string& path)
-        { m_listened.insert(path); }
-        void removeListenedPath(const std::string& path)
-        { m_listened.erase(path); }
-
-        const auto& listenedPaths() const noexcept
-        { return m_listened; }
-
-        bool operator==(
-            const typename QueryServer::connection_handler& h) const
-        { return !m_handler.expired() && m_handler.lock() == h.lock(); }
-    };
-
-    template<typename Attribute>
-    void updateRemoteAttribute(
-        const RemoteClient& clt,
-        const std::string& path,
-        const Attribute& attr)
-    {
-      std::string message = JSONFormat::attributeChangedMessage(path, attr);
-
-      m_server.sendMessage(clt, message);
-    }
-
+  private:
+    // Should be in a protocol-specific class.
     std::string generateReply(
         typename QueryServer::connection_handler hdl,
         const std::string& request)
     {
       using namespace std;
-      return ParseUrl::parse(
+      return QueryParser::parse(
             request,
             [&] (const string& path, const std::map<string, string>& parameters)
       {
@@ -138,7 +131,7 @@ class LocalDevice
         if(parameters.size() == 0)
         {
           std::lock_guard<std::mutex> lock(m_map_mutex);
-          return JSONFormat::marshallParameterMap(m_map, path);
+          return JSONFormat::marshallParameterMap(m_map.unsafeMap(), path);
         }
         else
         {
@@ -173,7 +166,7 @@ class LocalDevice
             {
               std::lock_guard<std::mutex> lock(m_map_mutex);
               return JSONFormat::marshallAttribute(
-                           *m_map.get<0>().find(path),
+                           m_map.unsafeMap().get(path),
                            path);
             }
           }
@@ -183,10 +176,69 @@ class LocalDevice
       });
     }
 
+    void setupRootNode()
+    { // TODO find the right place for the root node ?
+      Parameter root;
+      root.description = std::string("root node");
+      root.destination = std::string("/");
+      root.accessmode = Access::Mode::None;
+      m_map.add(root);
+    }
 
+  public:
+    const auto& clients() const
+    {
+      return m_clients;
+    }
+    auto& server()
+    {
+      return m_server;
+    }
+
+    LocalDevice()
+    {
+      setupRootNode();
+      // TODO Add osc message handlers to update the tree.
+    }
+
+    void add(const Parameter& parameter)
+    {
+      m_map.add(parameter);
+    }
+
+    void remove(const std::string& path)
+    {
+      auto lock = m_map.remove(path);
+      // If the root node was removed we reinstate it
+      if(path == "/")
+      {
+        setupRootNode();
+      }
+    }
+
+    template<typename Attribute>
+    void update(const std::string& path, const Attribute& val)
+    {
+      m_map.update(path, [=] (Parameter& p) { static_cast<Attribute&>(p) = val; });
+    }
+
+    void rename(std::string oldPath, std::string newPath)
+    { /* todo PATH_CHANGED */ }
+
+    Parameter get(const std::string& address) const
+    { return m_map.get(address); }
+
+    const auto& map() const
+    { return m_map; }
+
+    void expose()
+    { m_server.run(); }
+
+  private:
+    OscReceiver m_receiver{1234};
     mutable std::mutex m_map_mutex;
-    ParameterMap m_map;
-    std::vector<RemoteClient> m_clients;
+    LockedParameterMap<SimpleParameterMap<ParameterMap>> m_map;
+    std::vector<RemoteClient<QueryServer>> m_clients;
     QueryServer m_server
     {
       // Open handler
@@ -212,53 +264,53 @@ class LocalDevice
         return this->generateReply(hdl, message);
       }
     };
+};
 
-    OscReceiver m_receiver{1234};
+// Automatically synchronizes its changes with the client.
+// Note : put somewhere if the client wants to be synchronized
+// Note : be careful with the locking too, here
+template<typename QueryServer>
+class SynchronizingLocalDevice
+{
+  private:
+    LocalDevice<QueryServer> m_device;
+
   public:
-    LocalDevice()
+    SynchronizingLocalDevice()
     {
-      Parameter root;
-      root.description = std::string("root node");
-      root.destination = std::string("/");
-      root.accessmode = Access::Mode::None;
-      m_map.insert(root);
     }
 
     void add(const Parameter& parameter)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.insert(parameter);
-      auto addMessage = JSONFormat::insertParameterMessage(parameter);
+      m_device.add(parameter);
 
-      for(auto& client : m_clients)
+      auto message = JSONFormat::addPathMessage(m_device.map().unsafeMap(), parameter.destination);
+      for(auto& client : m_device.clients())
       {
-        m_server.sendMessage(client, addMessage);
+        m_device.server().sendMessage(client, message);
       }
     }
 
     void remove(const std::string& path)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.get<0>().erase(path);
+      m_device.remove(path);
 
-      auto removeMessage =  JSONFormat::removePathMessage(path);
-      for(auto& client : m_clients)
+      auto message = JSONFormat::removePathMessage(path);
+      for(auto& client : m_device.clients())
       {
-        m_server.sendMessage(client, removeMessage);
+        m_device.server().sendMessage(client, message);
       }
     }
 
     template<typename Attribute>
     void update(const std::string& path, const Attribute& val)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      auto& param_index = m_map.get<0>();
-      decltype(auto) param = param_index.find(path);
-      param_index.modify(param, [=] (Parameter& p) { static_cast<Attribute&>(p) = val; });
+      m_device.update(path, val);
 
-      for(auto& client : m_clients)
+      auto message = JSONFormat::attributeChangedMessage(path, val);
+      for(auto& client : m_device.clients())
       {
-        updateRemoteAttribute(client, path, val);
+        m_device.server().sendMessage(client, message);
       }
     }
 
@@ -266,14 +318,13 @@ class LocalDevice
     { /* todo PATH_CHANGED */ }
 
     Parameter get(const std::string& address) const
-    { return *m_map.get<0>().find(address); }
+    { return m_device.get(address); }
 
-    ParameterMap map() const
-    { return m_map; }
-
+    const ParameterMap& map() const
+    { return m_device.map().unsafeMap(); }
 
     void expose()
-    { m_server.run(); }
+    { m_device.expose(); }
 };
 
 }

@@ -63,7 +63,8 @@ class ConstantMap
     LockedParameterMap<Map>& safeMap()
     { return m_map; }
 
-    void replace(Map&& map)
+    template<typename Map_T>
+    void replace(Map_T&& map)
     { m_map = std::move(map); }
 };
 
@@ -91,7 +92,7 @@ class SettableMap : public ConstantMap<Map>
 
 // Cases : fully static (midi), non-queryable (pure osc), queryable (minuit, oscquery)
 template<
-    typename MapType,
+    typename BaseMapType,
     typename Parser,
     typename QueryProtocolClient,
     typename RemoteMapBase>
@@ -103,29 +104,32 @@ class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
       switch(Parser::messageType(message))
       {
         case MessageType::Device:
-          // DeviceHandler
           RemoteMapBase::connect(QueryProtocolClient::uri(), Parser::getPort(message));
           if(onConnect) onConnect();
           break;
 
         case MessageType::PathAdded:
-          // PathAdded handler
+          Parser::template parsePathAdded<BaseMapType>(RemoteMapBase::safeMap(), message);
+          if(onUpdate) onUpdate();
           break;
 
         case MessageType::PathRemoved:
-          // TODO differentiate between removing a parameter,
-          // and removing a whole part of the tree
-
+          Parser::parsePathRemoved(RemoteMapBase::safeMap(), message);
+          if(onUpdate) onUpdate();
           break;
 
         case MessageType::PathChanged:
-          // Pass the map for modification
           Parser::parsePathChanged(RemoteMapBase::safeMap(), message);
           if(onUpdate) onUpdate();
           break;
 
+        case MessageType::AttributeChanged:
+          Parser::parseAttributeChanged(RemoteMapBase::safeMap(), message);
+          if(onUpdate) onUpdate();
+          break;
+
         default:
-          RemoteMapBase::replace(Parser::template parseNamespace<MapType>(message));
+          RemoteMapBase::replace(Parser::template parseNamespace<BaseMapType>(message));
           if(onUpdate) onUpdate();
           break;
       }

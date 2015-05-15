@@ -71,7 +71,8 @@ class JSONParser
         case val_t::boolean: return Variant{bool(val.get<bool>())};
         case val_t::string:  return Variant{val.get<std::string>()};
         case val_t::null:    return Variant{};
-        default: throw BadRequestException{};
+        default:
+          throw BadRequestException{};
           // TODO blob
       }
     }
@@ -79,6 +80,7 @@ class JSONParser
     static auto jsonToVariantArray(const json_value& json_val)
     {
       std::vector<Variant> v;
+
       for(const auto& val : valToArray(json_val))
         v.push_back(jsonToVariant(val));
 
@@ -139,7 +141,8 @@ class JSONParser
     }
 
 
-    static void readObject(const json_map& obj, ParameterMap& map)
+    template<typename Map>
+    static void readObject(const json_map& obj, Map& map)
     {
       // If it's a real parameter
       if(obj.find("full_path") != obj.end())
@@ -163,7 +166,7 @@ class JSONParser
           mapper("clipmode", p.clipmodes, &JSONParser::jsonToClipModeArray);
         }
 
-        map.insert(p);
+        map.add(p);
       }
 
       // Recurse on the children
@@ -189,29 +192,36 @@ class JSONParser
     static MessageType messageType(const std::string& message)
     {
       const json_map obj{ message };
-      if(obj.find("osc_port") != obj.end())     return MessageType::Device;
-      if(obj.find("path_added") != obj.end())   return MessageType::PathAdded;
-      if(obj.find("path_removed") != obj.end()) return MessageType::PathRemoved;
-      if(obj.find("path_changed") != obj.end()) return MessageType::PathChanged;
+           if(obj.find("osc_port") != obj.end())     return MessageType::Device;
+      else if(obj.find("path_added") != obj.end())   return MessageType::PathAdded;
+      else if(obj.find("path_removed") != obj.end()) return MessageType::PathRemoved;
+      else if(obj.find("path_changed") != obj.end()) return MessageType::PathChanged;
+      else if(obj.find("attribute_changed") != obj.end()) return MessageType::AttributeChanged;
+      else return MessageType::Namespace; // TODO More checks needed
+    }
 
-      return MessageType::Namespace; // TODO More checks needed
+    template<typename Map>
+    static auto parseNamespace(const json_map& obj)
+    {
+      Map map;
+
+      readObject(obj, map);
+
+      return map;
     }
 
     template<typename Map>
     static auto parseNamespace(const std::string& message)
     {
-      json_map obj{message};
-      Map map;
-
-      try {
-        readObject(obj, map);
+      try
+      {
+        return parseNamespace<Map>(json_map{message});
       }
       catch(BadRequestException& req) {
         throw BadRequestException{message};
       }
-
-      return map;
     }
+
 
     template<typename Map>
     static void parsePathChanged(Map& map, const std::string& message)
@@ -219,19 +229,55 @@ class JSONParser
       json_map obj{message};
       std::string path = JSONParser::valToString(obj.get("path_changed"));
       json_assert(map.has(path));
-      auto getter = [] (auto&& member) { return [&] (auto&& p) -> auto& { return p.*member; }; };
-      auto mapper = [&] (const std::string& name, auto&& getter, auto&& method)
-      {
-        if(obj.find(name) != obj.end())
-          map.update(path, [&] (Parameter& p) { getter(p) = method(obj.get(name)); });
-      };
+      /* Replace the whole sub-namespace */
+      std::cout << "TODO parsePathChanged" << std::endl;
+    }
 
-      mapper("description", getter(&Parameter::description), &JSONParser::valToString);
-      mapper("tags",        getter(&Parameter::tags),        &JSONParser::jsonToTags);
-      mapper("access",      getter(&Parameter::accessmode),  &JSONParser::jsonToAccessMode);
-      mapper("value",       getter(&Parameter::values),      &JSONParser::jsonToVariantArray);
-      mapper("range",       getter(&Parameter::ranges),      &JSONParser::jsonToRangeArray);
-      mapper("clipmode",    getter(&Parameter::clipmodes),   &JSONParser::jsonToClipModeArray);
+    template<typename BaseMapType, typename Map>
+    static void parsePathAdded(Map& map, const std::string& message)
+    {
+      json_map obj{message};
+      map.merge(parseNamespace<BaseMapType>(obj.get<json_map>("path_added")));
+    }
+
+    template<typename Map>
+    static void parsePathRemoved(Map& map, const std::string& message)
+    {
+      json_map obj{message};
+      std::string path = JSONParser::valToString(obj.get("path_changed"));
+      json_assert(map.has(path));
+
+      map.remove(path);
+    }
+
+    template<typename Map>
+    static void parseAttributeChanged(Map& map, const std::string& message)
+    {
+      std::cout << std::endl << "AttributeChanged" << message << std::endl;
+      json_map obj{message};
+      auto attr_changed = obj.get<json_map>("attribute_changed");
+
+      // 1. Search for the paths
+      for(const auto& path : attr_changed.get_keys())
+      {
+        json_assert(map.has(path));
+        auto path_obj = attr_changed.get<json_map>(path);
+
+        // A lambda used to update the boost map.
+        auto mapper = [&] (const std::string& name, auto&& member, auto&& method)
+        {
+          if(path_obj.find(name) != path_obj.end())
+            map.update(path, [&] (Parameter& p) { p.*member = method(path_obj.get(name)); });
+        };
+
+        // 2. Map the values
+        mapper("description", &Parameter::description, &JSONParser::valToString);
+        mapper("tags",        &Parameter::tags,        &JSONParser::jsonToTags);
+        mapper("access",      &Parameter::accessmode,  &JSONParser::jsonToAccessMode);
+        mapper("value",       &Parameter::values,      &JSONParser::jsonToVariantArray);
+        mapper("range",       &Parameter::ranges,      &JSONParser::jsonToRangeArray);
+        mapper("clipmode",    &Parameter::clipmodes,   &JSONParser::jsonToClipModeArray);
+      }
     }
 };
 }

@@ -12,10 +12,10 @@ namespace oscquery
 {
 
 class RemoteDevice : public QueryRemoteDevice<
-    ParameterMap,
+    SimpleParameterMap<ParameterMap>,
     JSONParser,
     RemoteQueryClient<WebSocketClient, JSONParser>,
-    SettableMap<ParameterMap, OscSender>>
+    SettableMap<SimpleParameterMap<ParameterMap>, OscSender>>
 {
   public:
     using QueryRemoteDevice::QueryRemoteDevice;

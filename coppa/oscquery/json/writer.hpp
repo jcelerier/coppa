@@ -25,14 +25,19 @@ class JSONFormat
       return attributeToJson(std::forward<Args>(args)...).to_string();
     }
 
-    static std::string insertParameterMessage(const Parameter&)
+    template<typename... Args>
+    static std::string addPathMessage(Args&&... args)
     {
-      return {};
+      json_map map;
+      map["path_added"] = mapToJson(std::forward<Args>(args)...);
+      return map.to_string();
     }
 
-    static std::string removePathMessage(const std::string& )
+    static std::string removePathMessage(const std::string& path)
     {
-      return {};
+      json_map map;
+      map["path_removed"] = path;
+      return map.to_string();
     }
 
     static std::string deviceInfo(int port)
@@ -47,9 +52,14 @@ class JSONFormat
     static std::string attributeChangedMessage(const std::string& path, const Attribute& attr)
     {
       // TODO what if type changed?
+      json_map pathmap;
+      pathmap[attributeToKey(attr)] = attributeToJson(attr);
+
+      json_map attrchanged;
+      attrchanged[path] = pathmap;
+
       json_map map;
-      map["path_changed"] = path;
-      map[attributeToKey(attr)] = attributeToJson(attr);
+      map["attribute_changed"] = attrchanged;
       return map.to_string();
     }
 
@@ -233,7 +243,8 @@ class JSONFormat
     }
 
     // A ParameterMap can be JSON'd
-    static json_map mapToJson(const ParameterMap& map, std::string root)
+    template<typename Map>
+    static json_map mapToJson(const Map& theMap, std::string root)
     {
       using namespace std;
       using namespace boost;
@@ -242,7 +253,7 @@ class JSONFormat
       json_map localroot;
 
       // Create a tree with the parameters
-      for(const auto& parameter : filter(map, root))
+      for(const auto& parameter : filter(theMap, root))
       {
         // Trunk the given root from the parameters
         auto trunked_dest = parameter.destination;
@@ -253,7 +264,7 @@ class JSONFormat
         tokenizer<char_separator<char>> tokens(trunked_dest, sep);
 
         // Create the required parts of the tree and navigate to the corresponding node
-        auto* current_map = &localroot;
+        auto current_map = &localroot;
         for(const auto& token : tokens)
         {
           if(!current_map->has("contents"))

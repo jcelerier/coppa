@@ -6,36 +6,44 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(Threads REQUIRED)
 add_subdirectory(oscpack)
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/variant/include")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/websocketpp")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/jeayeson/include/")
-
 if(${CMAKE_MINOR_VERSION} LESS 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 endif()
 
+option(OPTIMIZED "Heavily optimized build" FALSE)
+
+if(OPTIMIZED)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native")
+endif()
+# Show the includes in IDEs
 file(GLOB_RECURSE COPPA_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/coppa/*.hpp")
-
-add_executable(server_test
-    "${CMAKE_CURRENT_SOURCE_DIR}/server_test.cpp"
-     ${COPPA_HEADERS})
-
-if(${CMAKE_MINOR_VERSION} GREATER 0)
-    target_compile_features(server_test PUBLIC cxx_constexpr cxx_noexcept cxx_variadic_templates)
-    set_property(TARGET server_test PROPERTY CXX_STANDARD 14)
-endif()
-
-target_link_libraries(server_test "${Boost_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)
+add_custom_target(coppa SOURCES ${COPPA_HEADERS})
 
 
-add_executable(client_test
-    "${CMAKE_CURRENT_SOURCE_DIR}/client_test.cpp"
-     ${COPPA_HEADERS})
+# A function that sets up all the required stuff for building with coppa.
+function (set_coppa_properties theTarget)
+  set_property(
+    TARGET ${theTarget}
+    PROPERTY INCLUDE_DIRECTORIES
+      "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/variant/include"
+      "${CMAKE_CURRENT_SOURCE_DIR}/websocketpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/jeayeson/include/")
 
-if(${CMAKE_MINOR_VERSION} GREATER 0)
-    target_compile_features(client_test PUBLIC cxx_constexpr cxx_noexcept cxx_variadic_templates)
-    set_property(TARGET client_test PROPERTY CXX_STANDARD 14)
-endif()
+  if(${CMAKE_MINOR_VERSION} GREATER 0)
+    target_compile_features(${theTarget} PUBLIC cxx_constexpr cxx_noexcept cxx_variadic_templates)
+    set_property(TARGET ${theTarget} PROPERTY CXX_STANDARD 14)
+  endif()
 
-target_link_libraries(client_test "${Boost_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)
+  target_link_libraries(${theTarget} "${Boost_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)
+endfunction()
+
+# Examples and tests
+add_executable(server_test "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/server_test.cpp")
+set_coppa_properties(server_test)
+
+add_executable(client_test "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/client_test.cpp")
+set_coppa_properties(client_test)
+
+add_executable(benchmark "${CMAKE_CURRENT_SOURCE_DIR}/tests/benchmarks/benchmark.cpp")
+set_coppa_properties(benchmark)
