@@ -117,38 +117,37 @@ class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
 
 
           case MessageType::PathAdded:
-            Parser::template parsePathAdded<BaseMapType>(RemoteMapBase::safeMap(), message);
+            Parser::template path_added<BaseMapType>(RemoteMapBase::safeMap(), message);
             break;
 
           case MessageType::PathChanged:
-            Parser::parsePathChanged(RemoteMapBase::safeMap(), message);
+            Parser::path_changed(RemoteMapBase::safeMap(), message);
             break;
 
           case MessageType::PathRemoved:
-            Parser::parsePathRemoved(RemoteMapBase::safeMap(), message);
+            Parser::path_removed(RemoteMapBase::safeMap(), message);
             break;
 
           case MessageType::AttributesChanged:
-            Parser::parseAttributesChanged(RemoteMapBase::safeMap(), message);
+            Parser::attributes_changed(RemoteMapBase::safeMap(), message);
             break;
 
-            /*
-        case MessageType::PathsAdded:
-          Parser::template parsePathsAdded<BaseMapType>(RemoteMapBase::safeMap(), message);
-          break;
 
-        case MessageType::PathsChanged:
-          Parser::parsePathsChanged(RemoteMapBase::safeMap(), message);
-          break;
+          case MessageType::PathsAdded:
+            Parser::template paths_added<BaseMapType>(RemoteMapBase::safeMap(), message);
+            break;
 
-        case MessageType::PathsRemoved:
-          Parser::parsePathsRemoved(RemoteMapBase::safeMap(), message);
-          break;
+          case MessageType::PathsChanged:
+            Parser::paths_changed(RemoteMapBase::safeMap(), message);
+            break;
 
-        case MessageType::AttributesChangedArray:
-          Parser::parseAttributesChangedArray(RemoteMapBase::safeMap(), message);
-          break;
-          */
+          case MessageType::PathsRemoved:
+            Parser::paths_removed(RemoteMapBase::safeMap(), message);
+            break;
+
+          case MessageType::AttributesChangedArray:
+            Parser::attributes_changed_array(RemoteMapBase::safeMap(), message);
+            break;
 
           case MessageType::Device:
           default:

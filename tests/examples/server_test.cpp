@@ -1,68 +1,14 @@
 #include <coppa/oscquery/device/local.hpp>
 #include <coppa/protocol/websockets/server.hpp>
+#include <coppa/tools/random.hpp>
 #include <chrono>
-
-// Found on stackoverflow
-std::string random_string( size_t length )
-{
-  auto randchar = []() -> char
-  {
-                  const char charset[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
-                  const size_t max_index = (sizeof(charset) - 1);
-                  return charset[ rand() % max_index ];
-};
-std::string str(length,0);
-std::generate_n( str.begin(), length, randchar );
-return str;
-}
-
 int main()
 {
   using namespace coppa::oscquery;
 
   // Create a device
   SynchronizingLocalDevice<coppa::WebSocketServer> dev;
-
-  // Create some parameters
-  Parameter aParam;
-  aParam.destination = "/da/da";
-  addValue(aParam, 42, {{}, {}, {}});
-  aParam.accessmode = coppa::Access::Mode::Set;
-  aParam.tags = {"wow", "much tag"};
-
-  Parameter bParam;
-  bParam.destination = "/plop/plip/plap";
-  addValue(bParam,
-           std::string("Why yes young chap"),
-  {{}, {}, {}},
-           coppa::ClipMode::None);
-
-  Parameter cParam;
-  cParam.destination = "/plop";
-  cParam.description = "A quite interesting parameter";
-
-  Parameter anotherParam;
-  anotherParam.destination = "/da/do";
-  anotherParam.accessmode = coppa::Access::Mode::Both;
-  addValue(anotherParam, 5, // Value
-  {{}, {}, {4, 5, 6}}, // Range
-           coppa::ClipMode::Both); // ClipMode
-
-  addValue(anotherParam, std::string("plip"));
-  addValue(anotherParam, 3.45f,  // Value
-  {coppa::Variant(0.0f), // Range min
-   coppa::Variant(5.5f), // Range max
-   {} // Range values
-           });
-
-  // Add them to the device
-  dev.add(aParam);
-  dev.add(bParam);
-  dev.add(cParam);
-  dev.add(anotherParam);
+  setup_basic_map(dev.map());
 
   std::cerr << "Size: " << dev.map().size() << std::endl;
 
@@ -100,11 +46,11 @@ int main()
       std::lock_guard<std::mutex> lock(test_mutex);
 
       auto size = dev.map().size();
-      auto randompath = dev.map()[rand() % size].destination;
+      auto randompath = dev.map()[my_rand<int>() % size].destination;
       Parameter p;
 
       // TODO empty names should not be allowed by ParameterMap
-      std::string name = random_string(1 + rand() % 2);
+      std::string name = my_rand<std::string>();
       if(randompath == "/")
       { p.destination = randompath + name; }
       else
@@ -114,7 +60,7 @@ int main()
     }
   });
 
-/*
+  /*
   std::thread parameterRemoveThread([&] ()
   {
     while(true)
@@ -123,7 +69,7 @@ int main()
       std::lock_guard<std::mutex> lock(test_mutex);
 
       auto size = dev.map().size();
-      auto randompath = dev.map()[rand() % size].destination;
+      auto randompath = dev.map()[rand2() % size].destination;
 
       // Note : we should not be able to remove the root
       // (or if we do, it juste replaces it with an empty root).

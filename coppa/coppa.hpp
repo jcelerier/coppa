@@ -64,7 +64,7 @@ template<typename... Args>
 class AttributeAggregate : public Args...
 {
 };
-
+// Make an oscquery-specific Variant ?
 using Generic = const char*;
 using Variant = eggs::variant<int, float, bool, std::string, Generic>;
 }

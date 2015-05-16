@@ -6,6 +6,7 @@
 #include <coppa/oscquery/json/parser.hpp>
 #include <coppa/device/remote.hpp>
 #include <coppa/protocol/websockets/client.hpp>
+#include <coppa/oscquery/map.hpp>
 namespace coppa
 {
 namespace oscquery
@@ -13,8 +14,8 @@ namespace oscquery
 
 class RemoteDevice : public QueryRemoteDevice<
     SimpleParameterMap<ParameterMap>,
-    JSONParser,
-    RemoteQueryClient<WebSocketClient, JSONParser>,
+    JSON::parser,
+    RemoteQueryClient<WebSocketClient, JSON::parser>,
     SettableMap<SimpleParameterMap<ParameterMap>, OscSender>>
 {
   public:

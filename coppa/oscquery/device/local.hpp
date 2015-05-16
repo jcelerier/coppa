@@ -5,6 +5,7 @@
 #include <coppa/protocol/osc/oscmessagegenerator.hpp>
 #include <unordered_set>
 #include <map>
+#include <coppa/oscquery/map.hpp>
 #include <coppa/oscquery/json/writer.hpp>
 
 class BadRequest : public std::runtime_error
@@ -131,7 +132,7 @@ class LocalDevice
         // Here we handle the url elements relative to oscquery
         if(parameters.size() == 0)
         {
-          return JSONFormat::marshallParameterMap(m_map.unsafeMap(), path);
+          return JSON::writer::marshallParameterMap(m_map.unsafeMap(), path);
         }
         else
         {
@@ -166,7 +167,7 @@ class LocalDevice
           {
             if(elt.second.empty())
             {
-              return JSONFormat::marshallAttribute(
+              return JSON::writer::marshallAttribute(
                            m_map.unsafeMap().get(path),
                            path);
             }
@@ -216,6 +217,8 @@ class LocalDevice
     Parameter get(const std::string& address) const
     { return m_map.get(address); }
 
+    auto& map()
+    { return m_map; }
     const auto& map() const
     { return m_map; }
 
@@ -235,7 +238,7 @@ class LocalDevice
         m_clients.emplace_back(hdl);
 
         // Send the client a message with the OSC port
-        m_server.sendMessage(hdl, JSONFormat::deviceInfo(m_receiver.port()));
+        m_server.sendMessage(hdl, JSON::writer::deviceInfo(m_receiver.port()));
       },
       // Close handler
       [&] (typename QueryServer::connection_handler hdl)
@@ -272,7 +275,7 @@ class SynchronizingLocalDevice
     {
       m_device.add(parameter);
 
-      auto message = JSONFormat::path_added(m_device.map().unsafeMap(), parameter.destination);
+      auto message = JSON::writer::path_added(m_device.map().unsafeMap(), parameter.destination);
       for(auto& client : m_device.clients())
       {
         m_device.server().sendMessage(client, message);
@@ -283,7 +286,7 @@ class SynchronizingLocalDevice
     {
       m_device.remove(path);
 
-      auto message = JSONFormat::path_removed(path);
+      auto message = JSON::writer::path_removed(path);
       for(auto& client : m_device.clients())
       {
         m_device.server().sendMessage(client, message);
@@ -303,7 +306,7 @@ class SynchronizingLocalDevice
     {
       m_device.update(path, std::forward<Attributes>(val)...);
 
-      auto message = JSONFormat::attributes_changed(
+      auto message = JSON::writer::attributes_changed(
                        path, std::forward<Attributes>(val)...);
       for(auto& client : m_device.clients())
       {
@@ -317,6 +320,8 @@ class SynchronizingLocalDevice
     Parameter get(const std::string& address) const
     { return m_device.get(address); }
 
+    auto& map()
+    { return m_device.map(); }
     const auto& map() const
     { return m_device.map(); }
 

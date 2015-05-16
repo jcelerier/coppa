@@ -28,7 +28,8 @@ function (set_coppa_properties theTarget)
       "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_SOURCE_DIR}/variant/include"
       "${CMAKE_CURRENT_SOURCE_DIR}/websocketpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/jeayeson/include/")
+      "${CMAKE_CURRENT_SOURCE_DIR}/jeayeson/include/"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests") # For catch
 
   if(${CMAKE_MINOR_VERSION} GREATER 0)
     target_compile_features(${theTarget} PUBLIC cxx_constexpr cxx_noexcept cxx_variadic_templates)
@@ -47,3 +48,11 @@ set_coppa_properties(client_test)
 
 add_executable(benchmark "${CMAKE_CURRENT_SOURCE_DIR}/tests/benchmarks/benchmark.cpp")
 set_coppa_properties(benchmark)
+
+
+add_executable(test_oscquery_map "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/oscquery/map.cpp")
+set_coppa_properties(test_oscquery_map)
+add_executable(test_json_writer "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/writer.cpp")
+set_coppa_properties(test_json_writer)
+add_executable(test_json_parser "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/parser.cpp")
+set_coppa_properties(test_json_parser)
