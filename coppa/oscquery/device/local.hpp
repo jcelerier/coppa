@@ -272,7 +272,7 @@ class SynchronizingLocalDevice
     {
       m_device.add(parameter);
 
-      auto message = JSONFormat::addPathMessage(m_device.map().unsafeMap(), parameter.destination);
+      auto message = JSONFormat::path_added(m_device.map().unsafeMap(), parameter.destination);
       for(auto& client : m_device.clients())
       {
         m_device.server().sendMessage(client, message);
@@ -283,7 +283,7 @@ class SynchronizingLocalDevice
     {
       m_device.remove(path);
 
-      auto message = JSONFormat::removePathMessage(path);
+      auto message = JSONFormat::path_removed(path);
       for(auto& client : m_device.clients())
       {
         m_device.server().sendMessage(client, message);
@@ -303,7 +303,7 @@ class SynchronizingLocalDevice
     {
       m_device.update(path, std::forward<Attributes>(val)...);
 
-      auto message = JSONFormat::attributesChangedMessage(
+      auto message = JSONFormat::attributes_changed(
                        path, std::forward<Attributes>(val)...);
       for(auto& client : m_device.clients())
       {
