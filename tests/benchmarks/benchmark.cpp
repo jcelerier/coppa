@@ -24,7 +24,7 @@ int main()
     using namespace coppa::oscquery;
 
     // Create a device
-    LocalDevice<coppa::WebSocketServer> dev;
+    LocalDevice<coppa::WebSocketServer, coppa::oscquery::Answerer> dev;
 
     // A thread that will periodically add a parameter.
     std::thread parameterAddThread([&] ()

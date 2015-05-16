@@ -7,7 +7,7 @@ int main()
   using namespace coppa::oscquery;
 
   // Create a device
-  SynchronizingLocalDevice<coppa::WebSocketServer> dev;
+  SynchronizingLocalDevice<coppa::WebSocketServer, coppa::oscquery::Answerer> dev;
   setup_basic_map(dev.map());
 
   std::cerr << "Size: " << dev.map().size() << std::endl;

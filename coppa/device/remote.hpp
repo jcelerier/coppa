@@ -67,6 +67,11 @@ class ConstantMap
     { m_map = std::move(map); }
 };
 
+// Sets a value on a remote device via a protocol like OSC.
+// TODO the local map shouldn't be constant ?
+// Or maybe we should have the choice between "fully mirrored" where
+// we only get changes via callbacks of the server
+// and a "local", modifiable mirror.
 template<typename Map, typename DataProtocolSender>
 class SettableMap : public ConstantMap<Map>
 {
@@ -82,7 +87,7 @@ class SettableMap : public ConstantMap<Map>
     {
       auto param = ConstantMap<Map>::get(address);
       if(param.accessmode == Access::Mode::Set
-         || param.accessmode == Access::Mode::Both)
+      || param.accessmode == Access::Mode::Both)
       {
         m_sender.send(address, std::forward<Args>(args)...);
       }
