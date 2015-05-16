@@ -3,6 +3,7 @@
 #include <websocketpp/server.hpp>
 #include <websocketpp/http/request.hpp>
 
+#include <coppa/exceptions/BadRequest.hpp>
 namespace coppa
 {
 class WebSocketServer
@@ -24,7 +25,14 @@ class WebSocketServer
 
       m_server.set_message_handler([=] (connection_handler hdl, server::message_ptr msg)
       {
+        try{
         sendMessage(hdl, messageHandler(hdl, msg->get_payload()));
+        }
+        catch(...)
+        {
+          server::connection_ptr con = m_server.get_con_from_hdl(hdl);
+          con->set_status(websocketpp::http::status_code::bad_request);
+        }
       });
 
       m_server.set_http_handler([=] (connection_handler hdl)
@@ -32,8 +40,15 @@ class WebSocketServer
         server::connection_ptr con = m_server.get_con_from_hdl(hdl);
 
         con->replace_header("Content-Type", "application/json; charset=utf-8");
+        try{
         con->set_body(messageHandler(hdl, con->get_uri()->get_resource()) + "\0");
         con->set_status(websocketpp::http::status_code::ok);
+        }
+        catch(BadRequestException& e)
+        {
+          std::cerr << "Error in request: " << con->get_uri()->get_resource() << " ==> "<< e.what() << std::endl;
+          con->set_status(websocketpp::http::status_code::bad_request);
+        }
       });
     }
 

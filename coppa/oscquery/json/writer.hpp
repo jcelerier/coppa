@@ -9,6 +9,7 @@ namespace JSON
 class writer
 {
   public:
+    // Initialisation
     static std::string deviceInfo(int port)
     {
       json_map map;
@@ -18,8 +19,9 @@ class writer
     }
 
     // Format interface
+    // Queries
     template<typename... Args>
-    static std::string marshallParameterMap(
+    static std::string query_namespace(
         Args&&... args)
     {
       using namespace detail;
@@ -27,14 +29,19 @@ class writer
     }
 
     template<typename... Args>
-    static std::string marshallAttribute(
-        Args&&... args)
+    static std::string query_attributes(
+        const Parameter& param,
+        const std::vector<std::string>& methods)
     {
       using namespace detail;
-      return attributeToJson(std::forward<Args>(args)...).to_string();
+      json_map map;
+      for(auto& method : methods)
+        map[method] = attributeToJsonValue(param, method);
+      return map.to_string();
     }
 
 
+    // Update messages
     template<typename... Args>
     static std::string path_added(
         Args&&... args)

@@ -1,6 +1,7 @@
 #pragma once
 #include <coppa/oscquery/parameter.hpp>
 #include <coppa/oscquery/json/keys.hpp>
+#include <coppa/exceptions/BadRequest.hpp>
 
 #include <jeayeson/jeayeson.hpp>
 #include <boost/tokenizer.hpp>
@@ -109,13 +110,6 @@ inline json_array getJsonTags(
 }
 
 
-inline auto attributeToJson(const Values& val) { return getJsonValueArray(val); }
-inline auto attributeToJson(const Ranges& val) { return getJsonRangeArray(val); }
-inline auto attributeToJson(const ClipModes& val) { return getJsonClipModeArray(val); }
-inline auto attributeToJson(const Access& val) { return static_cast<int>(val.accessmode); }
-inline auto attributeToJson(const Description& val) { return val.description; }
-inline auto attributeToJson(const Tags& val) { return getJsonTags(val); }
-
 inline std::string getJsonTypeString(
     const Parameter& parameter)
 {
@@ -135,31 +129,38 @@ inline std::string getJsonTypeString(
   return str_type;
 }
 
+inline auto attributeToJson(const Destination& val) { return val.destination; }
+inline auto attributeToJson(const Values& val) { return getJsonValueArray(val); }
+inline auto attributeToJson(const Ranges& val) { return getJsonRangeArray(val); }
+inline auto attributeToJson(const ClipModes& val) { return getJsonClipModeArray(val); }
+inline auto attributeToJson(const Access& val) { return static_cast<int>(val.accessmode); }
+inline auto attributeToJson(const Description& val) { return val.description; }
+inline auto attributeToJson(const Tags& val) { return getJsonTags(val); }
 
-inline json_map attributeToJson(
+inline auto attributeToJsonValue(
     const Parameter& parameter,
-    const std::string& method)
+    const std::string& method
+    )
 {
-  json_map map;
-
-  if(method == Key::attribute<Values>())
-  { map.set(method, getJsonValueArray(parameter)); }
+  /**/ if(method == Key::attribute<Values>())
+  { return json_value(attributeToJson(static_cast<const Values&>(parameter))); }
   else if(method == Key::attribute<Ranges>())
-  { map.set(method, getJsonRangeArray(parameter)); }
+  { return json_value(attributeToJson(static_cast<const Ranges&>(parameter))); }
   else if(method == Key::attribute<ClipModes>())
-  { map.set(method, getJsonClipModeArray(parameter)); }
+  { return json_value(attributeToJson(static_cast<const ClipModes&>(parameter))); }
   else if(method == Key::attribute<Access>())
-  { map.set(method, static_cast<int>(parameter.accessmode)); }
+  { return json_value(attributeToJson(static_cast<const Access&>(parameter))); }
   else if(method == Key::type())
-  { map.set(method, getJsonTypeString(parameter)); }
+  { return json_value(getJsonTypeString(parameter)); }
   else if(method == Key::attribute<Description>())
-  { map.set(method, parameter.description); }
+  { return json_value(attributeToJson(static_cast<const Description&>(parameter))); }
   else if(method == Key::attribute<Tags>())
-  { map.set(method, getJsonTags(parameter)); }
+  { return json_value(attributeToJson(static_cast<const Tags&>(parameter))); }
   else if(method == Key::full_path())
-  { map.set(method, parameter.destination); }
-
-  return map;
+  { return json_value(attributeToJson(static_cast<const Destination&>(parameter))); }
+  else {
+    throw BadRequestException{"Attribute not found"};
+  }
 }
 
 inline void parameterToJson(

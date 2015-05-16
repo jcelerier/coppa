@@ -1,4 +1,5 @@
 #pragma once
+#include <coppa/exceptions/BadRequest.hpp>
 #include <coppa/oscquery/websockets.hpp>
 #include <coppa/protocol/osc/oscreceiver.hpp>
 #include <coppa/protocol/osc/oscsender.hpp>
@@ -7,12 +8,6 @@
 #include <map>
 #include <coppa/oscquery/map.hpp>
 #include <coppa/oscquery/json/writer.hpp>
-
-class BadRequest : public std::runtime_error
-{
-  public:
-    using std::runtime_error::runtime_error;
-};
 
 class QueryParser
 {
@@ -132,10 +127,14 @@ class LocalDevice
         // Here we handle the url elements relative to oscquery
         if(parameters.size() == 0)
         {
-          return JSON::writer::marshallParameterMap(m_map.unsafeMap(), path);
+          return JSON::writer::query_namespace(m_map.unsafeMap(), path);
         }
         else
         {
+          // First check if we have the path
+          if(!map().has(path))
+            throw BadRequestException{"Path not found"};
+
           // Listen
           auto listen_it = parameters.find("listen");
           if(listen_it != end(parameters))
@@ -143,7 +142,7 @@ class LocalDevice
             // First we find for a corresponding client
             auto it = find(begin(m_clients), end(m_clients), hdl);
             if(it == std::end(m_clients))
-              return std::string{};
+              throw BadRequestException{"Client not found"};
 
             // Then we enable / disable listening
             if(listen_it->second == "true")
@@ -156,21 +155,25 @@ class LocalDevice
             }
             else
             {
-              throw BadRequest("");
+              throw BadRequestException{};
             }
           }
 
           // All the value-less parameters
-          // TODO marshall multiple at once ?
-          // Note : what happens if we marshall an empty parameter ?
+          std::vector<std::string> attributes;
           for(const auto& elt : parameters)
           {
             if(elt.second.empty())
             {
-              return JSON::writer::marshallAttribute(
-                           m_map.unsafeMap().get(path),
-                           path);
+              attributes.push_back(elt.first);
             }
+          }
+
+          if(!attributes.empty())
+          {
+            return JSON::writer::query_attributes(
+                  m_map.unsafeMap().get(path),
+                  attributes);
           }
         }
 
@@ -197,17 +200,20 @@ class LocalDevice
 
     void add(const Parameter& parameter)
     {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
       m_map.add(parameter);
     }
 
     void remove(const std::string& path)
     {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
       m_map.remove(path);
     }
 
     template<typename Attribute>
     void update(const std::string& path, const Attribute& val)
     {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
       m_map.update(path, [=] (Parameter& p) { static_cast<Attribute&>(p) = val; });
     }
 
@@ -252,7 +258,7 @@ class LocalDevice
       // Message handler
       [&] (typename QueryServer::connection_handler hdl, const std::string& message)
       {
-        return this->generateReply(hdl, message);
+          return this->generateReply(hdl, message);
       }
     };
 };
