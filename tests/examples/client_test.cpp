@@ -9,11 +9,11 @@ int main()
     while(!dev.connected())
       this_thread::sleep_for(chrono::milliseconds(100));
 
-    dev.update();
+    dev.queryNamespace();
 
     this_thread::sleep_for(chrono::seconds(1));
 
-    cerr <<  dev.map().size() << endl;
+    cerr <<  dev.safeMap().size() << endl;
 
     // We enable listening on this address
     if(dev.has("/da/do"))
@@ -28,11 +28,11 @@ int main()
     {
         this_thread::sleep_for(chrono::seconds(1));
 
-        auto theMap = dev.map();
+        const auto& theMap = dev.safeMap();
         cout << endl << "Current addresses: " << endl;
 
         // Print the real parameters in the tree
-        for(auto&& elt : theMap)
+        for(auto&& elt : theMap.unsafeMap())
         {
             cout << elt.destination << endl;
         }

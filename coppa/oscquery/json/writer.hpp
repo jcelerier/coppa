@@ -1,6 +1,8 @@
 #pragma once
-#include <jeayeson/jeayeson.hpp>
 #include <coppa/oscquery/parameter.hpp>
+#include <coppa/oscquery/json/keys.hpp>
+
+#include <jeayeson/jeayeson.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/bimap.hpp>
 #include <boost/assign.hpp>
@@ -12,65 +14,144 @@ class JSONFormat
 {
     using val_t = json_value::type;
   public:
+
+    static std::string deviceInfo(int port)
+    {
+      json_map map;
+      map[Key::osc_port()] = port;
+
+      return map.to_string();
+    }
+
     // Format interface
     template<typename... Args>
-    static std::string marshallParameterMap(Args&&... args)
+    static std::string marshallParameterMap(
+        Args&&... args)
     {
       return mapToJson(std::forward<Args>(args)...).to_string();
     }
 
     template<typename... Args>
-    static std::string marshallAttribute(Args&&... args)
+    static std::string marshallAttribute(
+        Args&&... args)
     {
       return attributeToJson(std::forward<Args>(args)...).to_string();
     }
 
+
     template<typename... Args>
-    static std::string addPathMessage(Args&&... args)
+    static std::string addPathMessage(
+        Args&&... args)
     {
       json_map map;
-      map["path_added"] = mapToJson(std::forward<Args>(args)...);
+      map[Key::path_added()] = mapToJson(std::forward<Args>(args)...);
       return map.to_string();
     }
 
-    static std::string removePathMessage(const std::string& path)
+    template<typename... Args>
+    static std::string changePathMessage(
+        Args&&... args)
     {
       json_map map;
-      map["path_removed"] = path;
+      map[Key::path_changed()] = mapToJson(std::forward<Args>(args)...);
       return map.to_string();
     }
 
-    static std::string deviceInfo(int port)
+    static std::string removePathMessage(
+        const std::string& path)
     {
       json_map map;
-      map["osc_port"] = port;
-
+      map[Key::path_removed()] = path;
       return map.to_string();
     }
 
+
+
+    template<typename Map, typename Vector>
+    static std::string addPathsMessage(
+        const Map& theMap,
+        const Vector& vec)
+    {
+      json_array arr;
+      for(const auto& elt : vec)
+      {
+        arr.push_back(mapToJson(theMap, elt));
+      }
+
+      json_map map;
+      map[Key::paths_added()] = arr;
+      return map.to_string();
+    }
+
+    template<typename Map, typename Vector>
+    static std::string changePathsMessage(
+        const Map& theMap,
+        const Vector& vec)
+    {
+      json_array arr;
+      for(const auto& elt : vec)
+      {
+        arr.push_back(mapToJson(theMap, elt));
+      }
+
+      json_map map;
+      map[Key::paths_changed()] = arr;
+      return map.to_string();
+    }
+
+    template<typename Vector>
+    static std::string removePathsMessage(
+        const Vector& vec)
+    {
+      json_array arr;
+      for(const auto& elt : vec)
+      {
+        arr.push_back(elt);
+      }
+
+      json_map map;
+      map[Key::paths_removed()] = arr;
+      return map.to_string();
+    }
+
+
+
+    // End of recursion
     template<typename Attribute>
-    static std::string attributeChangedMessage(const std::string& path, const Attribute& attr)
+    static void addAttributes(
+        json_map& map,
+        const Attribute& attr)
+    {
+      map[Key::attribute(attr)] = attributeToJson(attr);
+    }
+
+    template<typename Attribute, typename... Attributes>
+    static void addAttributes(
+        json_map& map,
+        const Attribute& attr,
+        Attributes&&... attrs)
+    {
+      map[attributeToKey(attr)] = attributeToJson(attr);
+      addAttributes(std::forward<Attributes>(attrs)...);
+    }
+
+    template<typename... Attributes>
+    static std::string attributesChangedMessage(
+        const std::string& path,
+        Attributes&&... attrs)
     {
       // TODO what if type changed?
-      json_map pathmap;
-      pathmap[attributeToKey(attr)] = attributeToJson(attr);
+      json_map objmap;
+      objmap[Key::full_path()] = path;
 
-      json_map attrchanged;
-      attrchanged[path] = pathmap;
+      addAttributes(objmap, std::forward<Attributes>(attrs)...);
 
       json_map map;
-      map["attribute_changed"] = attrchanged;
+      map[Key::attributes_changed()] = objmap;
       return map.to_string();
     }
 
   private:
-    static constexpr const char* attributeToKey(const Values& ) { return "value"; }
-    static constexpr const char* attributeToKey(const Ranges& ) { return "range"; }
-    static constexpr const char* attributeToKey(const ClipModes& ) { return "clipmode"; }
-    static constexpr const char* attributeToKey(const Access& ) { return "access"; }
-    static constexpr const char* attributeToKey(const Description& ) { return "description"; }
-    static constexpr const char* attributeToKey(const Tags& ) { return "tags"; }
-
     static auto attributeToJson(const Values& val) { return getJsonValueArray(val); }
     static auto attributeToJson(const Ranges& val) { return getJsonRangeArray(val); }
     static auto attributeToJson(const ClipModes& val) { return getJsonClipModeArray(val); }
@@ -78,7 +159,8 @@ class JSONFormat
     static auto attributeToJson(const Description& val) { return val.description; }
     static auto attributeToJson(const Tags& val) { return getJsonTags(val); }
 
-    static std::string getJsonTypeString(const Parameter& parameter)
+    static std::string getJsonTypeString(
+        const Parameter& parameter)
     {
       std::string str_type;
       for(const auto& value : parameter.values)
@@ -96,7 +178,9 @@ class JSONFormat
       return str_type;
     }
 
-    static void addValueToJsonArray(json_array& array, const Variant& val)
+    static void addValueToJsonArray(
+        json_array& array,
+        const Variant& val)
     {
       using namespace eggs::variants;
       switch(val.which())
@@ -109,7 +193,8 @@ class JSONFormat
       }
     }
 
-    static json_array getJsonValueArray(const Values& values)
+    static json_array getJsonValueArray(
+        const Values& values)
     {
       json_array value_arr;
 
@@ -121,7 +206,8 @@ class JSONFormat
       return value_arr;
     }
 
-    static json_array getJsonClipModeArray(const ClipModes& clipmodes)
+    static json_array getJsonClipModeArray(
+        const ClipModes& clipmodes)
     {
       static const boost::bimap<std::string, ClipMode> clipmodeMap =
           boost::assign::list_of<boost::bimap<std::string, ClipMode>::relation>
@@ -139,7 +225,8 @@ class JSONFormat
       return clip_arr;
     }
 
-    static json_array getJsonRangeArray(const Ranges& ranges)
+    static json_array getJsonRangeArray(
+        const Ranges& ranges)
     {
       json_array range_arr;
       for(const auto& range : ranges.ranges)
@@ -173,7 +260,8 @@ class JSONFormat
       return range_arr;
     }
 
-    static json_array getJsonTags(const Tags& tags)
+    static json_array getJsonTags(
+        const Tags& tags)
     {
       json_array arr;
       for(const auto& tag : tags.tags)
@@ -184,67 +272,72 @@ class JSONFormat
       return arr;
     }
 
-    static json_map attributeToJson(const Parameter& parameter, std::string method)
+    static json_map attributeToJson(
+        const Parameter& parameter,
+        const std::string& method)
     {
       json_map map;
 
-      if(method == "value")
-      { map.set("value", getJsonValueArray(parameter)); }
-      else if(method == "range")
-      { map.set("range", getJsonRangeArray(parameter)); }
-      else if(method == "clipmode")
-      { map.set("clipmode", getJsonClipModeArray(parameter)); }
-      else if(method == "access")
-      { map.set("access", static_cast<int>(parameter.accessmode)); }
-      else if(method == "type")
-      { map.set("type", getJsonTypeString(parameter)); }
-      else if(method == "description")
-      { map.set("description", parameter.description); }
-      else if(method == "tags")
-      { map.set("tags", getJsonTags(parameter)); }
-      else if(method == "full_path")
-      { map.set("full_path", parameter.destination); }
+      if(method == Key::attribute<Values>())
+      { map.set(method, getJsonValueArray(parameter)); }
+      else if(method == Key::attribute<Ranges>())
+      { map.set(method, getJsonRangeArray(parameter)); }
+      else if(method == Key::attribute<ClipModes>())
+      { map.set(method, getJsonClipModeArray(parameter)); }
+      else if(method == Key::attribute<Access>())
+      { map.set(method, static_cast<int>(parameter.accessmode)); }
+      else if(method == Key::type())
+      { map.set(method, getJsonTypeString(parameter)); }
+      else if(method == Key::attribute<Description>())
+      { map.set(method, parameter.description); }
+      else if(method == Key::attribute<Tags>())
+      { map.set(method, getJsonTags(parameter)); }
+      else if(method == Key::full_path())
+      { map.set(method, parameter.destination); }
 
       return map;
     }
 
-    static void parameterToJson(const Parameter& parameter,
-                                json_map& obj)
+    static void parameterToJson(
+        const Parameter& parameter,
+        json_map& obj)
     {
       using namespace std;
       using namespace boost;
       using namespace eggs::variants;
 
       // These attributes are always here
-      obj.set("full_path", parameter.destination);
-      obj.set("access", static_cast<int>(parameter.accessmode));
+      obj.set(Key::full_path(), parameter.destination);
+      obj.set(Key::attribute<Access>(), static_cast<int>(parameter.accessmode));
 
       // Potentially empty attributes :
       // Description
       if(!parameter.description.empty())
       {
-        obj.set("description", parameter.description);
+        obj.set(Key::attribute<Description>(), parameter.description);
       }
 
       // Tags
       if(!parameter.tags.empty())
       {
-        obj.set("tags", getJsonTags(parameter));
+        obj.set(Key::attribute<Tags>(), getJsonTags(parameter));
       }
 
       // Handling of the types / values
       if(!parameter.values.empty())
       {
-        obj.set("type", getJsonTypeString(parameter));
-        obj.set("value", getJsonValueArray(parameter));
-        obj.set("clipmode", getJsonClipModeArray(parameter));
-        obj.set("range", getJsonRangeArray(parameter));
+        obj.set(Key::type(), getJsonTypeString(parameter));
+        obj.set(Key::attribute<Values>(), getJsonValueArray(parameter));
+        obj.set(Key::attribute<Ranges>(), getJsonRangeArray(parameter));
+        obj.set(Key::attribute<ClipModes>(), getJsonClipModeArray(parameter));
       }
     }
 
     // A ParameterMap can be JSON'd
     template<typename Map>
-    static json_map mapToJson(const Map& theMap, std::string root)
+    static json_map mapToJson(
+        const Map& theMap,
+        const std::string& root)
     {
       using namespace std;
       using namespace boost;
@@ -267,10 +360,11 @@ class JSONFormat
         auto current_map = &localroot;
         for(const auto& token : tokens)
         {
-          if(!current_map->has("contents"))
-          { current_map->set("contents", json_map{}); }
+          // Note : see this in relation the osc method part of the spec
+          if(!current_map->has(Key::contents()))
+          { current_map->set(Key::contents(), json_map{}); }
 
-          current_map = &current_map->get_for_path<json_map>("contents");
+          current_map = &current_map->get_for_path<json_map>(Key::contents());
 
           if(!current_map->has(token))
           { current_map->set(token, json_map{}); }

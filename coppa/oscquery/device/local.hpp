@@ -160,6 +160,8 @@ class LocalDevice
           }
 
           // All the value-less parameters
+          // TODO marshall multiple at once ?
+          // Note : what happens if we marshall an empty parameter ?
           for(const auto& elt : parameters)
           {
             if(elt.second.empty())
@@ -188,7 +190,8 @@ class LocalDevice
 
     LocalDevice()
     {
-      // TODO Add osc message handlers to update the tree.
+      // TODO Add osc message handlers to update the tree
+      // when an osc message is received.
     }
 
     void add(const Parameter& parameter)
@@ -287,12 +290,21 @@ class SynchronizingLocalDevice
       }
     }
 
-    template<typename Attribute>
-    void update(const std::string& path, const Attribute& val)
-    {
-      m_device.update(path, val);
 
-      auto message = JSONFormat::attributeChangedMessage(path, val);
+    template<typename Attribute, typename... Attributes>
+    void update(const std::string& path, const Attribute& attr, Attributes&&... val)
+    {
+      m_device.update(path, attr);
+      update(path, std::forward<Attributes>(val)...);
+    }
+
+    template<typename... Attributes>
+    void update(const std::string& path, Attributes&&... val)
+    {
+      m_device.update(path, std::forward<Attributes>(val)...);
+
+      auto message = JSONFormat::attributesChangedMessage(
+                       path, std::forward<Attributes>(val)...);
       for(auto& client : m_device.clients())
       {
         m_device.server().sendMessage(client, message);

@@ -24,14 +24,14 @@ bmi::random_access<>>>;
 
 // Get all the parameters whose address begins with addr
 // TODO make an algorithm to rebase a map with a new root. (the inverse of this)
-template<typename MapType, typename Key>
-auto filter(const MapType& map, Key&& addr)
+template<typename Map, typename Key>
+auto filter(const Map& map, Key&& addr)
 {
-  MapType newmap;
+  typename Map::base_map_type newmap;
   for(const auto& param : map)
   {
     if(boost::starts_with(param.destination, addr))
-      newmap.add(param);
+      newmap.insert(param);
   }
 
   return newmap;
@@ -51,7 +51,7 @@ class SimpleParameterMap
     }
 
   public:
-    using map_type = Map;
+    using base_map_type = Map;
     using size_type = typename Map::size_type;
 
     constexpr SimpleParameterMap()
@@ -137,7 +137,7 @@ class LockedParameterMap
     mutable std::mutex m_map_mutex;
 
   public:
-    using map_type = Map;
+    using base_map_type = typename Map::base_map_type;
     constexpr LockedParameterMap() = default;
 
     operator const Map&() const

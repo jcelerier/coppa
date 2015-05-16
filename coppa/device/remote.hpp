@@ -29,11 +29,11 @@ class RemoteQueryClient
     { return m_client.connected(); }
 
     // Ask for an update of a part of the namespace
-    void update(const std::string& root = "/")
+    void queryNamespace(const std::string& root = "/")
     { m_client.sendMessage(root); }
 
     // Ask for an update of a single attribute
-    void updateAttribute(const std::string& address, const std::string& attribute)
+    void queryAttribute(const std::string& address, const std::string& attribute)
     { m_client.sendMessage(address + "?" + attribute); }
 
     void listenAddress(const std::string& address, bool b)
@@ -57,8 +57,7 @@ class ConstantMap
     auto get(const std::string& address) const
     { return m_map.get(address); }
 
-    Map map() const
-    { return m_map; }
+    // TODO cbegin / cend
 
     LockedParameterMap<Map>& safeMap()
     { return m_map; }
@@ -83,7 +82,7 @@ class SettableMap : public ConstantMap<Map>
     {
       auto param = ConstantMap<Map>::get(address);
       if(param.accessmode == Access::Mode::Set
-      || param.accessmode == Access::Mode::Both)
+         || param.accessmode == Access::Mode::Both)
       {
         m_sender.send(address, std::forward<Args>(args)...);
       }
@@ -101,37 +100,62 @@ class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
     void on_queryServerMessage(const std::string& message)
     try
     {
-      switch(Parser::messageType(message))
+      auto mt = Parser::messageType(message);
+
+      if(mt == MessageType::Device)
       {
-        case MessageType::Device:
-          RemoteMapBase::connect(QueryProtocolClient::uri(), Parser::getPort(message));
-          if(onConnect) onConnect();
+        RemoteMapBase::connect(QueryProtocolClient::uri(), Parser::getPort(message));
+        if(onConnect) onConnect();
+      }
+      else
+      {
+        switch(mt)
+        {
+          case MessageType::Namespace:
+            RemoteMapBase::replace(Parser::template parseNamespace<BaseMapType>(message));
+            break;
+
+
+          case MessageType::PathAdded:
+            Parser::template parsePathAdded<BaseMapType>(RemoteMapBase::safeMap(), message);
+            break;
+
+          case MessageType::PathChanged:
+            Parser::parsePathChanged(RemoteMapBase::safeMap(), message);
+            break;
+
+          case MessageType::PathRemoved:
+            Parser::parsePathRemoved(RemoteMapBase::safeMap(), message);
+            break;
+
+          case MessageType::AttributesChanged:
+            Parser::parseAttributesChanged(RemoteMapBase::safeMap(), message);
+            break;
+
+            /*
+        case MessageType::PathsAdded:
+          Parser::template parsePathsAdded<BaseMapType>(RemoteMapBase::safeMap(), message);
           break;
 
-        case MessageType::PathAdded:
-          Parser::template parsePathAdded<BaseMapType>(RemoteMapBase::safeMap(), message);
-          if(onUpdate) onUpdate();
+        case MessageType::PathsChanged:
+          Parser::parsePathsChanged(RemoteMapBase::safeMap(), message);
           break;
 
-        case MessageType::PathRemoved:
-          Parser::parsePathRemoved(RemoteMapBase::safeMap(), message);
-          if(onUpdate) onUpdate();
+        case MessageType::PathsRemoved:
+          Parser::parsePathsRemoved(RemoteMapBase::safeMap(), message);
           break;
 
-        case MessageType::PathChanged:
-          Parser::parsePathChanged(RemoteMapBase::safeMap(), message);
-          if(onUpdate) onUpdate();
+        case MessageType::AttributesChangedArray:
+          Parser::parseAttributesChangedArray(RemoteMapBase::safeMap(), message);
           break;
+          */
 
-        case MessageType::AttributeChanged:
-          Parser::parseAttributeChanged(RemoteMapBase::safeMap(), message);
-          if(onUpdate) onUpdate();
-          break;
+          case MessageType::Device:
+          default:
+            break;
+        }
 
-        default:
-          RemoteMapBase::replace(Parser::template parseNamespace<BaseMapType>(message));
-          if(onUpdate) onUpdate();
-          break;
+        if(onUpdate) onUpdate();
       }
     }
     catch(std::exception& e)

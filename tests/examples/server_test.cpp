@@ -114,7 +114,7 @@ int main()
     }
   });
 
-
+/*
   std::thread parameterRemoveThread([&] ()
   {
     while(true)
@@ -130,7 +130,7 @@ int main()
       dev.remove(randompath);
     }
   });
-
+*/
 
   // Start the websocket server
   dev.expose();

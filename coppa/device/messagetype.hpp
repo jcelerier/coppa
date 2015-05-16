@@ -4,6 +4,9 @@ namespace coppa
 {
 enum class MessageType
 {
-  Namespace, Device, PathChanged, PathAdded, PathRemoved, AttributeChanged
+  Device,
+  Namespace,
+  PathChanged, PathAdded, PathRemoved, AttributesChanged,
+  PathsChanged, PathsAdded, PathsRemoved, AttributesChangedArray,
 };
 }
