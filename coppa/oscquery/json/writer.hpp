@@ -179,7 +179,7 @@ class writer
       map[Key::attributes_changed()] = objmap;
       return map.to_string();
     }
-}; // End of namespace Marshall
+};
 } // JSON
 } // oscquery
 } // coppa

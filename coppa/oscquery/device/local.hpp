@@ -62,7 +62,7 @@ class LocalDevice
     void update(const std::string& path, Arg&& val)
     {
       std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.update(path, val);
+      m_map.update(path, std::forward<Arg>(val));
 
       if(m_handlers.find(path) != std::end(m_handlers))
       {
@@ -74,7 +74,7 @@ class LocalDevice
     void update_attributes(const std::string& path, Arg&& val)
     {
       std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.update_attributes(path, val);
+      m_map.update_attributes(path, std::forward<Arg>(val));
 
       if(m_handlers.find(path) != std::end(m_handlers))
       {
