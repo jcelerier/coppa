@@ -5,14 +5,12 @@
 #include <memory>
 #include <thread>
 #include <functional>
-#include <map>
 #include <iostream>
 
 class OscReceiver
 {
   public:
     using message_handler = std::function<void(const osc::ReceivedMessage&)>;
-    //using connection_handler = std::function<void(osc::ReceivedMessageArgumentStream, std::string)>;
 
     OscReceiver(unsigned int port, message_handler&& msg):
       m_impl{std::move(msg)}
@@ -33,18 +31,7 @@ class OscReceiver
     {
       m_runThread = std::thread(&UdpListeningReceiveSocket::Run, m_socket.get());
     }
-/*
-    template<typename T, class C>
-    void addHandler(const std::string &s, T&& theMember, C&& theObject)
-    {
-      m_impl.addHandler(s, std::bind(theMember, theObject, std::placeholders::_1));
-    }
 
-    void addHandler(const std::string &s, const	message_handler h)
-    {
-      m_impl.addHandler(s, h);
-    }
-*/
     unsigned int port() const
     {
       return m_port;
@@ -70,7 +57,6 @@ class OscReceiver
         }
       }
 
-//      std::cerr << "Receiver port set : " << _port << std::endl;
       return m_port;
     }
 
@@ -84,54 +70,23 @@ class OscReceiver
           m_messageHandler{std::move(msg)}
         {
         }
-        /*
-        void setConnectionHandler(const std::string& s, const connection_handler& h)
-        {
-          _connectionAdress = s;
-          _connectionHandler = h;
-        }
-
-        void setMessageHandler(const std::string& s, const message_handler& h)
-        {
-          _connectionAdress = s;
-          _connectionHandler = h;
-        }
-        */
 
       protected:
         virtual void ProcessMessage(const osc::ReceivedMessage& m,
                                     const IpEndpointName& ip) override
         {
-
           try
           {
             m_messageHandler(m);
-            /*
-            auto addr = std::string(m.AddressPattern());
-            std::cerr << "Message received on " << addr << std::endl;
-            if(addr == _connectionAdress)
-            {
-              char s[16];
-              ip.AddressAsString(s);
-              _connectionHandler(m.ArgumentStream(), std::string(s));
-            }
-            else if(_map.find(addr) != _map.end())
-            {
-              _map[addr](m.ArgumentStream());
-            }
-            */
           }
-          catch( osc::Exception& e )
+          catch( std::exception& e )
           {
             std::cerr << "OSC Parse Error on " << m.AddressPattern() << ": "
                       << e.what() << std::endl;
           }
-
         }
 
       private:
-        //std::string _connectionAdress;
-        //connection_handler _connectionHandler;
         message_handler m_messageHandler;
     } m_impl;
 
