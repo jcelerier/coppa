@@ -41,6 +41,11 @@ class LocalDevice
       m_handlers[name] = fun;
     }
 
+    void removeHandler(const std::string& name)
+    {
+      m_handlers.erase(name);
+    }
+
     void add(const Parameter& parameter)
     {
       std::lock_guard<std::mutex> lock(m_map_mutex);
@@ -187,6 +192,9 @@ class SynchronizingLocalDevice
     template<typename... Args>
     void addHandler(Args&&... args)
     { m_device.addHandler(std::forward<Args>(args)...); }
+    template<typename... Args>
+    void removeHandler(Args&&... args)
+    { m_device.removeHandler(std::forward<Args>(args)...); }
 
     auto& device() { return m_device; }
 
