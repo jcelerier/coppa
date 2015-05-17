@@ -65,5 +65,34 @@ inline void addValue(Parameter& parameter,
   parameter.clipmodes.push_back(clipmode);
 }
 
+template<typename T>
+void addDefaultValue(Parameter& parameter)
+{
+  parameter.values.push_back(T{});
+
+  int n = parameter.values.size();
+  parameter.ranges.resize(n);
+  parameter.clipmodes.resize(n);
+}
+
+// TODOHow to factorize this ??
+inline void addDefaultValue(Parameter& parameter, std::size_t value_type_id)
+{
+  switch(value_type_id)
+  {
+    case 0:
+      addDefaultValue<int>(parameter);
+      break;
+    case 1:
+      addDefaultValue<float>(parameter);
+      break;
+    case 3:
+      addDefaultValue<std::string>(parameter);
+      break;
+    default:
+      throw;
+  }
+}
+
 }
 }

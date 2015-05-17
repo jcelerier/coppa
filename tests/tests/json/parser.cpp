@@ -19,8 +19,9 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     REQUIRE( map.size() == 5 );
 
     WHEN( "A basic path is added" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(map,
-      "{ \"path_added\" : { \"full_path\" : \"\\/a\\/b\" \"type\": \"f\" \"access\": 1 } }");
+      parser::path_added<SimpleParameterMap<ParameterMap>>(
+            map,
+            "{ \"path_added\" : { \"full_path\" : \"\\/a\\/b\" \"type\": \"i\" \"access\": 1 } }");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -31,17 +32,19 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         REQUIRE(p.destination == "/a/b" );
         REQUIRE(p.accessmode == Access::Mode::Get );
 
-        REQUIRE(p.values.empty());
-        REQUIRE(p.ranges.empty());
-        REQUIRE(p.clipmodes.empty());
+        REQUIRE(p.values.size() == 1);
+        REQUIRE(p.values.front().which() == Variant(5).which());
+        REQUIRE(p.ranges.size() == 1);
+        REQUIRE(p.clipmodes.size() == 1);
         REQUIRE(p.description.empty());
         REQUIRE(p.tags.empty());
       }
     }
 
     WHEN( "A path with an int value is added" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(map,
-      "{ \"path_added\" : { \"full_path\" : \"\\/a\\/b\" \"type\": \"f\" \"access\": 1 \"value\": [ 15 ], \"range\": [ [0, 100, null] ]} }");
+      parser::path_added<SimpleParameterMap<ParameterMap>>(
+            map,
+            "{ \"path_added\" : { \"full_path\" : \"\\/a\\/b\" \"type\": \"i\" \"access\": 1 \"value\": [ 15 ], \"range\": [ [0, 100, null] ]} }");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -66,8 +69,9 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     }
 
     WHEN( "A path with a float value is added" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(map,
-      "{ \"path_added\" : { \"full_path\" : \"\\/a\\/b\" \"type\": \"f\" \"access\": 1 \"value\": [ 15.5 ], \"range\": [ [0.3, 10.4, null] ]} }");
+      parser::path_added<SimpleParameterMap<ParameterMap>>(
+            map,
+            "{ \"path_added\" : { \"full_path\" : \"\\/a\\/b\" \"type\": \"f\" \"access\": 1 \"value\": [ 15.5 ], \"range\": [ [0.3, 10.4, null] ]} }");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -92,11 +96,12 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     }
 
     WHEN( "A path with a string and an int value is added" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(map,
-      "{ \"path_added\" : "
-      "    { \"full_path\" : \"\\/a\\/b\" \"type\": \"f\" \"access\": 1 "
-      "      \"value\": [ \"yodee\", 45 ],"
-      "      \"range\": [ [null, null, [\"yodee\", \"yaho\", ]], [null, null, null] ]} }");
+      parser::path_added<SimpleParameterMap<ParameterMap>>(
+            map,
+            "{ \"path_added\" : "
+            "    { \"full_path\" : \"\\/a\\/b\" \"type\": \"si\" \"access\": 1 "
+            "      \"value\": [ \"yodee\", 45 ],"
+            "      \"range\": [ [null, null, [\"yodee\", \"yaho\", ]], [null, null, null] ]} }");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -130,11 +135,12 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
 
 
     WHEN( "An existing path is added again" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(map,
-      "{ \"path_added\" : "
-      "    { \"full_path\" : \"\\/a\\/b\" \"type\": \"f\" \"access\": 1 "
-      "      \"value\": [ \"yodee\", 45 ],"
-      "      \"range\": [ [null, null, [\"yodee\", \"yaho\", ]], [null, null, null] ]} }");
+      parser::path_added<SimpleParameterMap<ParameterMap>>(
+            map,
+            "{ \"path_added\" : "
+            "    { \"full_path\" : \"\\/a\\/b\" \"type\": \"si\" \"access\": 1 "
+            "      \"value\": [ \"yodee\", 45 ],"
+            "      \"range\": [ [null, null, [\"yodee\", \"yaho\", ]], [null, null, null] ]} }");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -169,8 +175,71 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
   }
 }
 
+// TODO test types not matching the actual values
+// TODO test without "type" attribute
+
+TEST_CASE( "paths_added parsing", "[parser]" ) {
+
+  GIVEN( "A non-empty parameter map" ) {
+
+    SimpleParameterMap<ParameterMap> map;
+    setup_basic_map(map);
+
+    REQUIRE( map.size() == 5 );
+
+    WHEN( "Paths are added" ) {
+      parser::paths_added<SimpleParameterMap<ParameterMap>>(
+            map,
+            "{ \"paths_added\" : ["
+            "    { \"full_path\" : \"\\/a\\/b\" \"type\": \"f\" \"access\": 1 },"
+            "    { \"full_path\" : \"\\/c\\/d\" \"type\": \"si\" \"access\": 2 "
+            "      \"value\": [ \"yodee\", 45 ],"
+            "      \"range\": [ [null, null, [\"yodee\", \"yaho\", ]], [null, null, null] ] } ]"
+            "}");
+
+      THEN( "the capacity changes" ) {
+        REQUIRE( map.size() == 7 );
+      }
+      THEN( "the paths are correctly added" ) {
+        auto p = map.get("/a/b");
+
+        REQUIRE(p.destination == "/a/b" );
+        REQUIRE(p.accessmode == Access::Mode::Get );
+
+        REQUIRE(p.values.size() == 1);
+        REQUIRE(p.ranges.size() == 1);
+        REQUIRE(p.clipmodes.size() == 1);
+        REQUIRE(p.description.empty());
+        REQUIRE(p.tags.empty());
 
 
+        auto p2 = map.get("/c/d");
+
+        REQUIRE(p2.destination == "/c/d" );
+        REQUIRE(p2.accessmode == Access::Mode::Set );
+
+        REQUIRE(p2.values.size() == 2);
+        REQUIRE(p2.ranges.size() == 2);
+
+        REQUIRE(get<std::string>(p2.values.front()) == "yodee");
+        const auto& stringRange = p2.ranges.front();
+        REQUIRE(!stringRange.min);
+        REQUIRE(!stringRange.max);
+        REQUIRE(stringRange.values.size() == 2);
+        REQUIRE(std::find(begin(stringRange.values), end(stringRange.values), Variant(std::string("yodee"))) != end(stringRange.values));
+        REQUIRE(std::find(begin(stringRange.values), end(stringRange.values), Variant(std::string("yaho"))) != end(stringRange.values));
+
+        const auto& intRange = p2.ranges.back();
+        REQUIRE(!intRange.min);
+        REQUIRE(!intRange.max);
+        REQUIRE(intRange.values.empty());
+
+        REQUIRE(p2.description.empty());
+        REQUIRE(p2.tags.empty());
+      }
+    }
+  }
+}
 
 
 
@@ -206,6 +275,62 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
       THEN( "the paths aren't there anymore" ) {
         REQUIRE(map.has("/da/da") == false);
         REQUIRE(map.has("/da/do") == false);
+      }
+    }
+  }
+}
+
+TEST_CASE( "paths_removed parsing", "[parser]" ) {
+
+  GIVEN( "A non-empty parameter map" ) {
+
+    SimpleParameterMap<ParameterMap> map;
+    setup_basic_map(map);
+
+    REQUIRE(map.size() == 5 );
+
+    REQUIRE(map.has("/da/da") == true);
+
+    WHEN( "An existing, real leaf path is removed" ) {
+      parser::paths_removed(map, "{ \"paths_removed\" : [\"\\/da\\/da\", \"\\/da\\/do\"] }");
+
+      THEN( "the capacity changes" ) {
+        REQUIRE( map.size() == 3 );
+      }
+      THEN( "the paths aren't there anymore" ) {
+        REQUIRE(map.has("/da/da") == false);
+        REQUIRE(map.has("/da/do") == false);
+      }
+    }
+  }
+}
+
+
+TEST_CASE( "path_changed parsing", "[parser]" ) {
+
+  GIVEN( "A non-empty parameter map" ) {
+
+    SimpleParameterMap<ParameterMap> map;
+    setup_basic_map(map);
+
+    REQUIRE(map.size() == 5 );
+
+    REQUIRE(map.has("/da/da") == true);
+    REQUIRE(map.get("/da/da").values.front().which() == 0); // It's an int
+
+    WHEN( "A leaf is changed" ) {
+      parser::path_changed(
+            map,
+            "{ \"path_changed\" : { \"full_path\" : \"\\/da\\/da\" \"type\": \"f\" \"access\": 2 } }");
+
+      THEN( "the capacity does not change" ) {
+        REQUIRE( map.size() == 5 );
+      }
+      THEN( "the path has changed" ) {
+        REQUIRE(map.has("/da/da") == true);
+        REQUIRE(map.get("/da/da").values.front().which() == 1); // It's a float
+
+
       }
     }
   }

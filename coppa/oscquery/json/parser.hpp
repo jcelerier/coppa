@@ -70,21 +70,16 @@ class parser
     static void path_changed(Map& map, const std::string& message)
     {
       using namespace detail;
-      json_map obj{message};
-      auto path_changed = obj.get<json_map>(Key::path_changed());
+      json_map mess{message};
 
-      // 1. Search for the paths
-      for(const auto& path : path_changed.get_keys())
-      {
-        json_assert(map.has(path));
-        auto path_obj = path_changed.get<json_map>(path);
+      // Get the object
+      const auto& obj = mess.get<json_map>(Key::path_changed());
 
-        // 2. Remove the existing path
-        map.remove(valToString(path_obj.get(Key::full_path())));
+      // 2. Remove the existing path
+      map.remove(valToString(obj.get(Key::full_path())));
 
-        // 3. Replace it
-        readObject(map, path_obj);
-      }
+      // 3. Replace it
+      readObject(map, obj);
     }
 
     template<typename Map>
@@ -93,7 +88,7 @@ class parser
       using namespace detail;
       json_map obj{message};
 
-      auto path = valToString(obj.get(Key::path_removed()));
+      const auto& path = valToString(obj.get(Key::path_removed()));
       json_assert(map.existing_path(path));
       map.remove(path);
     }
@@ -103,13 +98,13 @@ class parser
     {
       using namespace detail;
       json_map obj{message};
-      auto attr_changed = obj.get<json_map>(Key::attributes_changed());
+      const auto& attr_changed = obj.get<json_map>(Key::attributes_changed());
 
       // 1. Search for the paths
       for(const auto& path : attr_changed.get_keys())
       {
         json_assert(map.has(path));
-        auto path_obj = attr_changed.get<json_map>(path);
+        const auto& path_obj = attr_changed.get<json_map>(path);
 
         // A lambda used to update the boost map.
         // Here, since we are in attributes_changed, we will just ignore
@@ -135,7 +130,14 @@ class parser
     template<typename BaseMapType, typename Map>
     static void paths_added(Map& map, const std::string& message)
     {
-      std::cerr << "TODO" << std::endl;
+      using namespace detail;
+
+      json_map mess{message};
+      const auto& arr = detail::valToArray(mess["paths_added"]);
+      for(const auto& elt : arr)
+      {
+        map.merge(parseNamespace<BaseMapType>(elt.as<json_map>()));
+      }
     }
 
     template<typename Map>
@@ -147,7 +149,15 @@ class parser
     template<typename Map>
     static void paths_removed(Map& map, const std::string& message)
     {
-      std::cerr << "TODO" << std::endl;
+      json_map mess{message};
+      const auto& arr = detail::valToArray(mess["paths_removed"]);
+
+      for(const auto& elt : arr)
+      {
+        const auto& path = detail::valToString(elt);
+        json_assert(map.existing_path(path));
+        map.remove(path);
+      }
     }
 
     template<typename Map>

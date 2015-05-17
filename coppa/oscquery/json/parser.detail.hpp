@@ -110,14 +110,14 @@ static auto jsonToRangeArray(const json_value& val)
   std::vector<Range> ranges;
   for(const json_value& range_val : valToArray(val))
   {
-    auto range_arr = valToArray(range_val);
+    const auto& range_arr = valToArray(range_val);
     if(range_arr.size() != 3)
       throw BadRequestException{};
 
     Range range;
     range.min = jsonToVariant(range_arr.get(0));
     range.max = jsonToVariant(range_arr.get(1));
-    auto thirdElement = range_arr.get(2);
+    const auto& thirdElement = range_arr.get(2);
     if(thirdElement.is(val_t::array))
     {
       for(const auto& enum_val : valToArray(thirdElement))
@@ -134,6 +134,29 @@ static auto jsonToRangeArray(const json_value& val)
   return ranges;
 }
 
+static auto jsonToTypeVector(const json_value& val)
+{
+  std::vector<std::size_t> types_vec;
+  for(const auto& c : val.get<std::string>())
+  {
+    switch(c)
+    {
+      case 'i':
+        types_vec.push_back(0);
+        break;
+      case 'f':
+        types_vec.push_back(1);
+        break;
+      case 's':
+        types_vec.push_back(3);
+        break;
+      default:
+        throw BadRequestException("Unsupported type");
+    }
+  }
+
+  return types_vec;
+}
 
 template<typename Map>
 static void readObject(Map& map, const json_map& obj)
@@ -144,20 +167,72 @@ static void readObject(Map& map, const json_map& obj)
     Parameter p;
     p.destination = valToString(obj.get(Key::full_path()));
 
+    // To map non-mandatory elements
     auto mapper = [&] (const std::string& name, auto& member, auto&& method)
     {
-      if(obj.find(name) != obj.end()) member = method(obj.get(name));
+      auto it = obj.find(name);
+      if(it != obj.end())
+        member = method(it->second);
     };
 
+    // Note : clipmode : software that expects it should assume that no clipping will be performed
+    // What about integer clipping ? should we use arbitrary precision math ??
     mapper(Key::attribute<Description>(), p.description, &detail::valToString);
     mapper(Key::attribute<Tags>(),        p.tags,        &detail::jsonToTags);
     mapper(Key::attribute<Access>(),      p.accessmode , &detail::jsonToAccessMode);
 
-    if(obj.find(Key::attribute<Values>()) != obj.end())
+    // Types
+    auto type_it = obj.find(Key::type());
+    if(type_it != obj.end())
     {
-      mapper(Key::attribute<Values>(),    p.values,    &detail::jsonToVariantArray);
-      mapper(Key::attribute<Ranges>(),     p.ranges,    &detail::jsonToRangeArray);
-      mapper(Key::attribute<ClipModes>(),  p.clipmodes, &detail::jsonToClipModeArray);
+      auto type_vec = jsonToTypeVector(type_it->second);
+
+      auto val_it = obj.find(Key::attribute<Values>());
+      // If there are values in the json
+      if(val_it != obj.end())
+      {
+        p.values = detail::jsonToVariantArray(val_it->second);
+
+        // Check that the types are correct
+        json_assert(p.values.size() == type_vec.size());
+        for(int i = 0; i < p.values.size(); i++)
+        {
+          json_assert(p.values[i].which() == type_vec[i]);
+        }
+      }
+      else
+      {
+        // Make a default Values/range/clipmode array
+        for(int i = 0; i < type_vec.size(); i++)
+          addDefaultValue(p, type_vec[i]);
+      }
+
+      auto range_it = obj.find(Key::attribute<Ranges>());
+      if(range_it != obj.end())
+      {
+        p.ranges = jsonToRangeArray(range_it->second);
+
+        json_assert(p.ranges.size() == type_vec.size());
+        for(int i = 0; i < p.ranges.size(); i++)
+        {
+          static auto invalid = Variant().which();
+          const auto& elt = p.ranges[i];
+          json_assert(elt.min.which() == invalid || elt.min.which() == type_vec[i]);
+          json_assert(elt.max.which() == invalid || elt.max.which() == type_vec[i]);
+          for(const auto& range_elt : elt.values)
+          {
+            json_assert(range_elt.which() == invalid || range_elt.which() == type_vec[i]);
+          }
+        }
+      }
+
+      auto clipmode_it = obj.find(Key::attribute<ClipModes>());
+      if(clipmode_it != obj.end())
+      {
+        p.clipmodes = jsonToClipModeArray(clipmode_it->second);
+
+        json_assert(p.clipmodes.size() == type_vec.size());
+      }
     }
 
     map.add(p);

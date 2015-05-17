@@ -131,7 +131,7 @@ class writer
     }
 
     template<typename Map, typename Vector>
-    static std::string pahs_changed(
+    static std::string paths_changed(
         const Map& theMap,
         const Vector& vec)
     {
