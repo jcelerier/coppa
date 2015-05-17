@@ -26,7 +26,7 @@ int main()
 
       v.values[0] = i++;
       if(dev.map().has("da/do"))
-        dev.update("/da/do", v);
+        dev.update_attributes("/da/do", v);
       else
         return;
     }

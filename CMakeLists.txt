@@ -66,5 +66,9 @@ if(Qt5_FOUND)
   add_executable(qt_expose_object "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/qt/qt_expose_object.cpp")
   set_coppa_properties(qt_expose_object)
   target_link_libraries(qt_expose_object Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Multimedia)
+
+  add_executable(qt_update_object "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/qt/qt_update_object.cpp")
+  set_coppa_properties(qt_update_object)
+  target_link_libraries(qt_update_object Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Multimedia)
 endif()
 

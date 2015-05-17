@@ -4,20 +4,14 @@
 
 int main(int argc, char** argv)
 {
-  QApplication app{argc, argv};
   // Set-up Qt stuff
+  QApplication app{argc, argv};
   auto window = new QMainWindow;
   auto widget = new QWidget;
   window->setCentralWidget(widget);
   auto layout = new QHBoxLayout{widget};
   auto label = new QLabel{"0"};
   auto pushbutton = new QPushButton{"Count"};
-
-  int32_t count{};
-  QObject::connect(pushbutton, &QPushButton::clicked,
-                   [&label, &count] () {
-    label->setText(QString::number(++count));
-  });
 
   layout->addWidget(label);
   layout->addWidget(pushbutton);
@@ -28,35 +22,35 @@ int main(int argc, char** argv)
   using namespace coppa;
   using namespace coppa::oscquery;
   SynchronizingLocalDevice<WebSocketServer, Answerer> dev;
+
+  // Add a corresponding parameter
   Parameter p;
   p.destination = "/label/value";
   p.description = "Value of a label";
   p.tags.push_back("GUI");
+
+  int32_t count{};
   addValue(p, count);
 
+  dev.add(p);
+
+  // Update the value from the gui.
   QObject::connect(pushbutton, &QPushButton::clicked,
                    [&] () {
     Values v;
     v.values.push_back(++count);
-    dev.update(p.destination, v);
-
-    label->setText(QString::number(count));
+    dev.update_attributes(p.destination, v);
   });
 
-  dev.device().receiver().addHandler(
+  // Update the label when the data is updated.
+  dev.addHandler(
         p.destination,
-        [&] (osc::ReceivedMessageArgumentStream s) {
-    Values v;
-    int val;
-    s >> val;
-    v.values.push_back(val);
-    dev.update(p.destination, v);
-
-    label->setText(QString::number(count));
+        [&] (const Parameter& p) {
+    label->setText(QString::number(eggs::variants::get<int>(p.values.front())));
   });
 
-  dev.add(p);
-  std::thread ([&] () { dev.expose(); });
+  // Start coppa.
+  std::thread t([&] () { dev.expose(); });
 
   return app.exec();
 }

@@ -108,6 +108,20 @@ class LockedParameterMap
       m_map.update(std::forward<Args>(args)...);
     }
 
+    template<typename... Args>
+    void update_attributes(Args&&... args)
+    {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
+      m_map.update_attributes(std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    void replace(Args&&... args)
+    {
+      std::lock_guard<std::mutex> lock(m_map_mutex);
+      m_map.replace(std::forward<Args>(args)...);
+    }
+
 
     template<typename Element>
     void add(Element&& e)

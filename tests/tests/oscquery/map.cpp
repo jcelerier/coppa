@@ -99,8 +99,8 @@ TEST_CASE( "map element updating", "[oscquery][map]" ) {
 
     map.add(p1);
 
-    WHEN( "An existing parameter is updated" )  {
-      map.update(p2);
+    WHEN( "An existing parameter is replaced" )  {
+      map.replace(p2);
 
       THEN( "the capacity does not change" ) {
         REQUIRE( map.size() == 2 );

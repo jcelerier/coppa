@@ -2,15 +2,6 @@
 #include <coppa/oscquery/parameter.hpp>
 #include <type_traits>
 
-// Found on stackoverflow
-template<typename T, typename = void>
-struct is_callable : std::is_function<T> { };
-
-template<typename T>
-struct is_callable<T, typename std::enable_if<
-    std::is_same<decltype(void(&T::operator())), void>::value
-    >::type> : std::true_type { };
-
 namespace coppa
 {
 namespace oscquery
@@ -105,8 +96,7 @@ class SimpleParameterMap
 
 
     template<typename Key,
-             typename Updater,
-             typename std::enable_if<is_callable<Updater>::value>::type* = nullptr>
+             typename Updater>
     auto update(Key&& address, Updater&& updater)
     {
       auto& param_index = m_map.template get<0>();
@@ -115,22 +105,23 @@ class SimpleParameterMap
     }
 
     template<typename Key,
-             typename... Args,
-             typename std::enable_if<not is_callable<Args...>::value>::type* = nullptr>
-    auto update(Key&& address, Args&&... args)
+             typename... Args>
+    auto update_attributes(Key&& address, Args&&... args)
     {
-      auto& param_index = m_map.template get<0>();
-      decltype(auto) param = param_index.find(address);
-      param_index.modify(param, make_update_fun(std::forward<Args>(args)...));
+      update(std::forward<Key>(address),
+             make_update_fun(std::forward<Args>(args)...));
     }
 
     template<typename Element>
-    auto update(const Element& replacement)
+    auto replace(const Element& replacement)
     {
-      update(replacement.destination, [&] (Element& e) { e = replacement; });
+      auto& param_index = m_map.template get<0>();
+      param_index.replace(param_index.find(replacement.destination), replacement);
     }
 
 
+    // TODO rename in insert + add insert_and_assign
+    // See boost doc with rollback, too.
     template<typename Element>
     auto add(Element&& e)
     { m_map.insert(e); }
