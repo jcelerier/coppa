@@ -28,8 +28,8 @@ template<typename Device>
 void exposeQObject(Device& dev, QObject* obj)
 {
   auto path = computeObjectPath(obj).toStdString();
-  qDebug() << QString::fromStdString(path);
 
+  // Add nodes for each property
   for(int i = 0; i < obj->metaObject()->propertyCount(); i++)
   {
     auto prop = obj->metaObject()->property(i);
@@ -55,6 +55,7 @@ void exposeQObject(Device& dev, QObject* obj)
 
     dev.add(p);
 
+    //Connect the changes of parameters with Qt.
     dev.addHandler(
           p.destination,
           [&, wrapper = QPointer<QObject>(obj)] (const Parameter& p) {
@@ -115,9 +116,11 @@ int main(int argc, char** argv)
   // Set-up coppa
   SynchronizingLocalDevice<WebSocketServer, Answerer> dev;
 
+  // Automatically expose some objects
   exposeQObject(dev, g1);
   exposeQObject(dev, g2);
 
+  // Manually expose another object
   // Add a corresponding parameter
   Parameter p;
   p.destination = "/label/value";

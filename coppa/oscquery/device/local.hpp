@@ -103,22 +103,17 @@ class LocalDevice
     {1234,
       [&] (const osc::ReceivedMessage& m)
       {
-        std::cerr << "0" << std::endl;
         if(map().has(m.AddressPattern()))
         {
           update(m.AddressPattern(),
           [&] (Parameter& v)
           {
-            std::cerr << m.AddressPattern() << std::endl;
-            std::cerr << "msg count: " << m.ArgumentCount() << std::endl;
-            std::cerr << "val count: " << v.values.size() << std::endl;
             auto stream = m.ArgumentStream();
             for(int i = 0; i < m.ArgumentCount(); i++)
             {
               // Note : how to handle mismatch between received osc messages
               // and the structure of the tree ?
 
-              std::cerr << "2" << std::endl;
               // TODO assert correct number of args
               auto& elt = v.values[i];
               switch(elt.which())
