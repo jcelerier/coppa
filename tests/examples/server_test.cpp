@@ -10,9 +10,6 @@ int main()
   SynchronizingLocalDevice<coppa::WebSocketServer, coppa::oscquery::Answerer> dev;
   setup_basic_map(dev.map());
 
-  std::cerr << "Size: " << dev.map().size() << std::endl;
-
-
   std::mutex test_mutex;
 
   // A thread that will periodically update a value.

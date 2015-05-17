@@ -47,11 +47,11 @@ class LocalDevice
       m_map.remove(path);
     }
 
-    template<typename Attribute>
-    void update(const std::string& path, const Attribute& val)
+    template<typename Arg>
+    void update(const std::string& path, Arg&& val)
     {
       std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.update(path, [=] (Parameter& p) { static_cast<Attribute&>(p) = val; });
+      m_map.update(path, val);
     }
 
     void rename(std::string oldPath, std::string newPath)
@@ -67,6 +67,8 @@ class LocalDevice
 
     void expose()
     { m_server.run(); }
+
+    auto& receiver() { return m_receiver; }
 
   private:
     OscReceiver m_receiver{1234};
@@ -112,11 +114,30 @@ class SynchronizingLocalDevice
 {
   private:
     LocalDevice<QueryServer, QueryAnswerer> m_device;
+/*
+    void update_impl(const std::string& path)
+    {
+    }
 
+    template<typename Attribute>
+    void update_impl(const std::string& path, const Attribute& attr)
+    {
+      m_device.update(path, attr);
+    }
+
+    template<typename Attribute, typename... Attributes>
+    void update_impl(const std::string& path, const Attribute& attr, Attributes&&... val)
+    {
+      m_device.update(path, attr);
+      update_impl(path, std::forward<Attributes>(val)...);
+    }
+*/
   public:
     SynchronizingLocalDevice()
     {
     }
+
+    auto& device() { return m_device; }
 
     void add(const Parameter& parameter)
     {
@@ -138,14 +159,6 @@ class SynchronizingLocalDevice
       {
         m_device.server().sendMessage(client, message);
       }
-    }
-
-
-    template<typename Attribute, typename... Attributes>
-    void update(const std::string& path, const Attribute& attr, Attributes&&... val)
-    {
-      m_device.update(path, attr);
-      update(path, std::forward<Attributes>(val)...);
     }
 
     template<typename... Attributes>

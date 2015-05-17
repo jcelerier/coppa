@@ -56,3 +56,15 @@ add_executable(test_json_writer "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/wr
 set_coppa_properties(test_json_writer)
 add_executable(test_json_parser "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/parser.cpp")
 set_coppa_properties(test_json_parser)
+
+# Qt examples
+find_package(Qt5 5.2 REQUIRED COMPONENTS Core Widgets Gui Multimedia )
+if(Qt5_FOUND)
+  set(CMAKE_AUTOMOC ON)
+  include_directories(.)
+
+  add_executable(qt_expose_object "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/qt/qt_expose_object.cpp")
+  set_coppa_properties(qt_expose_object)
+  target_link_libraries(qt_expose_object Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Multimedia)
+endif()
+

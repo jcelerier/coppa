@@ -1,6 +1,15 @@
 #pragma once
 #include <coppa/oscquery/parameter.hpp>
+#include <type_traits>
 
+// Found on stackoverflow
+template<typename T, typename = void>
+struct is_callable : std::is_function<T> { };
+
+template<typename T>
+struct is_callable<T, typename std::enable_if<
+    std::is_same<decltype(void(&T::operator())), void>::value
+    >::type> : std::true_type { };
 
 namespace coppa
 {
@@ -19,6 +28,27 @@ class SimpleParameterMap
       root.destination = std::string("/");
       root.accessmode = Access::Mode::None;
       return root;
+    }
+
+    auto make_update_fun()
+    {
+      return [] (auto&& ) { };
+    }
+    template<typename Arg>
+    auto make_update_fun(Arg&& arg)
+    {
+      return [&] (auto&& p) {
+        static_cast<Arg&&>(p) = arg;
+      };
+    }
+
+    template<typename Arg, typename... Args>
+    auto make_update_fun(Arg&& arg, Args&&... args)
+    {
+      return [&] (auto&& p) {
+        make_update_fun(std::forward<Args>(args)...)(p);
+        static_cast<Arg&&>(p) = arg;
+      };
     }
 
   public:
@@ -73,12 +103,25 @@ class SimpleParameterMap
     auto end() const
     { return m_map.end(); }
 
-    template<typename Key, typename Updater>
+
+    template<typename Key,
+             typename Updater,
+             typename std::enable_if<is_callable<Updater>::value>::type* = nullptr>
     auto update(Key&& address, Updater&& updater)
     {
       auto& param_index = m_map.template get<0>();
       decltype(auto) param = param_index.find(address);
-      param_index.modify(param, updater);
+      param_index.modify(param, std::forward<Updater>(updater));
+    }
+
+    template<typename Key,
+             typename... Args,
+             typename std::enable_if<not is_callable<Args...>::value>::type* = nullptr>
+    auto update(Key&& address, Args&&... args)
+    {
+      auto& param_index = m_map.template get<0>();
+      decltype(auto) param = param_index.find(address);
+      param_index.modify(param, make_update_fun(std::forward<Args>(args)...));
     }
 
     template<typename Element>
@@ -86,6 +129,7 @@ class SimpleParameterMap
     {
       update(replacement.destination, [&] (Element& e) { e = replacement; });
     }
+
 
     template<typename Element>
     auto add(Element&& e)

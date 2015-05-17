@@ -8,6 +8,8 @@
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
+
+#include <type_traits>
 namespace coppa
 {
 // We make maps on parameter with a destination
@@ -99,12 +101,13 @@ class LockedParameterMap
       return m_map.get(address);
     }
 
-    template<typename Key, typename Updater>
-    void update(Key&& address, Updater&& updater)
+    template<typename... Args>
+    void update(Args&&... args)
     {
       std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.update(address, updater);
+      m_map.update(std::forward<Args>(args)...);
     }
+
 
     template<typename Element>
     void add(Element&& e)
