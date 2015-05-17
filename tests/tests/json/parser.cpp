@@ -329,8 +329,21 @@ TEST_CASE( "path_changed parsing", "[parser]" ) {
       THEN( "the path has changed" ) {
         REQUIRE(map.has("/da/da") == true);
         REQUIRE(map.get("/da/da").values.front().which() == 1); // It's a float
+      }
+    }
 
+    WHEN( "Nodes are removed" ) {
+      parser::path_changed(
+            map,
+            "{ \"path_changed\" : { \"full_path\" : \"\\/da\" } }");
 
+      THEN( "the capacity does change" ) {
+        REQUIRE( map.size() == 4 ); // -2 +1
+      }
+      THEN( "the map has changed" ) {
+        REQUIRE(map.has("/da") == true);
+        REQUIRE(map.has("/da/da") == false);
+        REQUIRE(map.has("/da/do") == false);
       }
     }
   }
