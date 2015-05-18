@@ -24,17 +24,26 @@ class parser
     {
       using namespace detail;
       const json_map obj{ message };
-      if(obj.find(Key::osc_port()) != obj.end())     return MessageType::Device;
+      if(obj.find(Key::osc_port()) != obj.end())
+        return MessageType::Device;
 
-      else if(obj.find(Key::path_added()) != obj.end())   return MessageType::PathAdded;
-      else if(obj.find(Key::path_removed()) != obj.end()) return MessageType::PathRemoved;
-      else if(obj.find(Key::path_changed()) != obj.end()) return MessageType::PathChanged;
-      else if(obj.find(Key::attributes_changed()) != obj.end()) return MessageType::AttributesChanged;
+      else if(obj.find(Key::path_added()) != obj.end())
+        return MessageType::PathAdded;
+      else if(obj.find(Key::path_removed()) != obj.end())
+        return MessageType::PathRemoved;
+      else if(obj.find(Key::path_changed()) != obj.end())
+        return MessageType::PathChanged;
+      else if(obj.find(Key::attributes_changed()) != obj.end())
+        return MessageType::AttributesChanged;
 
-      else if(obj.find(Key::paths_added()) != obj.end())   return MessageType::PathsAdded;
-      else if(obj.find(Key::paths_removed()) != obj.end()) return MessageType::PathsRemoved;
-      else if(obj.find(Key::paths_changed()) != obj.end()) return MessageType::PathsChanged;
-      else if(obj.find(Key::attributes_changed_array()) != obj.end()) return MessageType::AttributesChangedArray;
+      else if(obj.find(Key::paths_added()) != obj.end())
+        return MessageType::PathsAdded;
+      else if(obj.find(Key::paths_removed()) != obj.end())
+        return MessageType::PathsRemoved;
+      else if(obj.find(Key::paths_changed()) != obj.end())
+        return MessageType::PathsChanged;
+      else if(obj.find(Key::attributes_changed_array()) != obj.end())
+        return MessageType::AttributesChangedArray;
 
       else return MessageType::Namespace; // TODO More checks needed
     }
@@ -116,6 +125,7 @@ class parser
         };
 
         // 2. Map the values
+        // TODO check that they are correct (and put in detail).
         mapper(Key::attribute<Description>(), &Parameter::description, &valToString);
         mapper(Key::attribute<Tags>(),        &Parameter::tags,        &jsonToTags);
         mapper(Key::attribute<Access>(),      &Parameter::accessmode,  &jsonToAccessMode);
