@@ -17,7 +17,10 @@ namespace JSON
 using val_t = json_value::type;
 
 static void json_assert(bool val)
-{ if(!val) throw BadRequestException{}; }
+{
+    if(!val)
+        throw BadRequestException{};
+}
 
 namespace detail
 {
@@ -197,6 +200,12 @@ static void readObject(Map& map, const json_map& obj)
         json_assert(p.values.size() == type_vec.size());
         for(int i = 0; i < p.values.size(); i++)
         {
+          // Bad parse of a float as an
+          if(type_vec[i] == 1 && p.values[i].which() == 0)
+          {
+             p.values[i] = float(eggs::variants::get<int>(p.values[i]));
+          }
+
           json_assert(p.values[i].which() == type_vec[i]);
         }
       }
