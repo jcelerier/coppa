@@ -63,6 +63,7 @@ namespace osc
                         }
                     }
                 }
+                p << osc::EndMessage << osc::EndBundle;
 
                 return p;
             }

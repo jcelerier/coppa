@@ -24,8 +24,9 @@ QString computeObjectPath(QObject* obj)
   return "/" + names.join("/");
 }
 
+#include "ThreadManager.hpp"
 template<typename Device>
-void exposeQObject(Device& dev, QObject* obj)
+void exposeQObject(Device& dev, QObject* obj, ThreadManager* mgr)
 {
   auto path = computeObjectPath(obj).toStdString();
 
@@ -58,21 +59,20 @@ void exposeQObject(Device& dev, QObject* obj)
     //Connect the changes of parameters with Qt.
     dev.addHandler(
           p.destination,
-          [&, wrapper = QPointer<QObject>(obj)] (const Parameter& p) {
+          [&, mgr, wrapper = QPointer<QObject>(obj)] (const Parameter& p) {
       if(!wrapper)
       {
         dev.removeHandler(p.destination);
         return;
       }
-
       auto& elt = p.values.front();
       switch(elt.which())
       {
         case 0:
-          wrapper->setProperty(p.description.c_str(), eggs::variants::get<int>(elt));
+          mgr->setPropAsync(wrapper, QString::fromStdString(p.description), eggs::variants::get<int>(elt));
           break;
         case 1:
-          wrapper->setProperty(p.description.c_str(), eggs::variants::get<float>(elt));
+          mgr->setPropAsync(wrapper, QString::fromStdString(p.description), eggs::variants::get<float>(elt));
           break;
           //case 2: array.add(get<bool>(val)); break;
         case 3:
@@ -84,15 +84,32 @@ void exposeQObject(Device& dev, QObject* obj)
       }
     });
   }
-
 }
 
 #include <QFrame>
 #include <QLabel>
+#include <QGraphicsObject>
+
+class SomeObject : public QGraphicsObject
+{
+    public:
+        virtual QRectF boundingRect() const
+        {
+            return {0, 0, 50, 50};
+        }
+
+        virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+        {
+            painter->setPen(Qt::black);
+            painter->drawRect(boundingRect());
+        }
+};
+
 int main(int argc, char** argv)
 {
   // Set-up Qt stuff
   QApplication app{argc, argv};
+  qRegisterMetaType<QPointer<QObject>>();
   auto window = new QMainWindow;
   auto widget = new QWidget;
   window->setCentralWidget(widget);
@@ -109,16 +126,31 @@ int main(int argc, char** argv)
   g1->setObjectName("laPampa");
   g1->setLayout(new QHBoxLayout);
   auto g2 = new QLabel(g1);
+  g2->setText("A text");
   g2->setObjectName("mammamia");
   layout->addWidget(g1);
   g1->layout()->addWidget(g2);
 
+  auto g3 = new SomeObject;
+  g3->setObjectName("GraphicsSquare");
+  QGraphicsScene* s = new QGraphicsScene;
+  s->addItem(g3);
+
+  //g3->setPos(0, 0);
+  g3->setPos(100, 100);
+  g3->setRotation(45);
+  QGraphicsView* v = new QGraphicsView(s);
+  v->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  g1->layout()->addWidget(v);
+
+  ThreadManager* mgr = new ThreadManager;
   // Set-up coppa
   SynchronizingLocalDevice<WebSocketServer, Answerer> dev;
 
   // Automatically expose some objects
-  exposeQObject(dev, g1);
-  exposeQObject(dev, g2);
+  exposeQObject(dev, g1, mgr);
+  exposeQObject(dev, g2, mgr);
+  exposeQObject(dev, g3, mgr);
 
   // Manually expose another object
   // Add a corresponding parameter

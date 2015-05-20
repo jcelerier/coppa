@@ -23,11 +23,6 @@ class OscSender
         OscSender(OscSender&&) = default;
         OscSender(const OscSender&) = delete;
 
-        void send(const osc::OutboundPacketStream& m)
-        {
-            m_socket->Send( m.Data(), m.Size() );
-        }
-
         template<typename... Args>
         void send(std::string address, Args&&... args)
         {
@@ -38,6 +33,11 @@ class OscSender
         int port() const { return m_port; }
 
     private:
+        void send(const osc::OutboundPacketStream& m)
+        {
+            m_socket->Send( m.Data(), m.Size() );
+        }
+
         std::shared_ptr<UdpTransmitSocket> m_socket;
         std::string m_ip;
         int m_port;

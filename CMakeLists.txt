@@ -6,10 +6,6 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(Threads REQUIRED)
 add_subdirectory(oscpack)
 
-if(${CMAKE_MINOR_VERSION} LESS 1)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-endif()
-
 option(OPTIMIZED "Heavily optimized build" FALSE)
 
 if(OPTIMIZED)
@@ -18,8 +14,6 @@ endif()
 # Show the includes in IDEs
 file(GLOB_RECURSE COPPA_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/coppa/*.hpp")
 add_custom_target(coppa_headers SOURCES ${COPPA_HEADERS})
-
-
 
 add_library(coppa INTERFACE)
 target_include_directories(coppa INTERFACE
@@ -56,7 +50,7 @@ if(Qt5_FOUND)
   set(CMAKE_AUTOMOC ON)
   include_directories(.)
 
-  add_executable(qt_expose_object "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/qt/qt_expose_object.cpp")
+  add_executable(qt_expose_object "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/qt/qt_expose_object.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/qt/ThreadManager.cpp")
   target_link_libraries(qt_expose_object coppa)
   target_link_libraries(qt_expose_object Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Multimedia)
 
