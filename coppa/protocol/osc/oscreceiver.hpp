@@ -14,7 +14,7 @@ namespace osc
 class receiver
 {
   public:
-    using message_handler = std::function<void(const ::oscpack::ReceivedMessage&)>;
+    using message_handler = std::function<void(const oscpack::ReceivedMessage&)>;
 
     receiver(unsigned int port, message_handler&& msg):
       m_impl{std::move(msg)}
@@ -67,7 +67,7 @@ class receiver
   private:
     unsigned int m_port = 0;
     std::shared_ptr<UdpListeningReceiveSocket> m_socket;
-    class Impl: public ::oscpack::OscPacketListener
+    class Impl: public oscpack::OscPacketListener
     {
       public:
         Impl(message_handler&& msg):
@@ -76,7 +76,7 @@ class receiver
         }
 
       protected:
-        virtual void ProcessMessage(const ::oscpack::ReceivedMessage& m,
+        virtual void ProcessMessage(const oscpack::ReceivedMessage& m,
                                     const IpEndpointName& ip) override
         {
           try

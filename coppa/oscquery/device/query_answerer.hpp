@@ -11,7 +11,7 @@ namespace oscquery {
  *
  * OSCQuery query-answering logic.
  */
-class RequestAnswerer
+class answerer
 {
   public:
     template<typename Device>

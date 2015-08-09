@@ -45,6 +45,7 @@ class SimpleParameterMap
   public:
     using base_map_type = Map;
     using size_type = typename Map::size_type;
+    using value_type = typename base_map_type::value_type;
 
     constexpr SimpleParameterMap()
     { add(makeRootNode()); }

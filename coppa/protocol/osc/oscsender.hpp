@@ -29,14 +29,14 @@ class sender
     template<typename... Args>
     void send(std::string address, Args&&... args)
     {
-      send(::oscpack::MessageGenerator<>()(address, std::forward<Args>(args)...));
+      send(oscpack::MessageGenerator<>()(address, std::forward<Args>(args)...));
     }
 
     const std::string& ip() const { return m_ip; }
     int port() const { return m_port; }
 
   private:
-    void send(const ::oscpack::OutboundPacketStream& m)
+    void send(const oscpack::OutboundPacketStream& m)
     {
       m_socket->Send( m.Data(), m.Size() );
     }

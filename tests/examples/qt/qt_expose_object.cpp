@@ -162,12 +162,7 @@ int main(int argc, char** argv)
 
   ThreadManager* mgr = new ThreadManager;
   // Set-up coppa
-  SynchronizingLocalDevice<
-      WebSocketServer,
-      RequestAnswerer,
-      JSON::writer,
-      coppa::osc::receiver,
-      coppa::osc::message_handler> dev;
+  synchronizing_local_device dev;
 
   // Automatically expose some objects
   exposeQObject(dev, g1, mgr);

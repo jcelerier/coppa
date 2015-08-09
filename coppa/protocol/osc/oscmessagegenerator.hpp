@@ -34,8 +34,8 @@ class MessageGenerator
       using namespace eggs::variants;
       using namespace coppa;
       p.Clear();
-      p << ::oscpack::BeginBundleImmediate
-        << ::oscpack::BeginMessage( name.c_str() );
+      p << oscpack::BeginBundleImmediate
+        << oscpack::BeginMessage( name.c_str() );
       for(const auto& val : values)
       {
         switch((coppa::Type)val.which())
@@ -55,7 +55,7 @@ class MessageGenerator
           case Type::generic_t:
           {
             const char* str = get<const char*>(val);
-            ::oscpack::Blob b(str, std::strlen(str)); // todo : use Generic instead and convert to hex / base64
+            oscpack::Blob b(str, std::strlen(str)); // todo : use Generic instead and convert to hex / base64
             p << b;
             break;
           }
@@ -63,13 +63,13 @@ class MessageGenerator
             break;
         }
       }
-      p << ::oscpack::EndMessage
-        << ::oscpack::EndBundle;
+      p << oscpack::EndMessage
+        << oscpack::EndBundle;
 
       return p;
     }
 
-    const ::oscpack::OutboundPacketStream& stream() const
+    const oscpack::OutboundPacketStream& stream() const
     {
       return p;
     }
@@ -77,7 +77,7 @@ class MessageGenerator
   private:
     void subfunc()
     {
-      p << ::oscpack::EndMessage << ::oscpack::EndBundle;
+      p << oscpack::EndMessage << oscpack::EndBundle;
     }
 
     template <typename Arg1, typename... Args>
@@ -88,6 +88,6 @@ class MessageGenerator
     }
 
     std::array<char, BufferSize> buffer;
-    ::oscpack::OutboundPacketStream p{::oscpack::OutboundPacketStream(buffer.data(), buffer.size())};
+    oscpack::OutboundPacketStream p{oscpack::OutboundPacketStream(buffer.data(), buffer.size())};
 };
 }

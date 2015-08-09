@@ -1,3 +1,4 @@
+#include <coppa/device/local.hpp>
 #include <coppa/oscquery/device/local.hpp>
 #include <coppa/protocol/websockets/server.hpp>
 #include <chrono>
@@ -24,11 +25,7 @@ int main()
     using namespace coppa::oscquery;
 
     // Create a device
-    LocalDevice<coppa::WebSocketServer,
-        coppa::oscquery::RequestAnswerer,
-        coppa::oscquery::JSON::writer,
-        coppa::osc::receiver,
-        coppa::osc::message_handler> dev;
+    local_device dev;
 
     // A thread that will periodically add a parameter.
     std::thread parameterAddThread([&] ()

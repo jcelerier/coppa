@@ -10,13 +10,13 @@ namespace coppa
 namespace oscquery
 {
    /**
-   * @brief The QueryParser class
+   * @brief The query_parser class
    *
    * Parse OSCQUery queries.
    * The queries are similar to the GET part of an http request.
    * i.e. /a/b?value, etc...
    */
-  class QueryParser
+  class query_parser
   {
     public:
       template<typename Mapper>

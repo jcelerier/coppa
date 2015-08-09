@@ -48,6 +48,7 @@ class LockedParameterMap
 
   public:
     using base_map_type = typename Map::base_map_type;
+    using value_type = typename base_map_type::value_type;
     constexpr LockedParameterMap() = default;
 
     operator const Map&() const
