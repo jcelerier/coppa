@@ -15,34 +15,34 @@ class parser
     {
       using namespace detail;
       const json_map obj{ message };
-      json_assert(obj.get(Key::osc_port()).is(val_t::integer));
+      json_assert(obj.get(key::osc_port()).is(val_t::integer));
 
-      return obj.get<int>(Key::osc_port());
+      return obj.get<int>(key::osc_port());
     }
 
     static MessageType messageType(const std::string& message)
     {
       using namespace detail;
       const json_map obj{ message };
-      if(obj.find(Key::osc_port()) != obj.end())
+      if(obj.find(key::osc_port()) != obj.end())
         return MessageType::Device;
 
-      else if(obj.find(Key::path_added()) != obj.end())
+      else if(obj.find(key::path_added()) != obj.end())
         return MessageType::PathAdded;
-      else if(obj.find(Key::path_removed()) != obj.end())
+      else if(obj.find(key::path_removed()) != obj.end())
         return MessageType::PathRemoved;
-      else if(obj.find(Key::path_changed()) != obj.end())
+      else if(obj.find(key::path_changed()) != obj.end())
         return MessageType::PathChanged;
-      else if(obj.find(Key::attributes_changed()) != obj.end())
+      else if(obj.find(key::attributes_changed()) != obj.end())
         return MessageType::AttributesChanged;
 
-      else if(obj.find(Key::paths_added()) != obj.end())
+      else if(obj.find(key::paths_added()) != obj.end())
         return MessageType::PathsAdded;
-      else if(obj.find(Key::paths_removed()) != obj.end())
+      else if(obj.find(key::paths_removed()) != obj.end())
         return MessageType::PathsRemoved;
-      else if(obj.find(Key::paths_changed()) != obj.end())
+      else if(obj.find(key::paths_changed()) != obj.end())
         return MessageType::PathsChanged;
-      else if(obj.find(Key::attributes_changed_array()) != obj.end())
+      else if(obj.find(key::attributes_changed_array()) != obj.end())
         return MessageType::AttributesChangedArray;
 
       else return MessageType::Namespace; // TODO More checks needed
@@ -72,7 +72,7 @@ class parser
     {
       using namespace detail;
       json_map obj{message};
-      map.merge(parseNamespace<BaseMapType>(obj.get<json_map>(Key::path_added())));
+      map.merge(parseNamespace<BaseMapType>(obj.get<json_map>(key::path_added())));
     }
 
     template<typename Map>
@@ -82,10 +82,10 @@ class parser
       json_map mess{message};
 
       // Get the object
-      const auto& obj = mess.get<json_map>(Key::path_changed());
+      const auto& obj = mess.get<json_map>(key::path_changed());
 
       // 2. Remove the existing path
-      map.remove(valToString(obj.get(Key::full_path())));
+      map.remove(valToString(obj.get(key::full_path())));
 
       // 3. Replace it
       readObject(map, obj);
@@ -97,7 +97,7 @@ class parser
       using namespace detail;
       json_map obj{message};
 
-      const auto& path = valToString(obj.get(Key::path_removed()));
+      const auto& path = valToString(obj.get(key::path_removed()));
       json_assert(map.existing_path(path));
       map.remove(path);
     }
@@ -107,7 +107,7 @@ class parser
     {
       using namespace detail;
       json_map obj{message};
-      const auto& attr_changed = obj.get<json_map>(Key::attributes_changed());
+      const auto& attr_changed = obj.get<json_map>(key::attributes_changed());
 
       // 1. Search for the paths
       for(const auto& path : attr_changed.get_keys())
@@ -126,12 +126,12 @@ class parser
 
         // 2. Map the values
         // TODO check that they are correct (and put in detail).
-        mapper(Key::attribute<Description>(), &Parameter::description, &valToString);
-        mapper(Key::attribute<Tags>(),        &Parameter::tags,        &jsonToTags);
-        mapper(Key::attribute<Access>(),      &Parameter::accessmode,  &jsonToAccessMode);
-        mapper(Key::attribute<Values>(),      &Parameter::values,      &jsonToVariantArray);
-        mapper(Key::attribute<Ranges>(),      &Parameter::ranges,      &jsonToRangeArray);
-        mapper(Key::attribute<ClipModes>(),   &Parameter::clipmodes,   &jsonToClipModeArray);
+        mapper(key::attribute<Description>(), &Parameter::description, &valToString);
+        mapper(key::attribute<Tags>(),        &Parameter::tags,        &jsonToTags);
+        mapper(key::attribute<Access>(),      &Parameter::accessmode,  &jsonToAccessMode);
+        mapper(key::attribute<Values>(),      &Parameter::values,      &jsonToVariantArray);
+        mapper(key::attribute<Ranges>(),      &Parameter::ranges,      &jsonToRangeArray);
+        mapper(key::attribute<ClipModes>(),   &Parameter::clipmodes,   &jsonToClipModeArray);
       }
     }
 

@@ -11,12 +11,12 @@ namespace coppa
 {
 namespace oscquery
 {
-
+// Maybe a better name would be "mirror" ?
 class RemoteDevice : public QueryRemoteDevice<
     SimpleParameterMap<ParameterMap>,
     JSON::parser,
     RemoteQueryClient<WebSocketClient, JSON::parser>,
-    SettableMap<SimpleParameterMap<ParameterMap>, OscSender>>
+    SettableMap<SimpleParameterMap<ParameterMap>, osc::sender>>
 {
   public:
     using QueryRemoteDevice::QueryRemoteDevice;

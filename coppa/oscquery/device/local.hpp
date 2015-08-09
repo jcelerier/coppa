@@ -13,10 +13,65 @@
 #include <coppa/oscquery/device/queryanswerer.hpp>
 namespace coppa
 {
+namespace osc
+{
+class message_handler : public coppa::osc::receiver
+{
+  public:
+    template<typename Device>
+    static void on_messageReceived(Device& dev, const ::oscpack::ReceivedMessage& m)
+    {
+      using namespace coppa;
+
+      if(dev.map().has(m.AddressPattern()))
+      {
+        dev.update(
+              m.AddressPattern(),
+              [&] (auto& v) {
+          int i = 0;
+          for(auto it = m.ArgumentsBegin(); it != m.ArgumentsEnd(); ++it, ++i)
+          {
+            // Note : how to handle mismatch between received osc messages
+            // and the structure of the tree ?
+
+            // TODO assert correct number of args
+            auto& elt = v.values[i];
+            switch((coppa::Type)elt.which())
+            {
+              case Type::int_t:
+                elt = it->AsInt32();
+                break;
+              case Type::float_t:
+                elt = it->AsFloat();
+                break;
+              case Type::bool_t:
+                elt = it->AsBool();
+                break;
+              case Type::string_t:
+                elt = std::string(it->AsString());
+                break;
+                //  TODO case Type::generic_t: array.add(get<const char*>(val)); break;
+
+              default:
+                break;
+            }
+          }
+        });
+      }
+    }
+};
+
+}
+}
+namespace coppa
+{
 namespace oscquery
 {
 template<typename QueryServer,
-         typename QueryAnswerer>
+         typename QueryAnswerer,
+         typename Writer,
+         typename DataServer,
+         typename DataHandler>
 class LocalDevice
 {
   public:
@@ -99,40 +154,9 @@ class LocalDevice
     auto& receiver() { return m_receiver; }
 
   private:
-    OscReceiver m_receiver
-    {1234,
-      [&] (const osc::ReceivedMessage& m)
-      {
-        if(map().has(m.AddressPattern()))
-        {
-          update(m.AddressPattern(),
-          [&] (Parameter& v)
-          {
-            auto stream = m.ArgumentStream();
-            for(int i = 0; i < m.ArgumentCount(); i++)
-            {
-              // Note : how to handle mismatch between received osc messages
-              // and the structure of the tree ?
-
-              // TODO assert correct number of args
-              auto& elt = v.values[i];
-              switch(elt.which())
-              {
-                case 0: stream >> eggs::variants::get<int>(elt); break;
-                case 1: stream >> eggs::variants::get<float>(elt); break;
-                  //case 2: array.add(get<bool>(val)); break;
-                case 3:
-                  osc::Symbol s;
-                  stream >> s;
-                  std::string s2(s);
-                  elt = s2;
-                  break;
-                  //case 4: array.add(get<const char*>(val)); break;
-              }
-            }
-          });
-        }
-      }
+    DataServer m_receiver{
+      1234,
+      [&] (const auto& m) { DataHandler::on_messageReceived(*this, m); }
     };
 
     mutable std::mutex m_map_mutex;
@@ -148,7 +172,7 @@ class LocalDevice
         m_clients.emplace_back(hdl);
 
         // Send the client a message with the OSC port
-        m_server.sendMessage(hdl, JSON::writer::deviceInfo(m_receiver.port()));
+        m_server.sendMessage(hdl, Writer::deviceInfo(m_receiver.port()));
       },
       // Close handler
       [&] (typename QueryServer::connection_handler hdl)
@@ -173,11 +197,15 @@ class LocalDevice
 // Automatically synchronizes its changes with the client.
 // Note : put somewhere if the client wants to be synchronized
 // Note : be careful with the locking too, here
-template<typename QueryServer, typename QueryAnswerer>
+template<typename QueryServer,
+         typename QueryAnswerer,
+         typename Writer,
+         typename DataServer,
+         typename DataHandler>
 class SynchronizingLocalDevice
 {
   private:
-    LocalDevice<QueryServer, QueryAnswerer> m_device;
+    LocalDevice<QueryServer, QueryAnswerer, Writer, DataServer, DataHandler> m_device;
 
   public:
     SynchronizingLocalDevice()
@@ -197,7 +225,7 @@ class SynchronizingLocalDevice
     {
       m_device.add(parameter);
 
-      auto message = JSON::writer::path_added(
+      auto message = Writer::path_added(
                        m_device.map().unsafeMap(),
                        parameter.destination);
       for(auto& client : m_device.clients())
@@ -210,7 +238,7 @@ class SynchronizingLocalDevice
     {
       m_device.remove(path);
 
-      auto message = JSON::writer::path_removed(path);
+      auto message = Writer::path_removed(path);
       for(auto& client : m_device.clients())
       {
         m_device.server().sendMessage(client, message);
@@ -222,7 +250,7 @@ class SynchronizingLocalDevice
     {
       m_device.update_attributes(path, std::forward<Attributes>(val)...);
 
-      auto message = JSON::writer::attributes_changed(
+      auto message = Writer::attributes_changed(
                        path, std::forward<Attributes>(val)...);
       for(auto& client : m_device.clients())
       {

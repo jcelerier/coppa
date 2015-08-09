@@ -2,11 +2,18 @@
 #include <coppa/oscquery/device/local.hpp>
 #include <coppa/protocol/websockets/server.hpp>
 
+#include <QDebug>
 #include <QPointer>
+#include "ThreadManager.hpp"
 using namespace coppa;
 using namespace coppa::oscquery;
 
-#include <QDebug>
+/**
+ * @brief computeObjectPath Path of an object
+ * @param obj a QObject in a named object tree.
+ *
+ * @return The path of the QObject from the first object that does not have a objectName.
+ */
 QString computeObjectPath(QObject* obj)
 {
   QStringList names;
@@ -24,8 +31,13 @@ QString computeObjectPath(QObject* obj)
   return "/" + names.join("/");
 }
 
-#include "ThreadManager.hpp"
 template<typename Device>
+/**
+ * @brief exposeQObject Exposes a QObject over a query server
+ * @param dev A query server device
+ * @param obj The object to expose
+ * @param mgr Handles thread-safety for Qt
+ */
 void exposeQObject(Device& dev, QObject* obj, ThreadManager* mgr)
 {
   auto path = computeObjectPath(obj).toStdString();
@@ -56,7 +68,7 @@ void exposeQObject(Device& dev, QObject* obj, ThreadManager* mgr)
 
     dev.add(p);
 
-    //Connect the changes of parameters with Qt.
+    // Connect the changes of parameters with Qt.
     dev.addHandler(
           p.destination,
           [&, mgr, wrapper = QPointer<QObject>(obj)] (const Parameter& p) {
@@ -89,7 +101,11 @@ void exposeQObject(Device& dev, QObject* obj, ThreadManager* mgr)
 #include <QFrame>
 #include <QLabel>
 #include <QGraphicsObject>
-
+/**
+ * @brief The SomeObject class
+ *
+ * A simple graphics square.
+ */
 class SomeObject : public QGraphicsObject
 {
     public:
@@ -122,6 +138,7 @@ int main(int argc, char** argv)
 
   window->show();
 
+  // Create the objects that we will expose.
   auto g1 = new QFrame;
   g1->setObjectName("laPampa");
   g1->setLayout(new QHBoxLayout);
@@ -145,7 +162,12 @@ int main(int argc, char** argv)
 
   ThreadManager* mgr = new ThreadManager;
   // Set-up coppa
-  SynchronizingLocalDevice<WebSocketServer, Answerer> dev;
+  SynchronizingLocalDevice<
+      WebSocketServer,
+      RequestAnswerer,
+      JSON::writer,
+      coppa::osc::receiver,
+      coppa::osc::message_handler> dev;
 
   // Automatically expose some objects
   exposeQObject(dev, g1, mgr);
@@ -164,7 +186,7 @@ int main(int argc, char** argv)
 
   dev.add(p);
 
-  // Update the value from the gui.
+  // update the value from the gui.
   QObject::connect(pushbutton, &QPushButton::clicked,
                    [&] () {
     Values v;

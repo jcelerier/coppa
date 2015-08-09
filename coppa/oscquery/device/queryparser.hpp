@@ -7,10 +7,17 @@
 
 namespace coppa
 {
+namespace oscquery
+{
+   /**
+   * @brief The QueryParser class
+   *
+   * Parse OSCQUery queries.
+   * The queries are similar to the GET part of an http request.
+   * i.e. /a/b?value, etc...
+   */
   class QueryParser
   {
-      // The queries are similar to the GET part of an http request.
-      // i.e. /a/b?value, etc...
     public:
       template<typename Mapper>
       static std::string parse(const std::string& request, Mapper&& mapper)
@@ -35,7 +42,7 @@ namespace coppa
           vector<string> argument_tokens;
           split(argument_tokens, uri_tokens.at(1), is_any_of("&"));
 
-          // Finally, split these arguments at '=' at put them in a map
+          // Finally, split these arguments at '=' and put them in a map
           for(const auto& arg : argument_tokens)
           {
             vector<string> map_tokens;
@@ -60,4 +67,5 @@ namespace coppa
       }
 
   };
+}
 }

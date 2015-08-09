@@ -4,9 +4,14 @@
 #include <vector>
 #include <coppa/exceptions/BadRequest.hpp>
 
-namespace coppa { namespace oscquery {
-
-class Answerer
+namespace coppa {
+namespace oscquery {
+/**
+ * @brief The Answerer class
+ *
+ * OSCQuery query-answering logic.
+ */
+class RequestAnswerer
 {
   public:
     template<typename Device>
@@ -47,7 +52,7 @@ class Answerer
             }
             else
             {
-              throw BadRequestException{};
+              throw BadRequestException{"Wrong arguments to listen query"};
             }
           }
 

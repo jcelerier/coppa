@@ -165,10 +165,10 @@ template<typename Map>
 static void readObject(Map& map, const json_map& obj)
 {
   // If it's a real parameter
-  if(obj.find(Key::full_path()) != obj.end())
+  if(obj.find(key::full_path()) != obj.end())
   {
     Parameter p;
-    p.destination = valToString(obj.get(Key::full_path()));
+    p.destination = valToString(obj.get(key::full_path()));
 
     // To map non-mandatory elements
     auto mapper = [&] (const std::string& name, auto& member, auto&& method)
@@ -180,17 +180,17 @@ static void readObject(Map& map, const json_map& obj)
 
     // Note : clipmode : software that expects it should assume that no clipping will be performed
     // What about integer clipping ? should we use arbitrary precision math ??
-    mapper(Key::attribute<Description>(), p.description, &detail::valToString);
-    mapper(Key::attribute<Tags>(),        p.tags,        &detail::jsonToTags);
-    mapper(Key::attribute<Access>(),      p.accessmode , &detail::jsonToAccessMode);
+    mapper(key::attribute<Description>(), p.description, &detail::valToString);
+    mapper(key::attribute<Tags>(),        p.tags,        &detail::jsonToTags);
+    mapper(key::attribute<Access>(),      p.accessmode , &detail::jsonToAccessMode);
 
     // Types
-    auto type_it = obj.find(Key::type());
+    auto type_it = obj.find(key::type());
     if(type_it != obj.end())
     {
       auto type_vec = jsonToTypeVector(type_it->second);
 
-      auto val_it = obj.find(Key::attribute<Values>());
+      auto val_it = obj.find(key::attribute<Values>());
       // If there are values in the json
       if(val_it != obj.end())
       {
@@ -216,7 +216,7 @@ static void readObject(Map& map, const json_map& obj)
           addDefaultValue(p, type_vec[i]);
       }
 
-      auto range_it = obj.find(Key::attribute<Ranges>());
+      auto range_it = obj.find(key::attribute<Ranges>());
       if(range_it != obj.end())
       {
         p.ranges = jsonToRangeArray(range_it->second);
@@ -235,7 +235,7 @@ static void readObject(Map& map, const json_map& obj)
         }
       }
 
-      auto clipmode_it = obj.find(Key::attribute<ClipModes>());
+      auto clipmode_it = obj.find(key::attribute<ClipModes>());
       if(clipmode_it != obj.end())
       {
         p.clipmodes = jsonToClipModeArray(clipmode_it->second);
@@ -248,10 +248,10 @@ static void readObject(Map& map, const json_map& obj)
   }
 
   // Recurse on the children
-  if(obj.find(Key::contents()) != obj.end())
+  if(obj.find(key::contents()) != obj.end())
   {
     // contents is a json_map where each child is a key / json_map
-    for(const auto& val : valToMap(obj.get(Key::contents())).get_values())
+    for(const auto& val : valToMap(obj.get(key::contents())).get_values())
     {
       readObject(map, valToMap(val));
     }

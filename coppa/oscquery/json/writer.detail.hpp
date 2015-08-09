@@ -22,11 +22,11 @@ inline void addValueToJsonArray(
   using namespace eggs::variants;
   switch(val.which())
   {
-    case 0: array.add(get<int>(val)); break;
-    case 1: array.add(get<float>(val)); break;
-      //case 2: array.add(get<bool>(val)); break;
-    case 3: array.add(get<std::string>(val)); break;
-    case 4: array.add(get<const char*>(val)); break;
+    case 0: array.push_back(get<int>(val)); break;
+    case 1: array.push_back(get<float>(val)); break;
+      // TODO case 2: array.push_back(get<bool>(val)); break;
+    case 3: array.push_back(get<std::string>(val)); break;
+    case 4: array.push_back(get<const char*>(val)); break;
   }
 }
 
@@ -56,7 +56,7 @@ inline json_array getJsonClipModeArray(
   json_array clip_arr;
   for(const auto& clipmode : clipmodes.clipmodes)
   {
-    clip_arr.add(clipmodeMap.right.at(clipmode));
+    clip_arr.push_back(clipmodeMap.right.at(clipmode));
   }
 
   return clip_arr;
@@ -70,17 +70,17 @@ inline json_array getJsonRangeArray(
   {
     json_array range_subarray;
     if(!range.min)
-    { range_subarray.add(json_value::null_t{}); }
+    { range_subarray.push_back(json_value::null_t{}); }
     else
     { addValueToJsonArray(range_subarray, range.min); }
 
     if(!range.max)
-    { range_subarray.add(json_value::null_t{}); }
+    { range_subarray.push_back(json_value::null_t{}); }
     else
     { addValueToJsonArray(range_subarray, range.max); }
 
     if(range.values.empty())
-    { range_subarray.add(json_value::null_t{}); }
+    { range_subarray.push_back(json_value::null_t{}); }
     else
     {
       json_array range_values_array;
@@ -88,10 +88,10 @@ inline json_array getJsonRangeArray(
       {
         addValueToJsonArray(range_values_array, elt);
       }
-      range_subarray.add(range_values_array);
+      range_subarray.push_back(range_values_array);
     }
 
-    range_arr.add(range_subarray);
+    range_arr.push_back(range_subarray);
   }
 
   return range_arr;
@@ -103,7 +103,7 @@ inline json_array getJsonTags(
   json_array arr;
   for(const auto& tag : tags.tags)
   {
-    arr.add(tag);
+    arr.push_back(tag);
   }
 
   return arr;
@@ -120,7 +120,7 @@ inline std::string getJsonTypeString(
     {
       case 0: str_type += "i"; break;
       case 1: str_type += "f"; break;
-        // case 2: str_type += "B"; break; -> no bool
+        // TODO case 2: str_type += "B"; break; -> no bool
       case 3: str_type += "s"; break;
       case 4: str_type += "b"; break;
     }
@@ -142,21 +142,21 @@ inline auto attributeToJsonValue(
     const std::string& method
     )
 {
-  /**/ if(method == Key::attribute<Values>())
+  /**/ if(method == key::attribute<Values>())
   { return json_value(attributeToJson(static_cast<const Values&>(parameter))); }
-  else if(method == Key::attribute<Ranges>())
+  else if(method == key::attribute<Ranges>())
   { return json_value(attributeToJson(static_cast<const Ranges&>(parameter))); }
-  else if(method == Key::attribute<ClipModes>())
+  else if(method == key::attribute<ClipModes>())
   { return json_value(attributeToJson(static_cast<const ClipModes&>(parameter))); }
-  else if(method == Key::attribute<Access>())
+  else if(method == key::attribute<Access>())
   { return json_value(attributeToJson(static_cast<const Access&>(parameter))); }
-  else if(method == Key::type())
+  else if(method == key::type())
   { return json_value(getJsonTypeString(parameter)); }
-  else if(method == Key::attribute<Description>())
+  else if(method == key::attribute<Description>())
   { return json_value(attributeToJson(static_cast<const Description&>(parameter))); }
-  else if(method == Key::attribute<Tags>())
+  else if(method == key::attribute<Tags>())
   { return json_value(attributeToJson(static_cast<const Tags&>(parameter))); }
-  else if(method == Key::full_path())
+  else if(method == key::full_path())
   { return json_value(attributeToJson(static_cast<const Destination&>(parameter))); }
   else {
     throw BadRequestException{"Attribute not found"};
@@ -172,29 +172,29 @@ inline void parameterToJson(
   using namespace eggs::variants;
 
   // These attributes are always here
-  obj.set(Key::full_path(), parameter.destination);
-  obj.set(Key::attribute<Access>(), static_cast<int>(parameter.accessmode));
+  obj.set(key::full_path(), parameter.destination);
+  obj.set(key::attribute<Access>(), static_cast<int>(parameter.accessmode));
 
   // Potentially empty attributes :
   // Description
   if(!parameter.description.empty())
   {
-    obj.set(Key::attribute<Description>(), parameter.description);
+    obj.set(key::attribute<Description>(), parameter.description);
   }
 
   // Tags
   if(!parameter.tags.empty())
   {
-    obj.set(Key::attribute<Tags>(), getJsonTags(parameter));
+    obj.set(key::attribute<Tags>(), getJsonTags(parameter));
   }
 
   // Handling of the types / values
   if(!parameter.values.empty())
   {
-    obj.set(Key::type(), getJsonTypeString(parameter));
-    obj.set(Key::attribute<Values>(), getJsonValueArray(parameter));
-    obj.set(Key::attribute<Ranges>(), getJsonRangeArray(parameter));
-    obj.set(Key::attribute<ClipModes>(), getJsonClipModeArray(parameter));
+    obj.set(key::type(), getJsonTypeString(parameter));
+    obj.set(key::attribute<Values>(), getJsonValueArray(parameter));
+    obj.set(key::attribute<Ranges>(), getJsonRangeArray(parameter));
+    obj.set(key::attribute<ClipModes>(), getJsonClipModeArray(parameter));
   }
 }
 
@@ -213,7 +213,7 @@ json_map mapToJson(
   // Create a tree with the parameters
   for(const auto& parameter : filter(theMap, root))
   {
-    // Trunk the given root from the parameters
+    // Truncate the given root from the parameters
     auto trunked_dest = parameter.destination;
     if(root != "/")
       trunked_dest.erase(0, root.length());
@@ -226,10 +226,10 @@ json_map mapToJson(
     for(const auto& token : tokens)
     {
       // Note : see this in relation the osc method part of the spec
-      if(!current_map->has(Key::contents()))
-      { current_map->set(Key::contents(), json_map{}); }
+      if(!current_map->has(key::contents()))
+      { current_map->set(key::contents(), json_map{}); }
 
-      current_map = &current_map->get_for_path<json_map>(Key::contents());
+      current_map = &current_map->get_for_path<json_map>(key::contents());
 
       if(!current_map->has(token))
       { current_map->set(token, json_map{}); }

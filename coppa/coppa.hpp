@@ -66,5 +66,8 @@ class AttributeAggregate : public Args...
 };
 // Make an oscquery-specific Variant ?
 using Generic = const char*;
+
+enum class Type { int_t, float_t, bool_t, string_t, generic_t };
 using Variant = eggs::variant<int, float, bool, std::string, Generic>;
+
 }

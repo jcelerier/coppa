@@ -6,7 +6,7 @@
 #include <QDebug>
 int main(int argc, char** argv)
 {
-  OscSender s("127.0.0.1", 1234);
+  coppa::osc::sender s("127.0.0.1", 1234);
 
   float angle = 0;
   while(true)

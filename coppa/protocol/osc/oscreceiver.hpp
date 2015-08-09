@@ -7,18 +7,22 @@
 #include <functional>
 #include <iostream>
 
-class OscReceiver
+namespace coppa
+{
+namespace osc
+{
+class receiver
 {
   public:
-    using message_handler = std::function<void(const osc::ReceivedMessage&)>;
+    using message_handler = std::function<void(const ::oscpack::ReceivedMessage&)>;
 
-    OscReceiver(unsigned int port, message_handler&& msg):
+    receiver(unsigned int port, message_handler&& msg):
       m_impl{std::move(msg)}
     {
       setPort(port);
     }
 
-    ~OscReceiver()
+    ~receiver()
     {
       m_socket->AsynchronousBreak();
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -63,7 +67,7 @@ class OscReceiver
   private:
     unsigned int m_port = 0;
     std::shared_ptr<UdpListeningReceiveSocket> m_socket;
-    class Impl: public osc::OscPacketListener
+    class Impl: public ::oscpack::OscPacketListener
     {
       public:
         Impl(message_handler&& msg):
@@ -72,7 +76,7 @@ class OscReceiver
         }
 
       protected:
-        virtual void ProcessMessage(const osc::ReceivedMessage& m,
+        virtual void ProcessMessage(const ::oscpack::ReceivedMessage& m,
                                     const IpEndpointName& ip) override
         {
           try
@@ -92,3 +96,5 @@ class OscReceiver
 
     std::thread m_runThread;
 };
+}
+}

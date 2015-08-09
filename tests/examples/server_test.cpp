@@ -7,7 +7,12 @@ int main()
   using namespace coppa::oscquery;
 
   // Create a device
-  SynchronizingLocalDevice<coppa::WebSocketServer, coppa::oscquery::Answerer> dev;
+  SynchronizingLocalDevice<
+      coppa::WebSocketServer,
+      coppa::oscquery::RequestAnswerer,
+      coppa::oscquery::JSON::writer,
+      coppa::osc::receiver,
+      coppa::osc::message_handler> dev;
   setup_basic_map(dev.map());
 
   std::mutex test_mutex;

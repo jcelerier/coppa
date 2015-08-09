@@ -4,7 +4,9 @@ namespace coppa
 {
 namespace oscquery
 {
-namespace Key
+namespace JSON
+{
+namespace key
 {
 // Attributes
 constexpr const char* osc_port() { return "osc_port"; }
@@ -37,6 +39,6 @@ constexpr const char* paths_removed() { return "paths_removed"; }
 constexpr const char* paths_changed() { return "paths_changed"; }
 constexpr const char* attributes_changed_array() { return "attributes_changed_array"; }
 }
-
+}
 }
 }

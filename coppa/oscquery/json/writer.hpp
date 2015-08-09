@@ -8,12 +8,36 @@ namespace JSON
 {
 class writer
 {
+  private:
+    // The following three methods are here
+    // to make the attributes_changed message.
+    // End of recursion
+    template<typename Attribute>
+    static void addAttributes(
+        json_map& map,
+        const Attribute& attr)
+    {
+      using namespace detail;
+      map[key::attribute(attr)] = attributeToJson(attr);
+    }
+
+    template<typename Attribute, typename... Attributes>
+    static void addAttributes(
+        json_map& map,
+        const Attribute& attr,
+        Attributes&&... attrs)
+    {
+      using namespace detail;
+      map[attributeToKey(attr)] = attributeToJson(attr);
+      addAttributes(std::forward<Attributes>(attrs)...);
+    }
+
   public:
     // Initialisation
     static std::string deviceInfo(int port)
     {
       json_map map;
-      map[Key::osc_port()] = port;
+      map[key::osc_port()] = port;
 
       return map.to_string();
     }
@@ -48,17 +72,17 @@ class writer
     {
       using namespace detail;
       json_map map;
-      map[Key::path_added()] = mapToJson(std::forward<Args>(args)...);
+      map[key::path_added()] = mapToJson(std::forward<Args>(args)...);
       return map.to_string();
     }
 
     template<typename... Args>
-    static std::string change_path(
+    static std::string path_changed(
         Args&&... args)
     {
       using namespace detail;
       json_map map;
-      map[Key::path_changed()] = mapToJson(std::forward<Args>(args)...);
+      map[key::path_changed()] = mapToJson(std::forward<Args>(args)...);
       return map.to_string();
     }
 
@@ -67,33 +91,11 @@ class writer
     {
       using namespace detail;
       json_map map;
-      map[Key::path_removed()] = path;
+      map[key::path_removed()] = path;
       return map.to_string();
     }
 
-    // The following three methods are here
-    // to make the attributes_changed message.
-    // End of recursion
-    template<typename Attribute>
-    static void addAttributes(
-        json_map& map,
-        const Attribute& attr)
-    {
-      using namespace detail;
-      map[Key::attribute(attr)] = attributeToJson(attr);
-    }
-
-    template<typename Attribute, typename... Attributes>
-    static void addAttributes(
-        json_map& map,
-        const Attribute& attr,
-        Attributes&&... attrs)
-    {
-      using namespace detail;
-      map[attributeToKey(attr)] = attributeToJson(attr);
-      addAttributes(std::forward<Attributes>(attrs)...);
-    }
-
+  public:
     template<typename... Attributes>
     static std::string attributes_changed(
         const std::string& path,
@@ -102,15 +104,14 @@ class writer
       using namespace detail;
       // TODO what if type changed?
       json_map objmap;
-      objmap[Key::full_path()] = path;
+      objmap[key::full_path()] = path;
 
       addAttributes(objmap, std::forward<Attributes>(attrs)...);
 
       json_map map;
-      map[Key::attributes_changed()] = objmap;
+      map[key::attributes_changed()] = objmap;
       return map.to_string();
     }
-
 
 
     template<typename Map, typename Vector>
@@ -126,7 +127,7 @@ class writer
       }
 
       json_map map;
-      map[Key::paths_added()] = arr;
+      map[key::paths_added()] = arr;
       return map.to_string();
     }
 
@@ -143,7 +144,7 @@ class writer
       }
 
       json_map map;
-      map[Key::paths_changed()] = arr;
+      map[key::paths_changed()] = arr;
       return map.to_string();
     }
 
@@ -159,7 +160,7 @@ class writer
       }
 
       json_map map;
-      map[Key::paths_removed()] = arr;
+      map[key::paths_removed()] = arr;
       return map.to_string();
     }
 
@@ -171,12 +172,12 @@ class writer
       using namespace detail;
       // TODO what if type changed?
       json_map objmap;
-      objmap[Key::full_path()] = path;
+      objmap[key::full_path()] = path;
 
       addAttributes(objmap, std::forward<Attributes>(attrs)...);
 
       json_map map;
-      map[Key::attributes_changed()] = objmap;
+      map[key::attributes_changed()] = objmap;
       return map.to_string();
     }
 };
