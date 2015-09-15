@@ -61,6 +61,8 @@ class ConstantMap
 
     LockedParameterMap<Map>& safeMap()
     { return m_map; }
+    const LockedParameterMap<Map>& safeMap() const
+    { return m_map; }
 
     template<typename Map_T>
     void replace(Map_T&& map)

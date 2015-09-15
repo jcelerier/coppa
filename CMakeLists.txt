@@ -7,10 +7,12 @@ find_package(Threads REQUIRED)
 add_subdirectory(oscpack)
 
 option(OPTIMIZED "Heavily optimized build" FALSE)
+option(EXAMPLES "Build examples" FALSE)
 
 if(OPTIMIZED)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native")
 endif()
+
 # Show the includes in IDEs
 file(GLOB_RECURSE COPPA_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/coppa/*.hpp")
 add_custom_target(coppa_headers SOURCES ${COPPA_HEADERS})
@@ -27,6 +29,7 @@ target_compile_features(coppa INTERFACE cxx_decltype_auto cxx_constexpr cxx_noex
 target_link_libraries(coppa INTERFACE "${Boost_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)
 
 # Examples and tests
+if(EXAMPLES)
 add_executable(server_test "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/server_test.cpp")
 target_link_libraries(server_test coppa)
 
@@ -58,4 +61,4 @@ if(Qt5_FOUND)
   target_link_libraries(qt_update_object coppa)
   target_link_libraries(qt_update_object Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Multimedia)
 endif()
-
+endif()
