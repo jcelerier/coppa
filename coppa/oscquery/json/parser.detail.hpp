@@ -74,6 +74,29 @@ static auto jsonToVariant(const json_value& val)
   }
 }
 
+
+static auto jsonToVariant_checked(const json_value& val, std::size_t type)
+{
+  switch(val.get_type())
+  {
+    case val_t::integer:
+    {
+      // This case is special because we can't infer if 10 is 10 or 10.0 in json
+      if(type == 1)
+        return Variant{float(val.get<int>())};
+      else
+        return Variant{int(val.get<int>())};
+    }
+    case val_t::real:    return Variant{float(val.get<float>())};
+    case val_t::boolean: return Variant{bool(val.get<bool>())};
+    case val_t::string:  return Variant{val.get<std::string>()};
+    case val_t::null:    return Variant{};
+    default:
+      throw BadRequestException{};
+      // TODO blob
+  }
+}
+
 static auto jsonToVariantArray(const json_value& json_val)
 {
   std::vector<Variant> v;
@@ -111,6 +134,7 @@ static auto jsonToClipModeArray(const json_value& val)
 static auto jsonToRangeArray(const json_value& val)
 {
   std::vector<Range> ranges;
+
   for(const json_value& range_val : valToArray(val))
   {
     const auto& range_arr = valToArray(range_val);
@@ -120,11 +144,14 @@ static auto jsonToRangeArray(const json_value& val)
     Range range;
     range.min = jsonToVariant(range_arr.get(0));
     range.max = jsonToVariant(range_arr.get(1));
+
     const auto& thirdElement = range_arr.get(2);
     if(thirdElement.is(val_t::array))
     {
       for(const auto& enum_val : valToArray(thirdElement))
+      {
         range.values.push_back(jsonToVariant(enum_val));
+      }
     }
     else
     {
@@ -132,6 +159,42 @@ static auto jsonToRangeArray(const json_value& val)
     }
 
     ranges.push_back(range);
+  }
+
+  return ranges;
+}
+
+static auto jsonToRangeArray_checked(const json_value& val, const std::vector<std::size_t>& type_vec)
+{
+  std::vector<Range> ranges;
+
+  int i = 0;
+  for(const json_value& range_val : valToArray(val))
+  {
+    const auto& range_arr = valToArray(range_val);
+    if(range_arr.size() != 3)
+      throw BadRequestException{};
+
+    auto current_type = type_vec[i];
+    Range range;
+    range.min = jsonToVariant_checked(range_arr.get(0), current_type);
+    range.max = jsonToVariant_checked(range_arr.get(1), current_type);
+
+    const auto& thirdElement = range_arr.get(2);
+    if(thirdElement.is(val_t::array))
+    {
+      for(const auto& enum_val : valToArray(thirdElement))
+      {
+        range.values.push_back(jsonToVariant_checked(enum_val, current_type));
+      }
+    }
+    else
+    {
+      json_assert(range_arr.get(2).is(val_t::null));
+    }
+
+    ranges.push_back(range);
+    i++;
   }
 
   return ranges;
@@ -200,7 +263,7 @@ static void readObject(Map& map, const json_map& obj)
         json_assert(p.values.size() == type_vec.size());
         for(int i = 0; i < p.values.size(); i++)
         {
-          // Bad parse of a float as an
+          // Bad parse of a float as an int
           if(type_vec[i] == 1 && p.values[i].which() == 0)
           {
              p.values[i] = float(eggs::variants::get<int>(p.values[i]));
@@ -219,18 +282,17 @@ static void readObject(Map& map, const json_map& obj)
       auto range_it = obj.find(key::attribute<Ranges>());
       if(range_it != obj.end())
       {
-        p.ranges = jsonToRangeArray(range_it->second);
+        p.ranges = jsonToRangeArray_checked(range_it->second, type_vec);
 
         json_assert(p.ranges.size() == type_vec.size());
         for(int i = 0; i < p.ranges.size(); i++)
         {
-          static auto invalid = Variant().which();
           const auto& elt = p.ranges[i];
-          json_assert(elt.min.which() == invalid || elt.min.which() == type_vec[i]);
-          json_assert(elt.max.which() == invalid || elt.max.which() == type_vec[i]);
+          json_assert(elt.min.which() == elt.min.npos || elt.min.which() == type_vec[i]);
+          json_assert(elt.max.which() == elt.max.npos || elt.max.which() == type_vec[i]);
           for(const auto& range_elt : elt.values)
           {
-            json_assert(range_elt.which() == invalid || range_elt.which() == type_vec[i]);
+            json_assert(range_elt.which() == range_elt.npos || range_elt.which() == type_vec[i]);
           }
         }
       }

@@ -54,10 +54,10 @@ void exposeQObject(Device& dev, QObject* obj, ThreadManager* mgr)
     switch(prop.type())
     {
       case QVariant::Type::Int:
-        addValue(p, prop.read(obj).toInt());
+        addValue(p, prop.read(obj).toInt(), {0, 100, {}});
         break;
       case QVariant::Type::Double:
-        addValue(p, prop.read(obj).toFloat());
+        addValue(p, prop.read(obj).toFloat(), {0.f, 100.f, {}});
         break;
       case QVariant::Type::String:
         addValue(p, prop.read(obj).toString().toStdString());
