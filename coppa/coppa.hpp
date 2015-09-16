@@ -4,6 +4,12 @@
 #include <utility>
 #include <eggs/variant.hpp>
 
+#define FORWARD_FUN(object, ret, fun) \
+  template<typename... Args> \
+  ret fun(Args&&... args) { \
+    return object.fun(std::forward<Args>(args)...); \
+  }
+
 #if defined(coppa_dynamic)
 #define coppa_name(theName) static constexpr const char * name{ #theName };
 #define coppa_parameter(theValue) \
@@ -65,7 +71,8 @@ class AttributeAggregate : public Args...
 {
 };
 // Make an oscquery-specific Variant ?
-using Generic = const char*;
+
+using Generic = std::vector<char>;
 
 enum class Type { int_t, float_t, bool_t, string_t, generic_t };
 using Variant = eggs::variant<int, float, bool, std::string, Generic>;

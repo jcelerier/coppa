@@ -25,17 +25,37 @@ class LocalDevice
     auto& clients()
     { return m_clients; }
     auto& server()
-    { return m_server; }
+    { return m_query_server; }
 
     LocalDevice()
     {
-      m_receiver.run();
+      initDataServer(1234);
+      initQueryServer();
     }
 
-    LocalDevice(int data_port):
-      m_receiver{data_port, [&] (const auto& m) { DataProtocolHandler::on_messageReceived(*this, m); }}
+    LocalDevice(int data_port)
     {
-      m_receiver.run();
+      initDataServer(data_port);
+      initQueryServer();
+    }
+
+    LocalDevice(
+        QueryServer&& query_serv):
+      m_query_server{std::move(query_serv)}
+    {
+      initDataServer(1234);
+      initQueryServer();
+    }
+
+
+    LocalDevice(
+        QueryServer&& query_serv,
+        DataProtocolServer&& data_serv):
+      m_data_server{std::move(data_serv)},
+      m_query_server{std::move(query_serv)}
+    {
+      m_data_server.run();
+      initQueryServer();
     }
 
     template<typename T>
@@ -98,49 +118,72 @@ class LocalDevice
     { return m_map; }
 
     void expose()
-    { m_server.run(); }
+    { m_query_server.run(); }
 
-    auto& receiver() { return m_receiver; }
+    auto& receiver() { return m_data_server; }
 
   private:
-    DataProtocolServer m_receiver{
-      1234,
-      [&] (const auto& m) { DataProtocolHandler::on_messageReceived(*this, m); }
-    };
+    //// Data server behaviour ////
+    DataProtocolServer m_data_server;
+
+    void initDataServer(int port)
+    {
+      m_data_server = DataProtocolServer(port,
+            [&] (const auto& m)
+      { DataProtocolHandler::on_messageReceived(*this, m); });
+
+      m_data_server.run();
+
+    }
+
+    //// Query server behaviour ////
+    QueryServer m_query_server;
+    void initQueryServer()
+    {
+      m_query_server.setOpenHandler(
+            [&] (auto&&... args)
+      { return on_connectionOpen(std::forward<decltype(args)>(args)...); });
+
+      m_query_server.setCloseHandler(
+            [&] (auto&&... args)
+      { return on_connectionClosed(std::forward<decltype(args)>(args)...); });
+
+      m_query_server.setMessageHandler(
+            [&] (auto&&... args)
+      { return on_message(std::forward<decltype(args)>(args)...); });
+    }
+
+    // Handlers for the query server
+    void on_connectionOpen(typename QueryServer::connection_handler hdl)
+    {
+      // TODO lock this too
+      m_clients.emplace_back(hdl);
+
+      // Send the client a message with the OSC port
+      m_query_server.sendMessage(hdl, Serializer::deviceInfo(m_data_server.port()));
+    }
+
+    void on_connectionClosed(typename QueryServer::connection_handler hdl)
+    {
+      auto it = std::find(begin(m_clients), end(m_clients), hdl);
+      if(it != end(m_clients))
+      {
+        m_clients.erase(it);
+      }
+    }
+
+    auto on_message(typename QueryServer::connection_handler hdl, const std::string& message)
+    {
+      //std::lock_guard<std::mutex> lock(m_map_mutex);
+      return QueryParser::parse(
+            message,
+            QueryAnswerer::answer(*this, hdl));
+    }
 
     mutable std::mutex m_map_mutex;
     Map m_map;
     std::vector<RemoteClient<QueryServer>> m_clients;
     std::unordered_map<std::string, std::function<void(const typename Map::value_type&)>> m_handlers;
-    QueryServer m_server
-    {
-      // Open handler
-      [&] (typename QueryServer::connection_handler hdl)
-      {
-        // TODO lock this too
-        m_clients.emplace_back(hdl);
-
-        // Send the client a message with the OSC port
-        m_server.sendMessage(hdl, Serializer::deviceInfo(m_receiver.port()));
-      },
-      // Close handler
-      [&] (typename QueryServer::connection_handler hdl)
-      {
-        auto it = std::find(begin(m_clients), end(m_clients), hdl);
-        if(it != end(m_clients))
-        {
-          m_clients.erase(it);
-        }
-      },
-      // Message handler
-      [&] (typename QueryServer::connection_handler hdl, const std::string& message)
-      {
-        //std::lock_guard<std::mutex> lock(m_map_mutex);
-        return QueryParser::parse(
-              message,
-              QueryAnswerer::answer(*this, hdl));
-      }
-    };
 };
 
 // Automatically synchronizes its changes with the client.
@@ -158,17 +201,20 @@ class SynchronizingLocalDevice
 {
   private:
     LocalDevice<
-      Map,
-      QueryServer,
-      QueryParser,
-      QueryAnswerer,
-      Serializer,
-      DataProtocolServer,
-      DataProtocolHandler> m_device;
+    Map,
+    QueryServer,
+    QueryParser,
+    QueryAnswerer,
+    Serializer,
+    DataProtocolServer,
+    DataProtocolHandler> m_device;
 
   public:
-    SynchronizingLocalDevice()
+    template<typename... Args>
+    SynchronizingLocalDevice(Args&&... args):
+      m_device{std::forward<Args>(args)...}
     {
+
     }
 
     template<typename... Args>

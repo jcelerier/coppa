@@ -13,6 +13,13 @@ if(OPTIMIZED)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native")
 endif()
 
+find_package(Qt5 5.5 REQUIRED COMPONENTS Core Widgets Gui Multimedia )
+find_package(KF5DNSSD NO_MODULE)
+if(KF5DNSSD_FOUND)
+# ZeroConf sutff
+include_directories(/usr/include/KF5/KDNSSD)
+endif()
+
 # Show the includes in IDEs
 file(GLOB_RECURSE COPPA_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/coppa/*.hpp")
 add_custom_target(coppa_headers SOURCES ${COPPA_HEADERS})
@@ -27,6 +34,7 @@ target_include_directories(coppa INTERFACE
 
 target_compile_features(coppa INTERFACE cxx_decltype_auto cxx_constexpr cxx_noexcept cxx_variadic_templates cxx_lambda_init_captures)
 target_link_libraries(coppa INTERFACE "${Boost_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)
+
 
 # Examples and tests
 if(EXAMPLES)
@@ -48,10 +56,10 @@ add_executable(test_json_parser "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/pa
 target_link_libraries(test_json_parser coppa)
 
 # Qt examples
-find_package(Qt5 5.2 REQUIRED COMPONENTS Core Widgets Gui Multimedia )
 if(Qt5_FOUND)
   set(CMAKE_AUTOMOC ON)
   include_directories(.)
+
 
   add_executable(qt_expose_object "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/qt/qt_expose_object.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/qt/ThreadManager.cpp")
   target_link_libraries(qt_expose_object coppa)
@@ -60,5 +68,17 @@ if(Qt5_FOUND)
   add_executable(qt_update_object "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/qt/qt_update_object.cpp")
   target_link_libraries(qt_update_object coppa)
   target_link_libraries(qt_update_object Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Multimedia)
+
+  if(KF5DNSSD_FOUND)
+
+  add_executable(zc_server "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/zeroconf/zc_server.cpp")
+  target_link_libraries(zc_server coppa)
+  target_link_libraries(zc_server Qt5::Core Qt5::Network KF5DNSSD)
+
+  add_executable(zc_client "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/zeroconf/zc_client.cpp")
+  target_link_libraries(zc_client coppa)
+  target_link_libraries(zc_client Qt5::Core Qt5::Network KF5DNSSD)
+
+  endif()
 endif()
 endif()

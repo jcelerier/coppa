@@ -54,8 +54,8 @@ class MessageGenerator
             break;
           case Type::generic_t:
           {
-            const char* str = get<const char*>(val);
-            oscpack::Blob b(str, std::strlen(str)); // todo : use Generic instead and convert to hex / base64
+            const auto& buf = get<coppa::Generic>(val);
+            oscpack::Blob b(buf.data(), buf.size()); // todo : use Generic instead and convert to hex / base64
             p << b;
             break;
           }

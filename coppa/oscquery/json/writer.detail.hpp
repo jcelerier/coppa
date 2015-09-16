@@ -26,7 +26,7 @@ inline void addValueToJsonArray(
     case 1: array.push_back(get<float>(val)); break;
       // TODO case 2: array.push_back(get<bool>(val)); break;
     case 3: array.push_back(get<std::string>(val)); break;
-    case 4: array.push_back(get<const char*>(val)); break;
+      // TODO base64 case 4: array.push_back(get<coppa::Generic>(val)); break;
   }
 }
 

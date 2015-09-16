@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_set>
-
+// TODO namespace
 template<typename QueryServer>
 class RemoteClient
 {

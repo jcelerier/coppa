@@ -11,29 +11,84 @@ namespace coppa
 {
 namespace osc
 {
+template<typename MessageHandler>
+class listener: public oscpack::OscPacketListener
+{
+  public:
+    listener(MessageHandler msg):
+      m_messageHandler{msg}
+    {
+    }
+
+  protected:
+    void ProcessMessage(
+        const oscpack::ReceivedMessage& m,
+        const IpEndpointName& ip) override
+    {
+      try
+      {
+        m_messageHandler(m);
+      }
+      catch( std::exception& e )
+      {
+        std::cerr << "OSC Parse Error on " << m.AddressPattern() << ": "
+                  << e.what() << std::endl;
+      }
+    }
+
+  private:
+    MessageHandler m_messageHandler;
+};
+
 class receiver
 {
   public:
-    using message_handler = std::function<void(const oscpack::ReceivedMessage&)>;
+    receiver() = default;
+    receiver(receiver&& other)
+    {
+      other.stop();
+      m_impl = std::move(other.m_impl);
+      setPort(other.m_port);
+    }
 
-    receiver(unsigned int port, message_handler&& msg):
-      m_impl{std::move(msg)}
+    template<typename Handler>
+    receiver(unsigned int port, Handler msg):
+      m_impl{std::make_unique<listener<Handler> >(msg)}
     {
       setPort(port);
     }
 
+    receiver& operator=(receiver&& other)
+    {
+      stop();
+
+      m_socket = std::move(other.m_socket);
+      m_impl = std::move(other.m_impl);
+
+      return *this;
+    }
+
     ~receiver()
     {
-      m_socket->AsynchronousBreak();
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      if(m_runThread.joinable())
-        m_runThread.detach();
-      m_socket.reset();
+      stop();
     }
 
     void run()
     {
       m_runThread = std::thread(&UdpListeningReceiveSocket::Run, m_socket.get());
+    }
+
+    void stop()
+    {
+      if(m_socket)
+        m_socket->AsynchronousBreak();
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+      if(m_runThread.joinable())
+        m_runThread.detach();
+
+      m_socket.reset();
     }
 
     unsigned int port() const
@@ -50,9 +105,9 @@ class receiver
       {
         try
         {
-          m_socket = std::make_shared<UdpListeningReceiveSocket>
-                   (IpEndpointName(IpEndpointName::ANY_ADDRESS, m_port),
-                    &m_impl);
+          m_socket = std::make_unique<UdpListeningReceiveSocket>
+                     (IpEndpointName(IpEndpointName::ANY_ADDRESS, m_port),
+                      m_impl.get());
           ok = true;
         }
         catch(std::runtime_error& e)
@@ -66,33 +121,9 @@ class receiver
 
   private:
     unsigned int m_port = 0;
-    std::shared_ptr<UdpListeningReceiveSocket> m_socket;
-    class Impl: public oscpack::OscPacketListener
-    {
-      public:
-        Impl(message_handler&& msg):
-          m_messageHandler{std::move(msg)}
-        {
-        }
+    std::unique_ptr<UdpListeningReceiveSocket> m_socket;
 
-      protected:
-        virtual void ProcessMessage(const oscpack::ReceivedMessage& m,
-                                    const IpEndpointName& ip) override
-        {
-          try
-          {
-            m_messageHandler(m);
-          }
-          catch( std::exception& e )
-          {
-            std::cerr << "OSC Parse Error on " << m.AddressPattern() << ": "
-                      << e.what() << std::endl;
-          }
-        }
-
-      private:
-        message_handler m_messageHandler;
-    } m_impl;
+    std::unique_ptr<oscpack::OscPacketListener> m_impl;
 
     std::thread m_runThread;
 };
