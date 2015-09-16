@@ -113,7 +113,7 @@ class parser
       for(const auto& path : attr_changed.get_keys())
       {
         json_assert(map.has(path));
-        const auto& path_obj = attr_changed.get<json_map>(path);
+        const auto& path_obj = attr_changed.template get<json_map>(path);
 
         // A lambda used to update the boost map.
         // Here, since we are in attributes_changed, we will just ignore
@@ -121,7 +121,7 @@ class parser
         auto mapper = [&] (const std::string& name, auto&& member, auto&& method)
         {
           if(path_obj.find(name) != path_obj.end())
-            map.update(path, [&] (Parameter& p) { p.*member = method(path_obj.get(name)); });
+            map.update(path, [&] (Parameter& p) { p.*member = method(path_obj.template get(name)); });
         };
 
         // 2. Map the values
