@@ -49,7 +49,7 @@ class MainObj : public QObject
 
         QString addr = QString("http://") + ipAddress + ":" + QString::number(data->port());
         remote_device dev(addr.toStdString());
-        while(!dev.connected())
+        while(!dev.queryConnected())
           this_thread::sleep_for(chrono::milliseconds(100));
 
         dev.queryNamespace();

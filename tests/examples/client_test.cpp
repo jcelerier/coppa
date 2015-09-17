@@ -6,7 +6,7 @@ int main()
     using namespace std;
     using namespace coppa::oscquery;
     remote_device dev("http://127.0.0.1:9002/");
-    while(!dev.connected())
+    while(!dev.queryConnected())
       this_thread::sleep_for(chrono::milliseconds(100));
 
     dev.queryNamespace();

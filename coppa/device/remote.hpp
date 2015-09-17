@@ -21,11 +21,17 @@ class RemoteQueryClient
         return;
       handler(message);
     }},
-      m_serverURI{m_client.connect(uri)}
+      m_serverURI{uri}
     {
     }
 
-    bool connected() const
+    // Is blocking
+    void queryConnect()
+    {
+        m_client.connect(m_serverURI);
+    }
+
+    bool queryConnected() const
     { return m_client.connected(); }
 
     // Ask for an update of a part of the namespace
