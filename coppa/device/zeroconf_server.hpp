@@ -7,6 +7,7 @@
 
 namespace coppa
 {
+// TODO fix naming convention
 template<typename Server>
 class BonjourServer
 {
