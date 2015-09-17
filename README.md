@@ -9,14 +9,14 @@ The API is not yet stable. This aims to provide an example of a possible impleme
 
 * An up-to-date C++14 compiler (So far, only tested with clang-3.6; building 
 works with GCC-5.1 but it crashes at runtime)
-* Boost
+* libasio
 * CMake
 
 ## Setup
 
     $ git clone https://github.com/jcelerier/coppa
     $ cd coppa
-    $ git submodule update --init
+    $ git submodule update --init --recursive
     $ cd jeayeson
     $ ./configure
 
