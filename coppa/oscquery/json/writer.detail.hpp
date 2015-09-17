@@ -11,7 +11,7 @@ namespace coppa
 {
 namespace oscquery
 {
-namespace JSON
+namespace json
 {
 namespace detail
 {

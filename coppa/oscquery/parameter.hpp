@@ -6,6 +6,13 @@ namespace coppa
 {
 namespace oscquery
 {
+using coppa::Access;
+using coppa::Alias;
+using coppa::Description;
+using coppa::Destination;
+using coppa::Generic;
+using coppa::Tags;
+
 struct Range
 {
     Variant min;

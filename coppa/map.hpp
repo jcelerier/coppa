@@ -146,4 +146,56 @@ class LockedParameterMap
     }
 };
 
+
+template<typename Map>
+class ConstantMap
+{
+  protected:
+    LockedParameterMap<Map> m_map;
+
+  public:
+    bool has(const std::string& address) const
+    { return m_map.has(address); }
+
+    auto get(const std::string& address) const
+    { return m_map.get(address); }
+
+    // TODO cbegin / cend
+
+    LockedParameterMap<Map>& safeMap()
+    { return m_map; }
+    const LockedParameterMap<Map>& safeMap() const
+    { return m_map; }
+
+    template<typename Map_T>
+    void replace(Map_T&& map)
+    { m_map = std::move(map); }
+};
+
+// Sets a value on a remote device via a protocol like OSC.
+// TODO the local map shouldn't be constant ?
+// Or maybe we should have the choice between "fully mirrored" where
+// we only get changes via callbacks of the server
+// and a "local", modifiable mirror.
+template<typename Map, typename DataProtocolSender>
+class SettableMap : public ConstantMap<Map>
+{
+  private:
+    DataProtocolSender m_sender;
+
+  public:
+    void connect(const std::string& uri, int port)
+    { m_sender = DataProtocolSender{uri, port}; }
+
+    template<typename... Args>
+    void set(const std::string& address, Args&&... args)
+    {
+      auto param = ConstantMap<Map>::get(address);
+      if(param.accessmode == Access::Mode::Set
+      || param.accessmode == Access::Mode::Both)
+      {
+        m_sender.send(address, std::forward<Args>(args)...);
+      }
+    }
+};
 }

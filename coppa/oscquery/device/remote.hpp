@@ -1,5 +1,4 @@
 #pragma once
-#include <coppa/oscquery/websockets.hpp>
 #include <coppa/protocol/osc/oscsender.hpp>
 #include <coppa/protocol/osc/oscmessagegenerator.hpp>
 #include <unordered_set>
@@ -11,15 +10,19 @@ namespace coppa
 {
 namespace oscquery
 {
-// Maybe a better name would be "mirror" ?
-class remote_device : public QueryRemoteDevice<
+/**
+ * @brief The remote_device class
+ *
+ * A device that mirrors a remote OSCQuery server.
+ */
+class remote_device : public remote_query_device<
     SimpleParameterMap<ParameterMap>,
-    JSON::parser,
-    RemoteQueryClient<WebSocketClient, JSON::parser>,
+    json::parser,
+    remote_query_client<ws::client, json::parser>,
     SettableMap<SimpleParameterMap<ParameterMap>, osc::sender>>
 {
   public:
-    using QueryRemoteDevice::QueryRemoteDevice;
+    using remote_query_device::remote_query_device;
     void set(const std::string& addr, oscquery::Values& val)
     {
       SettableMap::set(addr, val.values);

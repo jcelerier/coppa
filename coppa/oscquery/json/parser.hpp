@@ -5,7 +5,7 @@ namespace coppa
 {
 namespace oscquery
 {
-namespace JSON
+namespace json
 {
 using val_t = json_value::type;
 class parser
@@ -81,8 +81,6 @@ class parser
       using namespace detail;
       json_map mess{message};
 
-#define JSON_B R"_json_("
-#define JSON_END )_json_"
       // Get the object
       const auto& obj = mess.get<json_map>(key::path_changed());
 

@@ -5,7 +5,7 @@
 #include <QDebug>
 #include <QPointer>
 #include "ThreadManager.hpp"
-using namespace coppa;
+
 using namespace coppa::oscquery;
 
 /**

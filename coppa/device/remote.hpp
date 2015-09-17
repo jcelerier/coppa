@@ -1,20 +1,31 @@
 #pragma once
 #include <string>
+#include <thread>
 #include <coppa/map.hpp>
 #include <coppa/device/messagetype.hpp>
 
 namespace coppa
 {
 
-template<typename QueryProtocolClient, typename Parser>
-class RemoteQueryClient
+/**
+ * @brief The remote_query_client class
+ *
+ * A simple class that allows to connect to a query server
+ * and send common queries on it
+ */
+template<
+    typename QueryProtocolClient,
+    typename Parser>
+class remote_query_client
 {
     QueryProtocolClient m_client;
     std::string m_serverURI;
 
+    std::thread m_asyncServerThread;
+
   public:
     template<typename ParseHandler>
-    RemoteQueryClient(const std::string& uri, ParseHandler&& handler):
+    remote_query_client(const std::string& uri, ParseHandler&& handler):
       m_client{[=] (typename QueryProtocolClient::connection_handler hdl, const std::string& message)
     {
       if(message.empty())
@@ -25,10 +36,23 @@ class RemoteQueryClient
     {
     }
 
+    ~remote_query_client()
+    {
+      if(m_client.connected())
+        m_client.stop();
+      if(m_asyncServerThread.joinable())
+        m_asyncServerThread.join();
+    }
+
     // Is blocking
     void queryConnect()
+    { m_client.connect(m_serverURI); }
+
+    void queryConnectAsync()
     {
-        m_client.connect(m_serverURI);
+      if(m_asyncServerThread.joinable())
+        m_asyncServerThread.join();
+      m_asyncServerThread = std::thread([&]{ m_client.connect(m_serverURI); });
     }
 
     bool queryConnected() const
@@ -50,65 +74,23 @@ class RemoteQueryClient
 
 };
 
-template<typename Map>
-class ConstantMap
-{
-  protected:
-    LockedParameterMap<Map> m_map;
 
-  public:
-    bool has(const std::string& address) const
-    { return m_map.has(address); }
-
-    auto get(const std::string& address) const
-    { return m_map.get(address); }
-
-    // TODO cbegin / cend
-
-    LockedParameterMap<Map>& safeMap()
-    { return m_map; }
-    const LockedParameterMap<Map>& safeMap() const
-    { return m_map; }
-
-    template<typename Map_T>
-    void replace(Map_T&& map)
-    { m_map = std::move(map); }
-};
-
-// Sets a value on a remote device via a protocol like OSC.
-// TODO the local map shouldn't be constant ?
-// Or maybe we should have the choice between "fully mirrored" where
-// we only get changes via callbacks of the server
-// and a "local", modifiable mirror.
-template<typename Map, typename DataProtocolSender>
-class SettableMap : public ConstantMap<Map>
-{
-  private:
-    DataProtocolSender m_sender;
-
-  public:
-    void connect(const std::string& uri, int port)
-    { m_sender = DataProtocolSender{uri, port}; }
-
-    template<typename... Args>
-    void set(const std::string& address, Args&&... args)
-    {
-      auto param = ConstantMap<Map>::get(address);
-      if(param.accessmode == Access::Mode::Set
-      || param.accessmode == Access::Mode::Both)
-      {
-        m_sender.send(address, std::forward<Args>(args)...);
-      }
-    }
-};
-
-// Cases : fully static (midi), non-queryable (pure osc), queryable (minuit, oscquery)
+/**
+ * @brief The remote_query_device class
+ *
+ * A device that answers to query servers. For instance it will mirror the
+ * namespace data that it receives.
+ *
+ * It has simple user-settable callbacks for connection and message events.
+ *
+ * TODO make a more complete device with per-addresss callbacks.
+ */
 template<
     typename BaseMapType,
     typename Parser,
     typename QueryProtocolClient,
     typename RemoteMapBase>
-class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
+class remote_query_device : public RemoteMapBase, public QueryProtocolClient
 {
     void on_queryServerMessage(const std::string& message)
     try
@@ -178,7 +160,7 @@ class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
     }
 
   public:
-    QueryRemoteDevice(const std::string& uri):
+    remote_query_device(const std::string& uri):
       QueryProtocolClient{uri, [&] (const std::string& mess) { on_queryServerMessage(mess); }}
     {
 
@@ -186,7 +168,6 @@ class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
 
     std::function<void()> onConnect;
     std::function<void()> onUpdate;
-
 };
 
 }

@@ -1,19 +1,27 @@
 #pragma once
 #include <string>
 #include <unordered_set>
-// TODO namespace
+
+namespace coppa
+{
+/**
+ * @brief The remote_client class
+ *
+ * Represents a client with listening abilities.
+ * For use in a server.
+ */
 template<typename QueryServer>
-class RemoteClient
+class remote_client
 {
     typename QueryServer::connection_handler m_handler;
     std::unordered_set<std::string> m_listened;
 
   public:
-    RemoteClient(
+    constexpr remote_client(
         typename QueryServer::connection_handler handler):
       m_handler{handler} { }
 
-    operator typename QueryServer::connection_handler() const
+    constexpr operator typename QueryServer::connection_handler() const noexcept
     { return m_handler; }
 
     // For performance's sake, it would be better
@@ -23,10 +31,12 @@ class RemoteClient
     void removeListenedPath(const std::string& path)
     { m_listened.erase(path); }
 
-    const auto& listenedPaths() const noexcept
+    constexpr const auto& listenedPaths() const noexcept
     { return m_listened; }
 
-    bool operator==(
+    constexpr bool operator==(
         const typename QueryServer::connection_handler& h) const
     { return !m_handler.expired() && m_handler.lock() == h.lock(); }
 };
+
+}

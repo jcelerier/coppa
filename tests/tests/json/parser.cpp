@@ -5,7 +5,7 @@
 #include <coppa/tools/random.hpp>
 using namespace coppa;
 using namespace coppa::oscquery;
-using namespace coppa::oscquery::JSON;
+using namespace coppa::oscquery::json;
 using namespace eggs::variants;
 using namespace std;
 

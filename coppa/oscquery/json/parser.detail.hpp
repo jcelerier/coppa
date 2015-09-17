@@ -12,7 +12,7 @@ namespace coppa
 {
 namespace oscquery
 {
-namespace JSON
+namespace json
 {
 using val_t = json_value::type;
 

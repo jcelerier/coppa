@@ -15,7 +15,7 @@ class answerer
 {
   public:
     template<typename Device>
-    static auto answer (Device& dev, typename Device::query_server::connection_handler& hdl)
+    static auto answer (Device& dev, typename Device::query_server_type::connection_handler& hdl)
     {
       return [&] (
           const std::string& path,
@@ -24,12 +24,12 @@ class answerer
         // Here we handle the url elements relative to oscquery
         if(parameters.size() == 0)
         {
-          return JSON::writer::query_namespace(dev.map().unsafeMap(), path);
+          return json::writer::query_namespace(dev.unsafeMap(), path);
         }
         else
         {
           // First check if we have the path
-          if(!dev.map().has(path))
+          if(!dev.has(path))
             throw BadRequestException{"Path not found"};
 
           // Listen
@@ -68,8 +68,8 @@ class answerer
 
           if(!attributes.empty())
           {
-            return JSON::writer::query_attributes(
-                  dev.map().unsafeMap().get(path),
+            return json::writer::query_attributes(
+                  dev.unsafeMap().get(path),
                   attributes);
           }
         }

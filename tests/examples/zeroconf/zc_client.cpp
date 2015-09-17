@@ -49,6 +49,7 @@ class MainObj : public QObject
 
         QString addr = QString("http://") + ipAddress + ":" + QString::number(data->port());
         remote_device dev(addr.toStdString());
+        dev.queryConnectAsync();
         while(!dev.queryConnected())
           this_thread::sleep_for(chrono::milliseconds(100));
 
@@ -57,6 +58,7 @@ class MainObj : public QObject
         this_thread::sleep_for(chrono::seconds(1));
 
         cerr <<  dev.safeMap().size() << endl;
+        exit(0);
 
       });
 

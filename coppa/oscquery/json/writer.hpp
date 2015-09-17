@@ -4,7 +4,7 @@ namespace coppa
 {
 namespace oscquery
 {
-namespace JSON
+namespace json
 {
 class writer
 {

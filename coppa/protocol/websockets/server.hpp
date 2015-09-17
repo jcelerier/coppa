@@ -7,23 +7,25 @@
 #include <coppa/exceptions/BadRequest.hpp>
 namespace coppa
 {
-class WebSocketServer
+namespace ws
+{
+class server
 {
   public:
-    using server = websocketpp::server<websocketpp::config::asio>;
+    using server_t = websocketpp::server<websocketpp::config::asio>;
     using connection_handler = websocketpp::connection_hdl;
 
-    WebSocketServer()
+    server()
     {
       m_server.init_asio();
       m_server.set_reuse_addr(true);
     }
 
     template<typename OpenHandler, typename CloseHandler, typename MessageHandler>
-    WebSocketServer(OpenHandler openHandler,
-                    CloseHandler closeHandler,
-                    MessageHandler messageHandler):
-      WebSocketServer{}
+    server(OpenHandler openHandler,
+           CloseHandler closeHandler,
+           MessageHandler messageHandler):
+    server{}
     {
       setOpenHandler(openHandler);
       setCloseHandler(closeHandler);
@@ -45,21 +47,21 @@ class WebSocketServer
     template<typename Handler>
     void setMessageHandler(Handler h)
     {
-        m_server.set_message_handler([=] (connection_handler hdl, server::message_ptr msg)
+        m_server.set_message_handler([=] (connection_handler hdl, server_t::message_ptr msg)
         {
           try{
           sendMessage(hdl, h(hdl, msg->get_payload()));
           }
           catch(...)
           {
-            server::connection_ptr con = m_server.get_con_from_hdl(hdl);
+            server_t::connection_ptr con = m_server.get_con_from_hdl(hdl);
             con->set_status(websocketpp::http::status_code::bad_request);
           }
         });
 
         m_server.set_http_handler([=] (connection_handler hdl)
         {
-          server::connection_ptr con = m_server.get_con_from_hdl(hdl);
+          auto con = m_server.get_con_from_hdl(hdl);
 
           con->replace_header("Content-Type", "application/json; charset=utf-8");
           try{
@@ -83,11 +85,13 @@ class WebSocketServer
 
     void sendMessage(connection_handler hdl, const std::string& message)
     {
-      server::connection_ptr con = m_server.get_con_from_hdl(hdl);
+      auto con = m_server.get_con_from_hdl(hdl);
       con->send(message);
     }
 
   private:
-    server m_server;
+    server_t m_server;
 };
+
+}
 }

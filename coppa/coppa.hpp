@@ -4,16 +4,28 @@
 #include <utility>
 #include <eggs/variant.hpp>
 
+#define FORWARD_CTOR(ctor, obj) \
+    template<typename... Args> \
+    ctor(Args&&... args):\
+        obj{std::forward<Args>(args)...} \
+    { }
+
 #define FORWARD_FUN(object, ret, fun) \
   template<typename... Args> \
   ret fun(Args&&... args) { \
     return object.fun(std::forward<Args>(args)...); \
   }
+
 #define FORWARD_FUN_CONST(object, ret, fun) \
     template<typename... Args> \
     ret fun(Args&&... args) const { \
     return object.fun(std::forward<Args>(args)...); \
     }
+
+#define FORWARD_LAMBDA(fun) [&] (auto&&... args) { return fun(std::forward<decltype(args)>(args)...); }
+
+#define GETTER(obj) auto& obj() noexcept { return m_##obj; }
+#define GETTER_CONST(obj) auto& obj() const noexcept { return m_##obj; }
 
 #if defined(coppa_dynamic)
 #define coppa_name(theName) static constexpr const char * name{ #theName };

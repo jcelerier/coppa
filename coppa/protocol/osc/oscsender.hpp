@@ -10,6 +10,12 @@ namespace coppa
 {
 namespace osc
 {
+/**
+ * @brief The sender class
+ *
+ * Sends OSC packets to a given address on an UDP port.
+ *
+ */
 class sender
 {
   public:
@@ -29,7 +35,7 @@ class sender
     template<typename... Args>
     void send(std::string address, Args&&... args)
     {
-      send(oscpack::MessageGenerator<>()(address, std::forward<Args>(args)...));
+      send(m_gen(address, std::forward<Args>(args)...));
     }
 
     const std::string& ip() const { return m_ip; }
@@ -44,6 +50,8 @@ class sender
     std::shared_ptr<UdpTransmitSocket> m_socket;
     std::string m_ip;
     int m_port;
+
+    oscpack::MessageGenerator<> m_gen;
 };
 
 }

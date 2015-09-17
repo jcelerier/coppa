@@ -11,7 +11,7 @@ int main()
 
   // Create a device
   synchronizing_local_device dev;
-  setup_basic_map(dev.map());
+  setup_basic_map(dev);
 
   std::mutex test_mutex;
 
@@ -28,7 +28,7 @@ int main()
       std::lock_guard<std::mutex> lock(test_mutex);
 
       v.values[0] = i++;
-      if(dev.map().has("da/do"))
+      if(dev.has("da/do"))
         dev.update_attributes("/da/do", v);
       else
         return;
@@ -45,8 +45,8 @@ int main()
       std::this_thread::sleep_for(std::chrono::milliseconds(200));
       std::lock_guard<std::mutex> lock(test_mutex);
 
-      auto size = dev.map().size();
-      auto randompath = dev.map()[my_rand<int>() % size].destination;
+      auto size = dev.size();
+      auto randompath = dev[my_rand<int>() % size].destination;
       Parameter p;
 
       // TODO empty names should not be allowed by ParameterMap

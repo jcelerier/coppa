@@ -12,6 +12,11 @@ namespace coppa
 namespace osc
 {
 template<typename MessageHandler>
+/**
+ * @brief The listener class
+ *
+ * Listens to OSC messages and handles them.
+ */
 class listener: public oscpack::OscPacketListener
 {
   public:
@@ -40,6 +45,12 @@ class listener: public oscpack::OscPacketListener
     MessageHandler m_messageHandler;
 };
 
+/**
+ * @brief The receiver class
+ *
+ * A OSC server.
+ * Note : if a port cannot be opened, it will be incremented.
+ */
 class receiver
 {
   public:
@@ -86,7 +97,7 @@ class receiver
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
       if(m_runThread.joinable())
-        m_runThread.detach();
+        m_runThread.detach(); // TODO why not join()?
 
       m_socket.reset();
     }
@@ -122,7 +133,6 @@ class receiver
   private:
     unsigned int m_port = 0;
     std::unique_ptr<UdpListeningReceiveSocket> m_socket;
-
     std::unique_ptr<oscpack::OscPacketListener> m_impl;
 
     std::thread m_runThread;

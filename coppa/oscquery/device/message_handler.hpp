@@ -5,6 +5,12 @@ namespace coppa
 {
 namespace osc
 {
+/**
+ * @brief The message_handler class
+ *
+ * Handles messages received via OSC in a OSCQuery device.
+ *
+ */
 class message_handler : public coppa::osc::receiver
 {
   public:
@@ -13,7 +19,7 @@ class message_handler : public coppa::osc::receiver
     {
       using namespace coppa;
 
-      if(dev.map().has(m.AddressPattern()))
+      if(dev.has(m.AddressPattern()))
       {
         dev.update(
               m.AddressPattern(),

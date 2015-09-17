@@ -17,23 +17,34 @@ namespace coppa
 {
 namespace oscquery
 {
-class local_device : public coppa::LocalDevice<
+/**
+ * @brief The local_device class
+ *
+ * An oscquery-compliant server.
+ */
+class local_device : public coppa::local_device<
     coppa::LockedParameterMap<coppa::oscquery::SimpleParameterMap<coppa::oscquery::ParameterMap>>,
-    coppa::WebSocketServer,
+    coppa::ws::server,
     coppa::oscquery::query_parser,
     coppa::oscquery::answerer,
-    coppa::oscquery::JSON::writer,
+    coppa::oscquery::json::writer,
     coppa::osc::receiver,
     coppa::osc::message_handler
     >
 { };
 
-class synchronizing_local_device : public coppa::SynchronizingLocalDevice<
+
+/**
+ * @brief The synchronizing_local_device class
+ *
+ * An oscquery-compliant server that syncs itself to the clients.
+ */
+class synchronizing_local_device : public coppa::synchronizing_local_device<
     coppa::LockedParameterMap<coppa::oscquery::SimpleParameterMap<coppa::oscquery::ParameterMap>>,
-    coppa::WebSocketServer,
+    coppa::ws::server,
     coppa::oscquery::query_parser,
     coppa::oscquery::answerer,
-    coppa::oscquery::JSON::writer,
+    coppa::oscquery::json::writer,
     coppa::osc::receiver,
     coppa::osc::message_handler
     >

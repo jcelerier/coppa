@@ -33,11 +33,10 @@ int main()
       while(true)
       {
         auto gstart = std::chrono::steady_clock::now();
-        const auto& theMap = dev.map();
-        auto randompath = theMap[rand() % dev.map().size()].destination;
+        auto randompath = dev[rand() % dev.size()].destination;
         auto gend = std::chrono::steady_clock::now();
         auto gdiff = gend - gstart;
-        std::cout << "Getting: " << theMap.size() << "  " << std::chrono::duration <double, std::milli> (gdiff).count() << "" << std::endl;
+        std::cout << "Getting: " << dev.size() << "  " << std::chrono::duration <double, std::milli> (gdiff).count() << "" << std::endl;
 
         Parameter p;
         // TODO empty names should not be allowed by ParameterMap
@@ -55,7 +54,7 @@ int main()
         dev.add(p);
         auto end = std::chrono::steady_clock::now();
         auto diff = end - start;
-        std::cout << "Adding: " << theMap.size() << "  " << std::chrono::duration <double, std::milli> (diff).count() << "" << std::endl;
+        std::cout << "Adding: " << dev.size() << "  " << std::chrono::duration <double, std::milli> (diff).count() << "" << std::endl;
       }
     });
 

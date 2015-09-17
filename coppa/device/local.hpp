@@ -7,6 +7,21 @@
 #include <mutex>
 namespace coppa
 {
+
+// As an example, make devices that also have :
+// no callbacks at all
+// callbacks on structural changes
+// callbacks that are only called when not updating locally.
+
+/**
+ * @brief The local_device class
+ *
+ * An example of generic device. This device has the following capabilities :
+ * - answering to requests using QueryAnswerer (for instance paths requested via an http address=
+ * - updating the tree both by the reception of messages that uses DataProtocolServer/Handler,
+ *   and by local intervention
+ * - ability to register per-address handlers that will inform the local software.
+ */
 template<typename Map,
          typename QueryServer,
          typename QueryParser,
@@ -14,32 +29,37 @@ template<typename Map,
          typename Serializer,
          typename DataProtocolServer,
          typename DataProtocolHandler>
-class LocalDevice
+class local_device : public Map
 {
   public:
-    using query_server = QueryServer;
-    using query_answerer = QueryAnswerer;
+    using map_type = Map;
+    using query_server_type = QueryServer;
+    using query_answerer_type = QueryAnswerer;
+    using serializer_type = Serializer;
 
-    const auto& clients() const
-    { return m_clients; }
-    auto& clients()
-    { return m_clients; }
-    auto& server()
-    { return m_query_server; }
+    GETTER(clients)
+    GETTER_CONST(clients)
 
-    LocalDevice()
+    GETTER(query_server)
+
+    void expose()
+    { m_query_server.run(); }
+
+    auto& receiver() { return m_data_server; }
+
+    local_device()
     {
       initDataServer(1234);
       initQueryServer();
     }
 
-    LocalDevice(int data_port)
+    local_device(int data_port)
     {
       initDataServer(data_port);
       initQueryServer();
     }
 
-    LocalDevice(
+    local_device(
         QueryServer&& query_serv):
       m_query_server{std::move(query_serv)}
     {
@@ -47,8 +67,7 @@ class LocalDevice
       initQueryServer();
     }
 
-
-    LocalDevice(
+    local_device(
         QueryServer&& query_serv,
         DataProtocolServer&& data_serv):
       m_data_server{std::move(data_serv)},
@@ -58,6 +77,7 @@ class LocalDevice
       initQueryServer();
     }
 
+    // Handlers to be called when an address is modified.
     template<typename T>
     void addHandler(const std::string& name, T&& fun)
     {
@@ -69,94 +89,57 @@ class LocalDevice
       m_handlers.erase(name);
     }
 
-    template<typename T>
-    void add(const T& parameter)
-    {
-      //std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.add(parameter);
-    }
-
-    void remove(const std::string& path)
-    {
-      //std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.remove(path);
-    }
-
     template<typename Arg>
     void update(const std::string& path, Arg&& val)
     {
-      //std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.update(path, std::forward<Arg>(val));
+      Map::update(path, std::forward<Arg>(val));
 
       if(m_handlers.find(path) != std::end(m_handlers))
       {
-        m_handlers[path](m_map.get(path));
+        m_handlers[path](Map::get(path));
       }
     }
 
     template<typename Arg>
     void update_attributes(const std::string& path, Arg&& val)
     {
-      //std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.update_attributes(path, std::forward<Arg>(val));
+      Map::update_attributes(path, std::forward<Arg>(val));
 
       if(m_handlers.find(path) != std::end(m_handlers))
       {
-        m_handlers[path](m_map.get(path));
+        m_handlers[path](Map::get(path));
       }
     }
 
     void rename(std::string oldPath, std::string newPath)
     { /* todo PATH_CHANGED */ }
 
-    auto get(const std::string& address) const
-    { return m_map.get(address); }
-
-    auto& map()
-    { return m_map; }
-    const auto& map() const
-    { return m_map; }
-
-    void expose()
-    { m_query_server.run(); }
-
-    auto& receiver() { return m_data_server; }
-
   private:
     //// Data server behaviour ////
-    DataProtocolServer m_data_server;
+    DataProtocolServer m_data_server; // Note : why not directly a list of servers on a data-access layer???
 
     void initDataServer(int port)
     {
       m_data_server = DataProtocolServer(port,
-            [&] (const auto& m)
+                                         [&] (const auto& m)
       { DataProtocolHandler::on_messageReceived(*this, m); });
 
       m_data_server.run();
-
     }
 
     //// Query server behaviour ////
     QueryServer m_query_server;
     void initQueryServer()
     {
-      m_query_server.setOpenHandler(
-            [&] (auto&&... args)
-      { return on_connectionOpen(std::forward<decltype(args)>(args)...); });
-
-      m_query_server.setCloseHandler(
-            [&] (auto&&... args)
-      { return on_connectionClosed(std::forward<decltype(args)>(args)...); });
-
-      m_query_server.setMessageHandler(
-            [&] (auto&&... args)
-      { return on_message(std::forward<decltype(args)>(args)...); });
+      m_query_server.setOpenHandler(FORWARD_LAMBDA(on_connectionOpen));
+      m_query_server.setCloseHandler(FORWARD_LAMBDA(on_connectionClosed));
+      m_query_server.setMessageHandler(FORWARD_LAMBDA(on_message));
     }
 
     // Handlers for the query server
     void on_connectionOpen(typename QueryServer::connection_handler hdl)
     {
-      // TODO lock this too
+      // TODO This should be locked by inside? Use a thread-safe vector ?
       m_clients.emplace_back(hdl);
 
       // Send the client a message with the OSC port
@@ -174,109 +157,78 @@ class LocalDevice
 
     auto on_message(typename QueryServer::connection_handler hdl, const std::string& message)
     {
-      //std::lock_guard<std::mutex> lock(m_map_mutex);
       return QueryParser::parse(
             message,
             QueryAnswerer::answer(*this, hdl));
     }
 
-    mutable std::mutex m_map_mutex;
-    Map m_map;
-    std::vector<RemoteClient<QueryServer>> m_clients;
+    std::vector<remote_client<QueryServer>> m_clients;
     std::unordered_map<std::string, std::function<void(const typename Map::value_type&)>> m_handlers;
 };
 
-// Automatically synchronizes its changes with the client.
-// Note : put somewhere if the client wants to be synchronized
-// Note : be careful with the locking too, here
-template<
-    typename Map,
-    typename QueryServer,
-    typename QueryParser,
-    typename QueryAnswerer,
-    typename Serializer,
-    typename DataProtocolServer,
-    typename DataProtocolHandler>
-class SynchronizingLocalDevice
+
+/**
+ * @brief The synchronizing_local_device class
+ *
+ * Extends a local_device :
+ * Automatically synchronizes its changes with the client.
+ * Note : put somewhere if the client wants to be synchronized
+ * Note : be careful with the locking too, here
+ */
+template<typename... Args>
+class synchronizing_local_device : private local_device<Args...>
 {
-  private:
-    LocalDevice<
-    Map,
-    QueryServer,
-    QueryParser,
-    QueryAnswerer,
-    Serializer,
-    DataProtocolServer,
-    DataProtocolHandler> m_device;
-
+    using parent_t = local_device<Args...>;
   public:
-    template<typename... Args>
-    SynchronizingLocalDevice(Args&&... args):
-      m_device{std::forward<Args>(args)...}
-    {
+    using parent_t::parent_t;
+    using parent_t::addHandler;
+    using parent_t::removeHandler;
+    using parent_t::expose;
 
-    }
-
-    template<typename... Args>
-    void addHandler(Args&&... args)
-    { m_device.addHandler(std::forward<Args>(args)...); }
-    template<typename... Args>
-    void removeHandler(Args&&... args)
-    { m_device.removeHandler(std::forward<Args>(args)...); }
-
-    auto& device() { return m_device; }
+    using parent_t::size;
+    using parent_t::has;
+    using parent_t::operator[];
 
     template<typename T>
     void add(const T& parameter)
     {
-      m_device.add(parameter);
+      parent_t::add(parameter);
 
-      auto message = Serializer::path_added(
-                       m_device.map().unsafeMap(),
+      auto message = parent_t::serializer_type::path_added(
+                       parent_t::unsafeMap(),
                        parameter.destination);
-      for(auto& client : m_device.clients())
+      for(auto& client : parent_t::clients())
       {
-        m_device.server().sendMessage(client, message);
+        parent_t::query_server().sendMessage(client, message);
       }
     }
 
     void remove(const std::string& path)
     {
-      m_device.remove(path);
+      parent_t::remove(path);
 
-      auto message = Serializer::path_removed(path);
-      for(auto& client : m_device.clients())
+      auto message = parent_t::serializer_type::path_removed(path);
+      for(auto& client : parent_t::clients())
       {
-        m_device.server().sendMessage(client, message);
+        parent_t::query_server().sendMessage(client, message);
       }
     }
 
     template<typename... Attributes>
     void update_attributes(const std::string& path, Attributes&&... val)
     {
-      m_device.update_attributes(path, std::forward<Attributes>(val)...);
+      parent_t::update_attributes(path, std::forward<Attributes>(val)...);
 
-      auto message = Serializer::attributes_changed(
+      auto message = parent_t::serializer_type::attributes_changed(
                        path, std::forward<Attributes>(val)...);
-      for(auto& client : m_device.clients())
+      for(auto& client : parent_t::clients())
       {
-        m_device.server().sendMessage(client, message);
+        parent_t::query_server().sendMessage(client, message);
       }
     }
 
     void rename(std::string oldPath, std::string newPath)
     { /* todo PATH_CHANGED */ }
-
-    typename Map::value_type get(const std::string& address) const
-    { return m_device.get(address); }
-
-    auto& map()
-    { return m_device.map(); }
-    const auto& map() const
-    { return m_device.map(); }
-
-    void expose()
-    { m_device.expose(); }
 };
 
 }

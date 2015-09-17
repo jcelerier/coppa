@@ -6,13 +6,15 @@
 
 namespace coppa
 {
-class WebSocketClient
+namespace ws
+{
+class client
 {
   public:
     using connection_handler = websocketpp::connection_hdl;
 
     template<typename MessageHandler>
-    WebSocketClient(MessageHandler&& messageHandler) :
+    client(MessageHandler&& messageHandler) :
       m_open{false},
       m_done{false}
     {
@@ -26,7 +28,7 @@ class WebSocketClient
         m_open = true;
       });
 
-      m_client.set_message_handler([=] (connection_handler hdl, client::message_ptr msg)
+      m_client.set_message_handler([=] (connection_handler hdl, client_t::message_ptr msg)
       { messageHandler(hdl, msg->get_payload()); });
 
       m_client.set_fail_handler([=] (connection_handler hdl) {
@@ -35,7 +37,7 @@ class WebSocketClient
       });
     }
 
-    ~WebSocketClient()
+    ~client()
     {
       if(m_open)
         stop();
@@ -88,14 +90,14 @@ class WebSocketClient
     }
 
   private:
-    using client = websocketpp::client<websocketpp::config::asio_client>;
+    using client_t = websocketpp::client<websocketpp::config::asio_client>;
     using scoped_lock = websocketpp::lib::lock_guard<websocketpp::lib::mutex>;
 
-    client m_client;
+    client_t m_client;
     connection_handler m_hdl;
     websocketpp::lib::mutex m_lock;
     bool m_open;
     bool m_done;
 };
-
+}
 }

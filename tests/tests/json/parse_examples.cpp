@@ -6,7 +6,7 @@
 #include <coppa/tools/random.hpp>
 using namespace coppa;
 using namespace coppa::oscquery;
-using namespace coppa::oscquery::JSON;
+using namespace coppa::oscquery::json;
 using namespace eggs::variants;
 using namespace std;
 #include <dirent.h>
@@ -59,14 +59,14 @@ class query_protocol_fake
         }
 };
 
-class test_remote_device : public QueryRemoteDevice<
+class test_remote_device : public remote_query_device<
     SimpleParameterMap<ParameterMap>,
-    JSON::parser,
+    json::parser,
     query_protocol_fake,
     SettableMap<SimpleParameterMap<ParameterMap>, osc::sender>>
 {
   public:
-    using QueryRemoteDevice::QueryRemoteDevice;
+    using remote_query_device::remote_query_device;
     void set(const std::string& addr, oscquery::Values& val)
     {
       SettableMap::set(addr, val.values);
