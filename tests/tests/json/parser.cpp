@@ -21,7 +21,9 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     WHEN( "A basic path is added" ) {
       parser::path_added<SimpleParameterMap<ParameterMap>>(
             map,
-            "{ \"path_added\" : { \"full_path\" : \"\\/a\\/b\" \"type\": \"i\" \"access\": 1 } }");
+   R"_json_(
+      { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "i" "ACCESS": 1 } }
+   )_json_");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -44,7 +46,9 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     WHEN( "A path with an int value is added" ) {
       parser::path_added<SimpleParameterMap<ParameterMap>>(
             map,
-            "{ \"path_added\" : { \"full_path\" : \"\\/a\\/b\" \"type\": \"i\" \"access\": 1 \"value\": [ 15 ], \"range\": [ [0, 100, null] ]} }");
+    R"_json_(
+      { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "i" "ACCESS": 1 "VALUE": [ 15 ], "RANGE": [ [0, 100, null] ]} }
+    )_json_");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -71,7 +75,9 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     WHEN( "A path with a float value is added" ) {
       parser::path_added<SimpleParameterMap<ParameterMap>>(
             map,
-            "{ \"path_added\" : { \"full_path\" : \"\\/a\\/b\" \"type\": \"f\" \"access\": 1 \"value\": [ 15.5 ], \"range\": [ [0.3, 10.4, null] ]} }");
+      R"_json_(
+        { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "f" "ACCESS": 1 "VALUE": [ 15.5 ], "RANGE": [ [0.3, 10.4, null] ]} }
+      )_json_");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -98,10 +104,14 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     WHEN( "A path with a string and an int value is added" ) {
       parser::path_added<SimpleParameterMap<ParameterMap>>(
             map,
-            "{ \"path_added\" : "
-            "    { \"full_path\" : \"\\/a\\/b\" \"type\": \"si\" \"access\": 1 "
-            "      \"value\": [ \"yodee\", 45 ],"
-            "      \"range\": [ [null, null, [\"yodee\", \"yaho\", ]], [null, null, null] ]} }");
+       R"_json_(
+       { "PATH_ADDED" :
+         { "FULL_PATH" : "\/a\/b" "TYPE": "si" "ACCESS": 1
+           "VALUE": [ "yodee", 45 ],
+           "RANGE": [ [null, null, ["yodee", "yaho", ]], [null, null, null] ]
+         }
+       }
+       )_json_");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -137,10 +147,14 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     WHEN( "An existing path is added again" ) {
       parser::path_added<SimpleParameterMap<ParameterMap>>(
             map,
-            "{ \"path_added\" : "
-            "    { \"full_path\" : \"\\/a\\/b\" \"type\": \"si\" \"access\": 1 "
-            "      \"value\": [ \"yodee\", 45 ],"
-            "      \"range\": [ [null, null, [\"yodee\", \"yaho\", ]], [null, null, null] ]} }");
+         R"_json_(
+         { "PATH_ADDED" :
+          { "FULL_PATH" : "\/a\/b" "TYPE": "si" "ACCESS": 1
+            "VALUE": [ "yodee", 45 ],
+            "RANGE": [ [null, null, ["yodee", "yaho", ]], [null, null, null] ]
+          }
+         }
+         )_json_");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 6 );
@@ -190,12 +204,15 @@ TEST_CASE( "paths_added parsing", "[parser]" ) {
     WHEN( "Paths are added" ) {
       parser::paths_added<SimpleParameterMap<ParameterMap>>(
             map,
-            "{ \"paths_added\" : ["
-            "    { \"full_path\" : \"\\/a\\/b\" \"type\": \"f\" \"access\": 1 },"
-            "    { \"full_path\" : \"\\/c\\/d\" \"type\": \"si\" \"access\": 2 "
-            "      \"value\": [ \"yodee\", 45 ],"
-            "      \"range\": [ [null, null, [\"yodee\", \"yaho\", ]], [null, null, null] ] } ]"
-            "}");
+                  R"_json_(
+                  { "PATHS_ADDED" : [
+                      { "FULL_PATH" : "/a/b" "TYPE": "f" "ACCESS": 1 },
+                      { "FULL_PATH" : "/c/d" "TYPE": "si" "ACCESS": 2
+                        "VALUE": [ "yodee", 45 ],
+                        "RANGE": [ [null, null, ["yodee", "yaho", ]], [null, null, null] ] } ]
+                  }
+                  )_json_"
+);
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 7 );
@@ -255,7 +272,10 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
     REQUIRE(map.has("/da/da") == true);
 
     WHEN( "An existing, real leaf path is removed" ) {
-      parser::path_removed(map, "{ \"path_removed\" : \"\\/da\\/da\" }");
+      parser::path_removed(map,
+                         R"_json_(
+                           { "PATH_REMOVED" : "/da/da" }
+                         )_json_");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 4 );
@@ -267,7 +287,10 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
 
 
     WHEN( "An existing, non-real node path is removed" ) {
-      parser::path_removed(map, "{ \"path_removed\" : \"\\/da\" }");
+      parser::path_removed(map,
+                       R"_json_(
+                         { "PATH_REMOVED" : "/da" }
+                       )_json_");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 3 );
@@ -292,7 +315,10 @@ TEST_CASE( "paths_removed parsing", "[parser]" ) {
     REQUIRE(map.has("/da/da") == true);
 
     WHEN( "An existing, real leaf path is removed" ) {
-      parser::paths_removed(map, "{ \"paths_removed\" : [\"\\/da\\/da\", \"\\/da\\/do\"] }");
+      parser::paths_removed(map,
+                    R"_json_(
+                      { "PATHS_REMOVED" : ["/da/da", "/da/do"] }
+                    )_json_");
 
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 3 );
@@ -321,7 +347,9 @@ TEST_CASE( "path_changed parsing", "[parser]" ) {
     WHEN( "A leaf is changed" ) {
       parser::path_changed(
             map,
-            "{ \"path_changed\" : { \"full_path\" : \"\\/da\\/da\" \"type\": \"f\" \"access\": 2 } }");
+        R"_json_(
+            { "PATH_CHANGED" : { "FULL_PATH" : "/da/da" "TYPE": "f" "ACCESS": 2 } }
+        )_json_");
 
       THEN( "the capacity does not change" ) {
         REQUIRE( map.size() == 5 );
@@ -335,7 +363,9 @@ TEST_CASE( "path_changed parsing", "[parser]" ) {
     WHEN( "Nodes are removed" ) {
       parser::path_changed(
             map,
-            "{ \"path_changed\" : { \"full_path\" : \"\\/da\" } }");
+       R"_json_(
+           { "PATH_CHANGED" : { "FULL_PATH" : "/da" } }
+       )_json_");
 
       THEN( "the capacity does change" ) {
         REQUIRE( map.size() == 4 ); // -2 +1

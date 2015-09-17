@@ -86,14 +86,9 @@ class SimpleParameterMap
     auto& operator[](size_type i) const
     { return m_map.template get<1>()[i]; }
 
-    auto size() const
-    { return m_map.size(); }
-
-    auto begin() const
-    { return m_map.begin(); }
-
-    auto end() const
-    { return m_map.end(); }
+    FORWARD_FUN_CONST(m_map, auto, size)
+    FORWARD_FUN_CONST(m_map, auto, begin)
+    FORWARD_FUN_CONST(m_map, auto, end)
 
 
     template<typename Key,

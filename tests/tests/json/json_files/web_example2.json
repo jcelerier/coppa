@@ -1,0 +1,19 @@
+ {
+      "DESCRIPTION": "simple container node, with one method- qux",
+      "FULL_PATH": "/baz",
+      "ACCESS": 0,
+      "CONTENTS": {
+          "qux":  {
+              "DESCRIPTION": "read/write OSC node- accepts one of several string-type inputs",
+              "FULL_PATH": "/baz/qux",
+              "ACCESS": 3,
+              "TYPE": "s",
+              "VALUE": [
+                  "half-full"
+              ],
+              "RANGE": [
+                  [null, null, ["empty", "half-full", "full"]]
+              ]
+          }
+      }
+  }

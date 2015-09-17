@@ -1,0 +1,5 @@
+  {
+      "RANGE": [
+          [null, null, ["empty", "half-full", "full"]]
+      ]
+  }

@@ -54,6 +54,12 @@ add_executable(test_json_writer "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/wr
 target_link_libraries(test_json_writer coppa)
 add_executable(test_json_parser "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/parser.cpp")
 target_link_libraries(test_json_parser coppa)
+add_executable(test_json_parse_examples "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/parse_examples.cpp")
+target_link_libraries(test_json_parse_examples coppa)
+
+# For tests
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/json_files"
+     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Qt examples
 if(Qt5_FOUND)
