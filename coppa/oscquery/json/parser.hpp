@@ -31,7 +31,7 @@ class parser
         return MessageType::PathAdded;
       else if(obj.find(key::path_removed()) != obj.end())
         return MessageType::PathRemoved;
-      else if(obj.find(key::path_changed()) != obj.end())
+      else if(obj.find(key::path_changed()) != obj.end()) // TODO Put it first since most common ??
         return MessageType::PathChanged;
       else if(obj.find(key::attributes_changed()) != obj.end())
         return MessageType::AttributesChanged;
@@ -81,6 +81,8 @@ class parser
       using namespace detail;
       json_map mess{message};
 
+#define JSON_B R"_json_("
+#define JSON_END )_json_"
       // Get the object
       const auto& obj = mess.get<json_map>(key::path_changed());
 
@@ -143,7 +145,7 @@ class parser
       using namespace detail;
 
       json_map mess{message};
-      const auto& arr = detail::valToArray(mess["paths_added"]);
+      const auto& arr = detail::valToArray(mess[key::paths_added()]);
       for(const auto& elt : arr)
       {
         map.merge(parseNamespace<BaseMapType>(elt.as<json_map>()));
@@ -160,7 +162,7 @@ class parser
     static void paths_removed(Map& map, const std::string& message)
     {
       json_map mess{message};
-      const auto& arr = detail::valToArray(mess["paths_removed"]);
+      const auto& arr = detail::valToArray(mess[key::paths_removed()]);
 
       for(const auto& elt : arr)
       {

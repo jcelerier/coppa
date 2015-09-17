@@ -113,6 +113,8 @@ class QueryRemoteDevice : public RemoteMapBase, public QueryProtocolClient
     void on_queryServerMessage(const std::string& message)
     try
     {
+        // TODO the map is parsed twice. We should forward the json_map obtained here
+        // and have the parser functions take json_map's.
       auto mt = Parser::messageType(message);
 
       if(mt == MessageType::Device)

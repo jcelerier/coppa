@@ -54,6 +54,11 @@ inline bool operator==(const Parameter& lhs, const Parameter& rhs)
       && lhs.tags == rhs.tags;
 }
 
+inline bool operator!=(const Parameter& lhs, const Parameter& rhs)
+{
+  return !(lhs == rhs);
+}
+
 // What about putting this in a class ?
 inline void addValue(Parameter& parameter,
                      const Variant& var,

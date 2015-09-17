@@ -9,6 +9,11 @@
   ret fun(Args&&... args) { \
     return object.fun(std::forward<Args>(args)...); \
   }
+#define FORWARD_FUN_CONST(object, ret, fun) \
+    template<typename... Args> \
+    ret fun(Args&&... args) const { \
+    return object.fun(std::forward<Args>(args)...); \
+    }
 
 #if defined(coppa_dynamic)
 #define coppa_name(theName) static constexpr const char * name{ #theName };
