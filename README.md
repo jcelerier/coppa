@@ -9,8 +9,9 @@ The API is not yet stable. This aims to provide an example of a possible impleme
 
 * An up-to-date C++14 compiler (So far, only tested with clang-3.6; building 
 works with GCC-5.1 but it crashes at runtime)
-* libasio
 * CMake
+* libasio (for websocket connection)
+* [facultative] Qt5 and kf5-kdnssd for ZeroConf operation and examples
 
 ## Setup
 
