@@ -22,7 +22,12 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
       parser::path_added<basic_map<ParameterMap>>(
             map, json_map(
    R"_json_(
-      { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "i" "ACCESS": 1 } }
+      { "PATH_ADDED" :
+        { "FULL_PATH" : "/a/b",
+          "TYPE": "i",
+          "ACCESS": 1
+        }
+      }
    )_json_"));
 
       THEN( "the capacity changes" ) {
@@ -47,7 +52,14 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
       parser::path_added<basic_map<ParameterMap>>(
             map,json_map(
     R"_json_(
-      { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "i" "ACCESS": 1 "VALUE": [ 15 ], "RANGE": [ [0, 100, null] ]} }
+      { "PATH_ADDED" :
+        { "FULL_PATH" : "/a/b",
+          "TYPE": "i",
+          "ACCESS": 1,
+          "VALUE": [ 15 ],
+          "RANGE": [ [0, 100, null] ]
+        }
+       }
     )_json_"));
 
       THEN( "the capacity changes" ) {
@@ -76,7 +88,14 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
       parser::path_added<basic_map<ParameterMap>>(
             map,json_map(
       R"_json_(
-        { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "f" "ACCESS": 1 "VALUE": [ 15.5 ], "RANGE": [ [0.3, 10.4, null] ]} }
+        { "PATH_ADDED" :
+          { "FULL_PATH" : "/a/b",
+            "TYPE": "f",
+            "ACCESS": 1,
+            "VALUE": [ 15.5 ],
+            "RANGE": [ [0.3, 10.4, null] ]
+          }
+        }
       )_json_"));
 
       THEN( "the capacity changes" ) {
@@ -106,9 +125,11 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
             map,json_map(
        R"_json_(
        { "PATH_ADDED" :
-         { "FULL_PATH" : "/a\/b" "TYPE": "si" "ACCESS": 1
+         { "FULL_PATH" : "/a\/b",
+           "TYPE": "si",
+           "ACCESS": 1,
            "VALUE": [ "yodee", 45 ],
-           "RANGE": [ [null, null, ["yodee", "yaho", ]], [null, null, null] ]
+           "RANGE": [ [null, null, ["yodee", "yaho" ]], [null, null, null] ]
          }
        }
        )_json_"));
@@ -149,7 +170,14 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
       parser::path_added<basic_map<ParameterMap>>(
               map,json_map(
         R"_json_(
-          { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "f" "ACCESS": 1 "VALUE": [ 15.5 ], "RANGE": [ [0.3, 10.4, null] ]} }
+          { "PATH_ADDED" :
+            { "FULL_PATH" : "/a/b",
+              "TYPE": "f",
+              "ACCESS": 1,
+              "VALUE": [ 15.5 ],
+              "RANGE": [ [0.3, 10.4, null] ]
+            }
+          }
         )_json_"));
 
       REQUIRE( map.has("/a/b") );
@@ -158,9 +186,11 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
             map,json_map(
          R"_json_(
          { "PATH_ADDED" :
-          { "FULL_PATH" : "/a/b" "TYPE": "si" "ACCESS": 1
+          { "FULL_PATH" : "/a/b",
+            "TYPE": "si",
+            "ACCESS": 1,
             "VALUE": [ "yodee", 45 ],
-            "RANGE": [ [null, null, ["yodee", "yaho", ]], [null, null, null] ]
+            "RANGE": [ [null, null, ["yodee", "yaho" ]], [null, null, null] ]
           }
          }
          )_json_"));
@@ -215,10 +245,17 @@ TEST_CASE( "paths_added parsing", "[parser]" ) {
             map,json_map(
                   R"_json_(
                   { "PATHS_ADDED" : [
-                      { "FULL_PATH" : "/a/b" "TYPE": "f" "ACCESS": 1 },
-                      { "FULL_PATH" : "/c/d" "TYPE": "si" "ACCESS": 2
+                      { "FULL_PATH" : "/a/b",
+                        "TYPE": "f",
+                        "ACCESS": 1
+                      },
+                      { "FULL_PATH" : "/c/d",
+                        "TYPE": "si",
+                        "ACCESS": 2,
                         "VALUE": [ "yodee", 45 ],
-                        "RANGE": [ [null, null, ["yodee", "yaho", ]], [null, null, null] ] } ]
+                        "RANGE": [ [null, null, ["yodee", "yaho" ]], [null, null, null] ]
+                      }
+                    ]
                   }
                   )_json_"));
 
@@ -356,7 +393,12 @@ TEST_CASE( "path_changed parsing", "[parser]" ) {
       parser::path_changed(
             map,json_map(
         R"_json_(
-            { "PATH_CHANGED" : { "FULL_PATH" : "/da/da" "TYPE": "f" "ACCESS": 2 } }
+            { "PATH_CHANGED" :
+              { "FULL_PATH" : "/da/da",
+                "TYPE": "f",
+                "ACCESS": 2
+              }
+            }
         )_json_"));
 
       THEN( "the capacity does not change" ) {

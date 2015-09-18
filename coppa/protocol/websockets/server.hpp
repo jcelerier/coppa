@@ -55,10 +55,12 @@ class server
           }
           catch(PathNotFoundException& e)
           {
+            auto con = m_server.get_con_from_hdl(hdl);
             con->set_status(websocketpp::http::status_code::not_found);
           }
           catch(BadRequestException& e)
           {
+            auto con = m_server.get_con_from_hdl(hdl);
             std::cerr << "Error in request: " << con->get_uri()->get_resource() << " ==> "<< e.what() << std::endl;
             con->set_status(websocketpp::http::status_code::bad_request);
           }
