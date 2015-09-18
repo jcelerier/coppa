@@ -31,7 +31,7 @@ class answerer
         {
           // First check if we have the path
           if(!dev.has(path))
-            throw BadRequestException{"Path not found"};
+            throw PathNotFoundException{path};
 
           // Listen
           auto listen_it = parameters.find("listen");

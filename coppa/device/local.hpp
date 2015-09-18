@@ -155,7 +155,11 @@ class local_device : public Map
       }
     }
 
-    auto on_message(typename QueryServer::connection_handler hdl, const std::string& message)
+    // Exceptions here will be catched by the server
+    // which will set appropriate error codes.
+    auto on_message(
+        typename QueryServer::connection_handler hdl,
+        const std::string& message)
     {
       return QueryParser::parse(
             message,

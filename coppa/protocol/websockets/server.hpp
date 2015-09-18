@@ -49,12 +49,17 @@ class server
     {
         m_server.set_message_handler([=] (connection_handler hdl, server_t::message_ptr msg)
         {
-          try{
-          send_message(hdl, h(hdl, msg->get_payload()));
-          }
-          catch(...)
+          try
           {
-            server_t::connection_ptr con = m_server.get_con_from_hdl(hdl);
+            send_message(hdl, h(hdl, msg->get_payload()));
+          }
+          catch(PathNotFoundException& e)
+          {
+            con->set_status(websocketpp::http::status_code::not_found);
+          }
+          catch(BadRequestException& e)
+          {
+            std::cerr << "Error in request: " << con->get_uri()->get_resource() << " ==> "<< e.what() << std::endl;
             con->set_status(websocketpp::http::status_code::bad_request);
           }
         });
@@ -64,9 +69,14 @@ class server
           auto con = m_server.get_con_from_hdl(hdl);
 
           con->replace_header("Content-Type", "application/json; charset=utf-8");
-          try{
-          con->set_body(h(hdl, con->get_uri()->get_resource()) + "\0");
-          con->set_status(websocketpp::http::status_code::ok);
+          try
+          {
+            con->set_body(h(hdl, con->get_uri()->get_resource()) + "\0");
+            con->set_status(websocketpp::http::status_code::ok);
+          }
+          catch(PathNotFoundException& e)
+          {
+            con->set_status(websocketpp::http::status_code::not_found);
           }
           catch(BadRequestException& e)
           {

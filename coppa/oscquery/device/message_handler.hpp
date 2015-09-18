@@ -16,7 +16,9 @@ class message_handler : public coppa::osc::receiver
 {
   public:
     template<typename Device>
-    static void on_messageReceived(Device& dev, const oscpack::ReceivedMessage& m)
+    static void on_messageReceived(
+        Device& dev,
+        const oscpack::ReceivedMessage& m)
     {
       using namespace coppa;
 
