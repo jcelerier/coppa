@@ -11,19 +11,23 @@ using val_t = json_value::type;
 class parser
 {
   public:
-    static int getPort(const std::string& message)
+    static json_map parse(const std::string& message)
+    {
+      // TODO checking
+      return message;
+    }
+
+    static int getPort(const json_map& obj)
     {
       using namespace detail;
-      const json_map obj{ message };
       json_assert(obj.get(key::osc_port()).is(val_t::integer));
 
       return obj.get<int>(key::osc_port());
     }
 
-    static MessageType messageType(const std::string& message)
+    static MessageType messageType(const json_map& obj)
     {
       using namespace detail;
-      const json_map obj{ message };
       if(obj.find(key::osc_port()) != obj.end())
         return MessageType::Device;
 
@@ -59,27 +63,17 @@ class parser
       return map;
     }
 
-    template<typename Map>
-    static auto parseNamespace(const std::string& message)
-    {
-      using namespace detail;
-      return parseNamespace<Map>(json_map{message});
-    }
-
-
     template<typename BaseMapType, typename Map>
-    static void path_added(Map& map, const std::string& message)
+    static void path_added(Map& map, const json_map& obj)
     {
       using namespace detail;
-      json_map obj{message};
       map.merge(parseNamespace<BaseMapType>(obj.get<json_map>(key::path_added())));
     }
 
     template<typename Map>
-    static void path_changed(Map& map, const std::string& message)
+    static void path_changed(Map& map, const json_map& mess)
     {
       using namespace detail;
-      json_map mess{message};
 
       // Get the object
       const auto& obj = mess.get<json_map>(key::path_changed());
@@ -92,10 +86,9 @@ class parser
     }
 
     template<typename Map>
-    static void path_removed(Map& map, const std::string& message)
+    static void path_removed(Map& map, const json_map& obj)
     {
       using namespace detail;
-      json_map obj{message};
 
       const auto& path = valToString(obj.get(key::path_removed()));
       json_assert(map.existing_path(path));
@@ -103,10 +96,9 @@ class parser
     }
 
     template<typename Map>
-    static void attributes_changed(Map& map, const std::string& message)
+    static void attributes_changed(Map& map, const json_map& obj)
     {
       using namespace detail;
-      json_map obj{message};
       const auto& attr_changed = obj.get<json_map>(key::attributes_changed());
 
       // 1. Search for the paths
@@ -138,12 +130,11 @@ class parser
 
     // Plural forms
     template<typename BaseMapType, typename Map>
-    static void paths_added(Map& map, const std::string& message)
+    static void paths_added(Map& map, const json_map& obj)
     {
       using namespace detail;
 
-      json_map mess{message};
-      const auto& arr = detail::valToArray(mess[key::paths_added()]);
+      const auto& arr = detail::valToArray(obj[key::paths_added()]);
       for(const auto& elt : arr)
       {
         map.merge(parseNamespace<BaseMapType>(elt.as<json_map>()));
@@ -151,16 +142,15 @@ class parser
     }
 
     template<typename Map>
-    static void paths_changed(Map& map, const std::string& message)
+    static void paths_changed(Map& map, const json_map& obj)
     {
       std::cerr << "TODO" << std::endl;
     }
 
     template<typename Map>
-    static void paths_removed(Map& map, const std::string& message)
+    static void paths_removed(Map& map, const json_map& obj)
     {
-      json_map mess{message};
-      const auto& arr = detail::valToArray(mess[key::paths_removed()]);
+      const auto& arr = detail::valToArray(obj[key::paths_removed()]);
 
       for(const auto& elt : arr)
       {
@@ -171,7 +161,7 @@ class parser
     }
 
     template<typename Map>
-    static void attributes_changed_array(Map& map, const std::string& message)
+    static void attributes_changed_array(Map& map, const json_map& obj)
     {
       std::cerr << "TODO" << std::endl;
     }

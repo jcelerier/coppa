@@ -24,6 +24,7 @@ static void json_assert(bool val)
 
 namespace detail
 {
+// TODO -> inline
 static const auto& valToString(const json_value& val)
 {
   json_assert(val.is(val_t::string));

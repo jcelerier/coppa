@@ -97,11 +97,12 @@ class remote_query_device : public RemoteMapBase, public QueryProtocolClient
     {
         // TODO the map is parsed twice. We should forward the json_map obtained here
         // and have the parser functions take json_map's.
-      auto mt = Parser::messageType(message);
+      auto data = Parser::parse(message);
+      auto mt = Parser::messageType(data);
 
       if(mt == MessageType::Device)
       {
-        RemoteMapBase::connect(QueryProtocolClient::uri(), Parser::getPort(message));
+        RemoteMapBase::connect(QueryProtocolClient::uri(), Parser::getPort(data));
         if(onConnect) onConnect();
       }
       else
@@ -109,41 +110,41 @@ class remote_query_device : public RemoteMapBase, public QueryProtocolClient
         switch(mt)
         {
           case MessageType::Namespace:
-            RemoteMapBase::replace(Parser::template parseNamespace<BaseMapType>(message));
+            RemoteMapBase::replace(Parser::template parseNamespace<BaseMapType>(data));
             break;
 
 
           case MessageType::PathAdded:
-            Parser::template path_added<BaseMapType>(RemoteMapBase::safeMap(), message);
+            Parser::template path_added<BaseMapType>(RemoteMapBase::safeMap(), data);
             break;
 
           case MessageType::PathChanged:
-            Parser::path_changed(RemoteMapBase::safeMap(), message);
+            Parser::path_changed(RemoteMapBase::safeMap(), data);
             break;
 
           case MessageType::PathRemoved:
-            Parser::path_removed(RemoteMapBase::safeMap(), message);
+            Parser::path_removed(RemoteMapBase::safeMap(), data);
             break;
 
           case MessageType::AttributesChanged:
-            Parser::attributes_changed(RemoteMapBase::safeMap(), message);
+            Parser::attributes_changed(RemoteMapBase::safeMap(), data);
             break;
 
 
           case MessageType::PathsAdded:
-            Parser::template paths_added<BaseMapType>(RemoteMapBase::safeMap(), message);
+            Parser::template paths_added<BaseMapType>(RemoteMapBase::safeMap(), data);
             break;
 
           case MessageType::PathsChanged:
-            Parser::paths_changed(RemoteMapBase::safeMap(), message);
+            Parser::paths_changed(RemoteMapBase::safeMap(), data);
             break;
 
           case MessageType::PathsRemoved:
-            Parser::paths_removed(RemoteMapBase::safeMap(), message);
+            Parser::paths_removed(RemoteMapBase::safeMap(), data);
             break;
 
           case MessageType::AttributesChangedArray:
-            Parser::attributes_changed_array(RemoteMapBase::safeMap(), message);
+            Parser::attributes_changed_array(RemoteMapBase::safeMap(), data);
             break;
 
           case MessageType::Device:

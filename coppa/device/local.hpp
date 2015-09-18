@@ -79,12 +79,12 @@ class local_device : public Map
 
     // Handlers to be called when an address is modified.
     template<typename T>
-    void addHandler(const std::string& name, T&& fun)
+    void add_handler(const std::string& name, T&& fun)
     {
       m_handlers[name] = fun;
     }
 
-    void removeHandler(const std::string& name)
+    void remove_handler(const std::string& name)
     {
       m_handlers.erase(name);
     }
@@ -181,8 +181,8 @@ class synchronizing_local_device : private local_device<Args...>
     using parent_t = local_device<Args...>;
   public:
     using parent_t::parent_t;
-    using parent_t::addHandler;
-    using parent_t::removeHandler;
+    using parent_t::add_handler;
+    using parent_t::remove_handler;
     using parent_t::expose;
 
     using parent_t::size;

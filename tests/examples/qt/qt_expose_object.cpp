@@ -69,12 +69,12 @@ void exposeQObject(Device& dev, QObject* obj, ThreadManager* mgr)
     dev.add(p);
 
     // Connect the changes of parameters with Qt.
-    dev.addHandler(
+    dev.add_handler(
           p.destination,
           [&, mgr, wrapper = QPointer<QObject>(obj)] (const Parameter& p) {
       if(!wrapper)
       {
-        dev.removeHandler(p.destination);
+        dev.remove_handler(p.destination);
         return;
       }
       auto& elt = p.values.front();
@@ -190,7 +190,7 @@ int main(int argc, char** argv)
   });
 
   // Update the label when the data is updated.
-  dev.addHandler(
+  dev.add_handler(
         p.destination,
         [&] (const Parameter& p) {
     label->setText(QString::number(eggs::variants::get<int>(p.values.front())));
