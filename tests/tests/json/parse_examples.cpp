@@ -19,12 +19,32 @@ std::vector<std::string> list_test_files()
     {
       while (auto ent = readdir(dir))
       {
-          vec.push_back(std::string(ent->d_name));
+          auto str = std::string(ent->d_name);
+          if(str != "." && str != "..")
+            vec.push_back(str);
       }
       closedir(dir);
     }
 
     return vec;
+}
+
+std::vector<std::string> conformance_test_folders()
+{
+  std::vector<std::string> vec;
+
+  if (auto dir = opendir("conformance"))
+  {
+    while (auto ent = readdir(dir))
+    {
+      auto str = std::string(ent->d_name);
+      if(str != "." && str != "..")
+        vec.push_back(str);
+    }
+    closedir(dir);
+  }
+
+  return vec;
 }
 
 auto read_json_map(const std::string& filename)
@@ -79,16 +99,6 @@ class test_remote_device : public remote_query_device<
 };
 
 TEST_CASE( "parse all files without crashing", "[parser]" ) {
-
-    for(const auto& file : list_test_files())
-    {
-        test_remote_device dev("");
-        dev.message(read_json_file("json_files" + file));
-    }
-}
-
-
-TEST_CASE( "various parse examples", "[parser]" ) {
 
     for(const auto& file : list_test_files())
     {
@@ -177,17 +187,21 @@ TEST_CASE( "other examples parsing", "[parser]" ) {
 TEST_CASE("effects on map", "[general]") {
 
   GIVEN( "An empty parameter map" ) {
-    test_remote_device dev("");
-    dev.message(read_json_file("conformance/1/original.json"));
 
-    auto orig_map = coppa::oscquery::json::detail::mapToJson(dev.data_map(), "/");
+    for(const auto& file : conformance_test_folders())
+    {
+        auto base = "conformance/" + file + "/";
+        test_remote_device dev("");
 
-    dev.message(read_json_file("conformance/1/message.json"));
+        // Set-up the initial namespace
+        dev.message(read_json_file(base + "original.json"));
+        auto orig_map = coppa::oscquery::json::detail::mapToJson(dev.data_map(), "/");
 
-    auto result_map = coppa::oscquery::json::detail::mapToJson(dev.data_map(), "/");
+        // Apply a command
+        dev.message(read_json_file(base + "message.json"));
+        auto result_map = coppa::oscquery::json::detail::mapToJson(dev.data_map(), "/");
 
-    std::cerr << orig_map;
-    REQUIRE(result_map == read_json_map("conformance/1/expected.json"));
-
+        REQUIRE(result_map == read_json_map(base + "expected.json"));
+    }
   }
 }

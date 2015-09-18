@@ -8,6 +8,7 @@
               "FULL_PATH": "/foo",
               "ACCESS": 1,
               "TYPE": "f",
+              "CLIPMODE": ["Both"],
               "VALUE": [
                   0.5
               ],
@@ -20,6 +21,7 @@
               "FULL_PATH": "/bar",
               "ACCESS": 3,
               "TYPE": "ii",
+              "CLIPMODE": ["Both", "Both"],
               "VALUE": [
                   4,
                   51

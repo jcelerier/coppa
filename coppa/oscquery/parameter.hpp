@@ -43,6 +43,8 @@ struct ClipModes
 };
 
 // TODO try one based on something like QVariantMap
+// TODO another possibility would be to use boost::optional
+// for access / clipmode
 using Parameter = AttributeAggregate<
                     Destination,
                     Values,
