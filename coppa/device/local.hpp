@@ -131,9 +131,9 @@ class local_device : public Map
     QueryServer m_query_server;
     void initQueryServer()
     {
-      m_query_server.setOpenHandler(FORWARD_LAMBDA(on_connectionOpen));
-      m_query_server.setCloseHandler(FORWARD_LAMBDA(on_connectionClosed));
-      m_query_server.setMessageHandler(FORWARD_LAMBDA(on_message));
+      m_query_server.set_open_handler(FORWARD_LAMBDA(on_connectionOpen));
+      m_query_server.set_close_handler(FORWARD_LAMBDA(on_connectionClosed));
+      m_query_server.set_message_handler(FORWARD_LAMBDA(on_message));
     }
 
     // Handlers for the query server
@@ -143,7 +143,7 @@ class local_device : public Map
       m_clients.emplace_back(hdl);
 
       // Send the client a message with the OSC port
-      m_query_server.sendMessage(hdl, Serializer::deviceInfo(m_data_server.port()));
+      m_query_server.send_message(hdl, Serializer::deviceInfo(m_data_server.port()));
     }
 
     void on_connectionClosed(typename QueryServer::connection_handler hdl)
@@ -200,7 +200,7 @@ class synchronizing_local_device : private local_device<Args...>
                        parameter.destination);
       for(auto& client : parent_t::clients())
       {
-        parent_t::query_server().sendMessage(client, message);
+        parent_t::query_server().send_message(client, message);
       }
     }
 
@@ -211,7 +211,7 @@ class synchronizing_local_device : private local_device<Args...>
       auto message = parent_t::serializer_type::path_removed(path);
       for(auto& client : parent_t::clients())
       {
-        parent_t::query_server().sendMessage(client, message);
+        parent_t::query_server().send_message(client, message);
       }
     }
 
@@ -224,7 +224,7 @@ class synchronizing_local_device : private local_device<Args...>
                        path, std::forward<Attributes>(val)...);
       for(auto& client : parent_t::clients())
       {
-        parent_t::query_server().sendMessage(client, message);
+        parent_t::query_server().send_message(client, message);
       }
     }
 

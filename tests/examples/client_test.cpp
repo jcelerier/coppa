@@ -33,7 +33,7 @@ int main()
         cout << endl << "Current addresses: " << endl;
 
         // Print the real parameters in the tree
-        for(auto&& elt : theMap)
+        for(auto&& elt : theMap.data_map())
         {
             cout << elt.destination << endl;
         }

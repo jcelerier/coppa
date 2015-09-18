@@ -7,13 +7,15 @@ namespace oscquery
 {
 namespace json
 {
+// TODO switch to RapidJSON
+// See : https://github.com/miloyip/nativejson-benchmark#libraries
 using val_t = json_value::type;
 class parser
 {
   public:
     static json_map parse(const std::string& message)
     {
-      // TODO checking
+      // TODO check here for valid json.
       return message;
     }
 
@@ -115,14 +117,34 @@ class parser
           if(path_obj.find(name) != path_obj.end())
             map.update(path, [&] (Parameter& p) { p.*member = method(path_obj.template get(name)); });
         };
-
         // 2. Map the values
         // TODO check that they are correct (and put in detail).
         mapper(key::attribute<Description>(), &Parameter::description, &valToString);
         mapper(key::attribute<Tags>(),        &Parameter::tags,        &jsonToTags);
         mapper(key::attribute<Access>(),      &Parameter::accessmode,  &jsonToAccessMode);
-        mapper(key::attribute<Values>(),      &Parameter::values,      &jsonToVariantArray);
-        mapper(key::attribute<Ranges>(),      &Parameter::ranges,      &jsonToRangeArray);
+
+        auto type_it = obj.find(key::type());
+        if(type_it != obj.end())
+        {
+          // We can be type-safe
+          auto type_vec = jsonToTypeVector(type_it->second);
+          auto mapper_tyepsafe = [&] (const std::string& name, auto&& member, auto&& method)
+          {
+            if(path_obj.find(name) != path_obj.end())
+              map.update(path, [&] (Parameter& p) { p.*member = method(path_obj.template get(name), type_vec); });
+          };
+
+          mapper_tyepsafe(key::attribute<Values>(),      &Parameter::values,      &jsonToVariantArray_checked);
+          mapper_tyepsafe(key::attribute<Ranges>(),      &Parameter::ranges,      &jsonToRangeArray_checked);
+        }
+        else
+        {
+          // Degrade to unsafe parsing that will just replace the values without checking.
+          // bool, nil are unexpressable in such mode.
+          mapper(key::attribute<Values>(),      &Parameter::values,      &jsonToVariantArray);
+          mapper(key::attribute<Ranges>(),      &Parameter::ranges,      &jsonToRangeArray);
+        }
+
         mapper(key::attribute<ClipModes>(),   &Parameter::clipmodes,   &jsonToClipModeArray);
       }
     }

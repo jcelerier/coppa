@@ -20,20 +20,22 @@ class sender
 {
   public:
     sender() = default;
+    sender(sender&&) = default;
+    sender(const sender&) = delete;
     sender& operator=(const sender&) = default;
+    sender& operator=(sender&&) = default;
+
     sender(const std::string& ip, const int port):
-      m_socket{std::make_shared<UdpTransmitSocket>(IpEndpointName(ip.c_str(), port))},
+      m_socket{std::make_unique<UdpTransmitSocket>(IpEndpointName(ip.c_str(), port))},
       m_ip(ip),
       m_port(port)
     {
     }
 
     virtual ~sender() = default;
-    sender(sender&&) = default;
-    sender(const sender&) = delete;
 
     template<typename... Args>
-    void send(std::string address, Args&&... args)
+    void send(const std::string& address, Args&&... args)
     {
       send(m_gen(address, std::forward<Args>(args)...));
     }
@@ -47,7 +49,7 @@ class sender
       m_socket->Send( m.Data(), m.Size() );
     }
 
-    std::shared_ptr<UdpTransmitSocket> m_socket;
+    std::unique_ptr<UdpTransmitSocket> m_socket;
     std::string m_ip;
     int m_port;
 

@@ -27,30 +27,30 @@ class server
            MessageHandler messageHandler):
     server{}
     {
-      setOpenHandler(openHandler);
-      setCloseHandler(closeHandler);
-      setMessageHandler(messageHandler);
+      set_open_handler(openHandler);
+      set_close_handler(closeHandler);
+      set_message_handler(messageHandler);
     }
 
     template<typename Handler>
-    void setOpenHandler(Handler h)
+    void set_open_handler(Handler h)
     {
         m_server.set_open_handler(h);
     }
 
     template<typename Handler>
-    void setCloseHandler(Handler h)
+    void set_close_handler(Handler h)
     {
         m_server.set_close_handler(h);
     }
 
     template<typename Handler>
-    void setMessageHandler(Handler h)
+    void set_message_handler(Handler h)
     {
         m_server.set_message_handler([=] (connection_handler hdl, server_t::message_ptr msg)
         {
           try{
-          sendMessage(hdl, h(hdl, msg->get_payload()));
+          send_message(hdl, h(hdl, msg->get_payload()));
           }
           catch(...)
           {
@@ -83,7 +83,7 @@ class server
       m_server.run();
     }
 
-    void sendMessage(connection_handler hdl, const std::string& message)
+    void send_message(connection_handler hdl, const std::string& message)
     {
       auto con = m_server.get_con_from_hdl(hdl);
       con->send(message);

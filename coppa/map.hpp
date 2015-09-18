@@ -20,7 +20,7 @@ template<typename ParameterType>
 using ParameterMapType = bmi::multi_index_container<
 ParameterType,
 bmi::indexed_by<
-bmi::ordered_unique< // TODO compare performance with ordered_unique
+bmi::ordered_unique< // TODO compare performance with hashed_unique
 bmi::member<
 Destination,
 std::string,

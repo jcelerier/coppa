@@ -102,7 +102,7 @@ class writer
         Attributes&&... attrs)
     {
       using namespace detail;
-      // TODO what if type changed?
+      // TODO what if type changed? We have to add the type array.
       json_map objmap;
       objmap[key::full_path()] = path;
 
@@ -170,7 +170,7 @@ class writer
         Attributes&&... attrs)
     {
       using namespace detail;
-      // TODO what if type changed?
+      // TODO what if type changed? We have to add the type array.
       json_map objmap;
       objmap[key::full_path()] = path;
 

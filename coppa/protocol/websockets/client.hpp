@@ -75,7 +75,7 @@ class client
       m_client.reset(); // In order to be able to reconnect afterwards.
     }
 
-    void sendMessage(const std::string& request)
+    void send_message(const std::string& request)
     {
       if(!m_open)
         return;

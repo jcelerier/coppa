@@ -89,9 +89,34 @@ class AttributeAggregate : public Args...
 };
 // Make an oscquery-specific Variant ?
 
-using Generic = std::vector<char>;
+struct Generic
+{
+    std::string buf;
+
+    bool operator==(const Generic& other) const
+    {
+      return buf == other.buf;
+    }
+};
 
 enum class Type { int_t, float_t, bool_t, string_t, generic_t };
+
+// TODO boost::recursive_variant
+// TODO map Type to the actual types somehow
 using Variant = eggs::variant<int, float, bool, std::string, Generic>;
+
+inline char getOSCType(const coppa::Variant& value)
+{
+  switch(value.which())
+  {
+    case 0: return 'i';
+    case 1: return 'f';
+    case 2: return eggs::variants::get<bool>(value) ? 'T' : 'F';
+    case 3: return 's';
+    case 4: return 'b';
+    default: return 'N';
+  }
+}
+
 
 }

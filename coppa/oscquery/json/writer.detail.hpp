@@ -3,6 +3,7 @@
 #include <coppa/oscquery/json/keys.hpp>
 #include <coppa/exceptions/BadRequest.hpp>
 
+#include <base64/base64.h>
 #include <jeayeson/jeayeson.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/bimap.hpp>
@@ -24,9 +25,16 @@ inline void addValueToJsonArray(
   {
     case 0: array.push_back(get<int>(val)); break;
     case 1: array.push_back(get<float>(val)); break;
-      // TODO case 2: array.push_back(get<bool>(val)); break;
+    case 2: array.push_back(get<bool>(val)); break;
     case 3: array.push_back(get<std::string>(val)); break;
-      // TODO base64 case 4: array.push_back(get<coppa::Generic>(val)); break;
+    case 4:
+    {
+      std::string out;
+      bool b = Base64::Encode(get<coppa::Generic>(val).buf, &out);
+      assert(b);
+      array.push_back(out); break;
+    }
+    default: array.push_back(json_null{});
   }
 }
 
@@ -109,22 +117,13 @@ inline json_array getJsonTags(
   return arr;
 }
 
-
 inline std::string getJsonTypeString(
     const Parameter& parameter)
 {
-  std::string str_type;
-  for(const auto& value : parameter.values)
-  {
-    switch(value.which())
-    {
-      case 0: str_type += "i"; break;
-      case 1: str_type += "f"; break;
-        // TODO case 2: str_type += "B"; break; -> no bool
-      case 3: str_type += "s"; break;
-      case 4: str_type += "b"; break;
-    }
-  }
+  // We build a string with default values of Nil
+  std::string str_type(parameter.values.size(), 'N');
+  for(int i = 0; i < parameter.values.size(); i++)
+    str_type[i] = getOSCType(parameter.values[i]);
 
   return str_type;
 }

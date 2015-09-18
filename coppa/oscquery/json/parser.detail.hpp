@@ -4,6 +4,8 @@
 #include <coppa/device/messagetype.hpp>
 #include <coppa/oscquery/json/keys.hpp>
 
+#include <base64/base64.h>
+
 #include <jeayeson/jeayeson.hpp>
 #include <boost/bimap.hpp>
 #include <boost/assign.hpp>
@@ -14,6 +16,7 @@ namespace oscquery
 {
 namespace json
 {
+// TODO make global tests with three files: a given tree, a transformation, and an expected result.
 using val_t = json_value::type;
 
 inline void json_assert(bool val)
@@ -67,16 +70,16 @@ inline auto jsonToVariant(const json_value& val)
     case val_t::real:    return Variant{float(val.get<float>())};
     case val_t::boolean: return Variant{bool(val.get<bool>())};
     case val_t::string:  return Variant{val.get<std::string>()};
+    // Note : this may match the blob, since it is saved as a string, too.
     case val_t::null:    return Variant{};
     default:
       throw BadRequestException{};
-      // TODO blob
   }
 }
 
-
 inline auto jsonToVariant_checked(const json_value& val, std::size_t type)
 {
+  // TODO more checks.
   switch(val.get_type())
   {
     case val_t::integer:
@@ -84,18 +87,47 @@ inline auto jsonToVariant_checked(const json_value& val, std::size_t type)
       // This case is special because we can't infer if 10 is 10 or 10.0 in json
       if(type == 1)
         return Variant{float(val.get<int>())};
-      else
+      else if(type == 0)
         return Variant{int(val.get<int>())};
+      else
+        throw BadRequestException{};
     }
-    case val_t::real:    return Variant{float(val.get<float>())};
-    case val_t::boolean: return Variant{bool(val.get<bool>())};
-    case val_t::string:  return Variant{val.get<std::string>()};
+    case val_t::real:
+    {
+      json_assert(type == 1);
+      return Variant{float(val.get<float>())};
+    }
+    case val_t::boolean:
+    {
+      json_assert(type == 2);
+      return Variant{bool(val.get<bool>())};
+    }
+    case val_t::string:
+    {
+      // Here we can't infer from the json if
+      // it's a plain string or a blob.
+      if(type == 3)
+      {
+        return Variant{val.get<std::string>()};
+      }
+      else if(type == 4)
+      {
+        std::string out;
+        bool b = Base64::Decode(val.get<std::string>(), &out);
+        assert(b);
+        return Variant{coppa::Generic{out}};
+      }
+      else
+      {
+        throw BadRequestException{};
+      }
+    }
     case val_t::null:    return Variant{};
     default:
       throw BadRequestException{};
-      // TODO blob
   }
 }
+
 
 inline auto jsonToVariantArray(const json_value& json_val)
 {
@@ -104,7 +136,23 @@ inline auto jsonToVariantArray(const json_value& json_val)
   for(const auto& val : valToArray(json_val))
     v.push_back(jsonToVariant(val));
 
-  // TODO : error-checking with the "types"
+  return v;
+}
+
+
+inline auto jsonToVariantArray_checked(
+    const json_value& json_val,
+    const std::vector<std::size_t>& type_vec)
+{
+  std::vector<Variant> v;
+
+  auto arr = valToArray(json_val);
+
+  json_assert(arr.size() == type_vec.size());
+  for(int i = 0; i < arr.size(); i++)
+  {
+    v.push_back(jsonToVariant_checked(arr[i], type_vec[i]));
+  }
 
   return v;
 }
@@ -200,26 +248,25 @@ inline auto jsonToRangeArray_checked(const json_value& val, const std::vector<st
   return ranges;
 }
 
+static constexpr std::size_t OSCToVariantType(char c)
+{
+  switch(c)
+  {
+    case 'i': return 0;
+    case 'f': return 1;
+    case 'T': return 2;
+    case 'F': return 2;
+    case 's': return 3;
+    case 'b': return 4;
+    default: throw BadRequestException("Unsupported type");
+  }
+}
+
 inline auto jsonToTypeVector(const json_value& val)
 {
-  std::vector<std::size_t> types_vec;
-  for(const auto& c : val.get<std::string>())
-  {
-    switch(c)
-    {
-      case 'i':
-        types_vec.push_back(0);
-        break;
-      case 'f':
-        types_vec.push_back(1);
-        break;
-      case 's':
-        types_vec.push_back(3);
-        break;
-      default:
-        throw BadRequestException("Unsupported type");
-    }
-  }
+  auto str = val.get<std::string>();
+  std::vector<std::size_t> types_vec(str.size());
+  std::transform(str.begin(), str.end(), types_vec.begin(), &OSCToVariantType);
 
   return types_vec;
 }
@@ -257,20 +304,7 @@ void readObject(Map& map, const json_map& obj)
       // If there are values in the json
       if(val_it != obj.end())
       {
-        p.values = detail::jsonToVariantArray(val_it->second);
-
-        // Check that the types are correct
-        json_assert(p.values.size() == type_vec.size());
-        for(int i = 0; i < p.values.size(); i++)
-        {
-          // Bad parse of a float as an int
-          if(type_vec[i] == 1 && p.values[i].which() == 0)
-          {
-             p.values[i] = float(eggs::variants::get<int>(p.values[i]));
-          }
-
-          json_assert(p.values[i].which() == type_vec[i]);
-        }
+        p.values = detail::jsonToVariantArray_checked(val_it->second, type_vec);
       }
       else
       {

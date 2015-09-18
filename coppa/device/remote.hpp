@@ -67,14 +67,14 @@ class remote_query_client
 
     // Ask for an update of a part of the namespace
     void query_request_namespace(const std::string& root = "/")
-    { m_client.sendMessage(root); }
+    { m_client.send_message(root); }
 
     // Ask for an update of a single attribute
     void query_request_attribute(const std::string& address, const std::string& attribute)
-    { m_client.sendMessage(address + "?" + attribute); }
+    { m_client.send_message(address + "?" + attribute); }
 
     void query_listen_address(const std::string& address, bool b)
-    { m_client.sendMessage(address + "?listen=" + (b? "true" : "false")); }
+    { m_client.send_message(address + "?listen=" + (b? "true" : "false")); }
 
     const std::string uri() const
     { return m_serverURI; }

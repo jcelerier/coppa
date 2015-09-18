@@ -19,10 +19,10 @@ class zeroconf_server : private Server
     std::unique_ptr<KDNSSD::PublicService> m_zeroconf_service;
 
   public:
-    using Server::setOpenHandler;
-    using Server::setCloseHandler;
-    using Server::setMessageHandler;
-    using Server::sendMessage;
+    using Server::set_open_handler;
+    using Server::set_close_handler;
+    using Server::set_message_handler;
+    using Server::send_message;
 
     zeroconf_server() = default;
     zeroconf_server(zeroconf_server&& other):
