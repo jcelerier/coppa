@@ -106,7 +106,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
             map,json_map(
        R"_json_(
        { "PATH_ADDED" :
-         { "FULL_PATH" : "\/a\/b" "TYPE": "si" "ACCESS": 1
+         { "FULL_PATH" : "/a\/b" "TYPE": "si" "ACCESS": 1
            "VALUE": [ "yodee", 45 ],
            "RANGE": [ [null, null, ["yodee", "yaho", ]], [null, null, null] ]
          }
@@ -145,21 +145,30 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
 
 
     WHEN( "An existing path is added again" ) {
+
+      parser::path_added<basic_map<ParameterMap>>(
+              map,json_map(
+        R"_json_(
+          { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "f" "ACCESS": 1 "VALUE": [ 15.5 ], "RANGE": [ [0.3, 10.4, null] ]} }
+        )_json_"));
+
+      REQUIRE( map.has("/a/b") );
+
       parser::path_added<basic_map<ParameterMap>>(
             map,json_map(
          R"_json_(
          { "PATH_ADDED" :
-          { "FULL_PATH" : "\/a\/b" "TYPE": "si" "ACCESS": 1
+          { "FULL_PATH" : "/a/b" "TYPE": "si" "ACCESS": 1
             "VALUE": [ "yodee", 45 ],
             "RANGE": [ [null, null, ["yodee", "yaho", ]], [null, null, null] ]
           }
          }
          )_json_"));
 
-      THEN( "the capacity changes" ) {
+      THEN( "the capacity doesn't change" ) {
         REQUIRE( map.size() == 6 );
       }
-      THEN( "the path is correctly added" ) {
+      THEN( "the path is correctly updated" ) {
         auto p = map.get("/a/b");
 
         REQUIRE(p.destination == "/a/b" );

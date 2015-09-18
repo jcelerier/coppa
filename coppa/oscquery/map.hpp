@@ -62,6 +62,13 @@ class basic_map
       return *this;
     }
 
+
+    template<typename Key>
+    auto find(Key&& address) const
+    {
+      return m_map.template get<0>().find(address);
+    }
+
     template<typename Key>
     bool has(Key&& address) const
     {
@@ -143,9 +150,13 @@ class basic_map
     template<typename Map_T>
     void merge(Map_T&& other)
     {
+      // TODO OPTIMIZEME
       for(auto&& elt : other)
       {
-        m_map.insert(elt);
+        if(has(elt.destination))
+          replace(elt);
+        else
+          insert(elt);
       }
     }
 };

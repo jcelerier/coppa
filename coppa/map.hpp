@@ -72,8 +72,12 @@ class locked_map : private Map
     // Note : these iterators are here for convenience purpose.
     // However the map has to be locked manually when using them with
     // acquire_r/w_lock
+
+    // TODO would it be possible to have iterators wrapped so that
+    // they would "carry" a lock with them ?
     using Map::begin;
     using Map::end;
+    using Map::find;
 
     // operator[] to be locked explicitly from the outside since
     // it returns a ref.
@@ -159,7 +163,7 @@ class locked_map : private Map
     void merge(Map_T&& other)
     {
       auto&& l = acquire_write_lock();
-      Map::merge(other);
+      Map::merge(std::move(other));
     }
 };
 
