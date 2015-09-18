@@ -143,7 +143,7 @@ class local_device : public Map
       m_clients.emplace_back(hdl);
 
       // Send the client a message with the OSC port
-      m_query_server.send_message(hdl, Serializer::deviceInfo(m_data_server.port()));
+      m_query_server.send_message(hdl, Serializer::device_info(m_data_server.port()));
     }
 
     void on_connectionClosed(typename QueryServer::connection_handler hdl)

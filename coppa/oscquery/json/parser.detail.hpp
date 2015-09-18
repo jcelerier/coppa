@@ -330,6 +330,11 @@ void readObject(Map& map, const json_map& obj)
           }
         }
       }
+      else
+      {
+        // We create default ranges
+        p.ranges.resize(type_vec.size());
+      }
 
       auto clipmode_it = obj.find(key::attribute<ClipModes>());
       if(clipmode_it != obj.end())
@@ -337,6 +342,11 @@ void readObject(Map& map, const json_map& obj)
         p.clipmodes = jsonToClipModeArray(clipmode_it->second);
 
         json_assert(p.clipmodes.size() == type_vec.size());
+      }
+      else
+      {
+        // We create default clip-modes
+        p.clipmodes.resize(type_vec.size(), ClipMode::Both);
       }
     }
 

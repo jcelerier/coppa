@@ -34,7 +34,7 @@ class writer
 
   public:
     // Initialisation
-    static std::string deviceInfo(int port)
+    static std::string device_info(int port)
     {
       json_map map;
       map[key::osc_port()] = port;

@@ -60,6 +60,8 @@ target_link_libraries(test_json_parse_examples coppa)
 # For tests
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/json_files"
      DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/conformance"
+     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Qt examples
 if(Qt5_FOUND)

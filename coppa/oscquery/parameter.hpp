@@ -42,6 +42,7 @@ struct ClipModes
     std::vector<ClipMode> clipmodes;
 };
 
+// TODO try one based on something like QVariantMap
 using Parameter = AttributeAggregate<
                     Destination,
                     Values,
@@ -56,6 +57,7 @@ inline bool operator==(const Parameter& lhs, const Parameter& rhs)
   return lhs.destination == rhs.destination
       && lhs.values == rhs.values
       && lhs.ranges == rhs.ranges
+      && lhs.accessmode == rhs.accessmode
       && lhs.clipmodes == rhs.clipmodes
       && lhs.description == rhs.description
       && lhs.tags == rhs.tags;

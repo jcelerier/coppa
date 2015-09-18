@@ -1,0 +1,37 @@
+{
+      "DESCRIPTION": "root node",
+      "FULL_PATH": "/",
+      "ACCESS": 0,
+      "CONTENTS": {
+          "foo": {
+              "DESCRIPTION": "demonstrates a read-only OSC node- single float value ranged 0-100",
+              "FULL_PATH": "/foo",
+              "ACCESS": 1,
+              "TYPE": "f",
+              "VALUE": [
+                  0.5
+              ],
+              "RANGE": [
+                  [0.0, 100.0, null]
+              ]
+          },
+          "bar": {
+              "DESCRIPTION": "demonstrates a read/write OSC node- two ints with different ranges",
+              "FULL_PATH": "/bar",
+              "ACCESS": 3,
+              "TYPE": "ii",
+              "VALUE": [
+                  4,
+                  51
+              ],
+              "RANGE": [
+                  [0, 50, null],
+                  [51, 100, null]
+              ]
+          },
+          "baz": {
+              "FULL_PATH": "/baz",
+              "ACCESS" : 0
+          }
+      }
+  }

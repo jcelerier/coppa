@@ -27,6 +27,11 @@ std::vector<std::string> list_test_files()
     return vec;
 }
 
+auto read_json_map(const std::string& filename)
+{
+  return json_map{json_file{filename}};
+}
+
 std::string read_json_file(const std::string& filename)
 {
     std::ifstream t(filename);
@@ -117,7 +122,7 @@ bool operator==(const Map& lhs, const Map& rhs)
     return true;
 }
 
-TEST_CASE( "path_removed parsing", "[parser]" ) {
+TEST_CASE( "other examples parsing", "[parser]" ) {
 
   GIVEN( "An empty parameter map" ) {
 
@@ -165,5 +170,24 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
               REQUIRE( !map_eq );
           }
       }
+  }
+}
+
+#include<coppa/oscquery/json/writer.detail.hpp>
+TEST_CASE("effects on map", "[general]") {
+
+  GIVEN( "An empty parameter map" ) {
+    test_remote_device dev("");
+    dev.message(read_json_file("conformance/1/original.json"));
+
+    auto orig_map = coppa::oscquery::json::detail::mapToJson(dev.data_map(), "/");
+
+    dev.message(read_json_file("conformance/1/message.json"));
+
+    auto result_map = coppa::oscquery::json::detail::mapToJson(dev.data_map(), "/");
+
+    std::cerr << orig_map;
+    REQUIRE(result_map == read_json_map("conformance/1/expected.json"));
+
   }
 }

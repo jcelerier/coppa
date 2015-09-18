@@ -80,7 +80,7 @@ class parser
       // Get the object
       const auto& obj = mess.get<json_map>(key::path_changed());
 
-      // 2. Remove the existing path
+      // 2. Remove the missing contents
       map.remove(valToString(obj.get(key::full_path())));
 
       // 3. Replace it
