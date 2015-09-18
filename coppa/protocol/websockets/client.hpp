@@ -18,8 +18,8 @@ class client
       m_open{false},
       m_done{false}
     {
-      m_client.set_access_channels(websocketpp::log::alevel::all);
-      m_client.set_error_channels(websocketpp::log::elevel::all);
+      m_client.clear_access_channels(websocketpp::log::alevel::all);
+      m_client.clear_error_channels(websocketpp::log::elevel::all);
       m_client.init_asio();
 
       m_client.set_open_handler([=] (connection_handler hdl)
@@ -52,6 +52,8 @@ class client
       m_client.close(m_hdl, websocketpp::close::status::normal, "");
       m_open = false;
     }
+
+    void close() { stop(); }
 
     // This function returns if the connection is stopped / fails.
     void connect(const std::string & uri)

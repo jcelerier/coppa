@@ -6,21 +6,21 @@ int main()
     using namespace std;
     using namespace coppa::oscquery;
     remote_device dev("http://127.0.0.1:9002/");
-    dev.queryConnectAsync();
-    while(!dev.queryConnected())
+    dev.query_connect_async();
+    while(!dev.query_is_connected())
       this_thread::sleep_for(chrono::milliseconds(100));
 
-    dev.queryNamespace();
+    dev.query_request_namespace();
 
     this_thread::sleep_for(chrono::seconds(1));
 
-    cerr <<  dev.safeMap().size() << endl;
+    cerr << dev.size() << endl;
 
     // We enable listening on this address
     if(dev.has("/da/do"))
     {
         cout << "Listening on /da/do" << endl;
-        dev.listenAddress("/da/do", true);
+        dev.query_listen_address("/da/do", true);
     }
 
 
@@ -29,11 +29,11 @@ int main()
     {
         this_thread::sleep_for(chrono::seconds(1));
 
-        const auto& theMap = dev.safeMap();
+        const auto& theMap = dev.locked_map();
         cout << endl << "Current addresses: " << endl;
 
         // Print the real parameters in the tree
-        for(auto&& elt : theMap.unsafeMap())
+        for(auto&& elt : theMap)
         {
             cout << elt.destination << endl;
         }

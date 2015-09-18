@@ -1,5 +1,7 @@
 #pragma once
 #include <mutex>
+#define BOOST_SYSTEM_NO_DEPRECATED
+#include <boost/thread/shared_mutex.hpp>
 
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index_container.hpp>
@@ -41,144 +43,166 @@ auto filter(const Map& map, Key&& addr)
 }
 
 template<typename Map>
-class LockedParameterMap
+/**
+ * @brief The locked_map class
+ *
+ * Thread-safe wrapper for maps
+ */
+class locked_map : private Map
 {
-    Map m_map;
-    mutable std::mutex m_map_mutex;
+    mutable boost::shared_mutex m_map_mutex;
 
   public:
+    using data_map_type = Map;
+    using parent_map_type = Map;
     using base_map_type = typename Map::base_map_type;
     using value_type = typename base_map_type::value_type;
-    constexpr LockedParameterMap() = default;
 
-    operator const Map&() const
-    { return m_map; }
+    constexpr locked_map() = default;
 
-    operator Map&()
-    { return m_map; }
+    boost::shared_lock<boost::shared_mutex> acquire_read_lock() const
+    {
+      return boost::shared_lock<boost::shared_mutex>(m_map_mutex);
+    }
+    boost::unique_lock<boost::shared_mutex> acquire_write_lock()
+    {
+      return boost::unique_lock<boost::shared_mutex>(m_map_mutex);
+    }
 
+    // Note : these iterators are here for convenience purpose.
+    // However the map has to be locked manually when using them with
+    // acquire_r/w_lock
+    using Map::begin;
+    using Map::end;
+
+    // operator[] to be locked explicitly from the outside since
+    // it returns a ref.
     auto& operator[](typename Map::size_type i) const
-    { return m_map[i]; }
+    { return Map::operator[](i); }
+
+    // These are of course unsafe, too
+    auto& data_map() { return static_cast<data_map_type&>(*this); }
+    auto& data_map() const { return static_cast<const data_map_type&>(*this); }
+
 
     auto size() const
-    { return m_map.size(); }
-
-    auto& unsafeMap()
-    { return static_cast<Map&>(*this); }
-
-    const auto& unsafeMap() const
-    { return static_cast<const Map&>(*this); }
-
-    auto mapCopy() const
-    { return static_cast<const Map&>(this); }
-
+    {
+      auto&& l = acquire_read_lock();
+      return Map::size();
+    }
 
     template<typename Map_T>
-    LockedParameterMap& operator=(Map_T&& map)
+    locked_map& operator=(Map_T&& map)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map = std::move(map);
+      auto&& l = acquire_write_lock();
+      static_cast<Map&>(*this) = std::move(map);
       return *this;
     }
 
     template<typename Key>
     bool has(Key&& address) const
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      return m_map.has(address);
+      auto&& l = acquire_read_lock();
+      return Map::has(address);
     }
 
     template<typename Key>
     bool existing_path(Key&& address) const
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      return m_map.existing_path(address);
+      auto&& l = acquire_read_lock();
+      return Map::existing_path(address);
     }
 
     template<typename Key>
     auto get(Key&& address) const
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      return m_map.get(address);
+      auto&& l = acquire_read_lock();
+      return Map::get(address);
     }
 
     template<typename... Args>
     void update(Args&&... args)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.update(std::forward<Args>(args)...);
+      auto&& l = acquire_write_lock();
+      Map::update(std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     void update_attributes(Args&&... args)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.update_attributes(std::forward<Args>(args)...);
+      auto&& l = acquire_write_lock();
+      Map::update_attributes(std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     void replace(Args&&... args)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.replace(std::forward<Args>(args)...);
+      auto&& l = acquire_write_lock();
+      Map::replace(std::forward<Args>(args)...);
     }
 
-
     template<typename Element>
-    void add(Element&& e)
+    void insert(Element&& e)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.add(e);
+      auto&& l = acquire_write_lock();
+      Map::insert(e);
     }
 
     template<typename Key>
     void remove(Key&& k)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.remove(k);
+      auto&& l = acquire_write_lock();
+      Map::remove(k);
     }
 
     template<typename Map_T>
     void merge(Map_T&& other)
     {
-      std::lock_guard<std::mutex> lock(m_map_mutex);
-      m_map.merge(other);
+      auto&& l = acquire_write_lock();
+      Map::merge(other);
     }
 };
 
 
+/**
+ * @brief The constant_map class
+ *
+ * This wrapper is meant to have a safe map that has no modifying accessor
+ */
 template<typename Map>
-class ConstantMap
+class constant_map : private locked_map<Map>
 {
-  protected:
-    LockedParameterMap<Map> m_map;
-
   public:
-    bool has(const std::string& address) const
-    { return m_map.has(address); }
+    using parent_map_type = locked_map<Map>;
+    using data_map_type = typename locked_map<Map>::data_map_type;
+    auto& locked_map() { return static_cast<parent_map_type&>(*this); }
+    auto& locked_map() const { return static_cast<parent_map_type&>(*this); }
+    auto& data_map() { return parent_map_type::data_map(); }
+    auto& data_map() const { return parent_map_type::data_map(); }
 
-    auto get(const std::string& address) const
-    { return m_map.get(address); }
-
-    // TODO cbegin / cend
-
-    LockedParameterMap<Map>& safeMap()
-    { return m_map; }
-    const LockedParameterMap<Map>& safeMap() const
-    { return m_map; }
+    using parent_map_type::has;
+    using parent_map_type::get;
+    using parent_map_type::size;
 
     template<typename Map_T>
     void replace(Map_T&& map)
-    { m_map = std::move(map); }
+    { locked_map() = std::move(map); }
 };
 
-// Sets a value on a remote device via a protocol like OSC.
-// TODO the local map shouldn't be constant ?
-// Or maybe we should have the choice between "fully mirrored" where
-// we only get changes via callbacks of the server
-// and a "local", modifiable mirror.
+/**
+ * @brief The remote_map_setter class
+ *
+ * This class uses a constant_map as backend, and allows updating
+ * of a *remote* map thanks to the information it has.
+ *
+ * The local map would then only be updated on a callback from
+ * the remote server.
+ *
+ * TODO make alternatives :
+ * - Also sets the local map
+ */
 template<typename Map, typename DataProtocolSender>
-class SettableMap : public ConstantMap<Map>
+class remote_map_setter : public constant_map<Map>
 {
   private:
     DataProtocolSender m_sender;
@@ -190,7 +214,7 @@ class SettableMap : public ConstantMap<Map>
     template<typename... Args>
     void set(const std::string& address, Args&&... args)
     {
-      auto param = ConstantMap<Map>::get(address);
+      auto param = this->get(address);
       if(param.accessmode == Access::Mode::Set
       || param.accessmode == Access::Mode::Both)
       {

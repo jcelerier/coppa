@@ -60,16 +60,16 @@ class query_protocol_fake
 };
 
 class test_remote_device : public remote_query_device<
-    SimpleParameterMap<ParameterMap>,
+    basic_map<ParameterMap>,
     json::parser,
     query_protocol_fake,
-    SettableMap<SimpleParameterMap<ParameterMap>, osc::sender>>
+    remote_map_setter<basic_map<ParameterMap>, osc::sender>>
 {
   public:
     using remote_query_device::remote_query_device;
     void set(const std::string& addr, oscquery::Values& val)
     {
-      SettableMap::set(addr, val.values);
+      remote_map_setter::set(addr, val.values);
     }
 };
 
@@ -122,7 +122,7 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
   GIVEN( "An empty parameter map" ) {
 
       test_remote_device dev("");
-      auto map = dev.safeMap().unsafeMap(); // Source copy
+      auto map = dev.data_map();
 
 
       WHEN( "empty.json read" ) {
@@ -130,8 +130,8 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
 
         THEN("nothing happens")
         {
-            bool map_eq = map == dev.safeMap().unsafeMap();
-            std::cerr << map.size() << " " << dev.safeMap().unsafeMap().size();
+            bool map_eq = map == dev.data_map();
+            std::cerr << map.size() << " " << dev.size();
             REQUIRE( map_eq );
         }
       }
@@ -140,8 +140,8 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
 
           THEN("nothing happens")
           {
-              bool map_eq = map == dev.safeMap().unsafeMap();
-              std::cerr << map.size() << " " << dev.safeMap().unsafeMap().size();
+              bool map_eq = map == dev.data_map();
+              std::cerr << map.size() << " " << dev.size();
               REQUIRE( map_eq );
           }
       }
@@ -150,8 +150,8 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
 
           THEN("nothing happens")
           {
-              bool map_eq = map == dev.safeMap().unsafeMap();
-              std::cerr << map.get("/").description << " " << dev.safeMap().unsafeMap().size();
+              bool map_eq = map == dev.data_map();
+              std::cerr << map.get("/").description << " " << dev.size();
               REQUIRE( map_eq );
           }
       }
@@ -160,7 +160,7 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
 
           THEN("the map changes")
           {
-              bool map_eq = map == dev.safeMap().unsafeMap();
+              bool map_eq = map == dev.data_map();
               std::cerr << dev.get("/baz").description << std::endl;
               REQUIRE( !map_eq );
           }

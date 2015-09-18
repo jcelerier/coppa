@@ -8,11 +8,17 @@ namespace oscquery
 {
 using ParameterMap = ParameterMapType<Parameter>;
 
+/**
+ * @brief The basic_map class
+ *
+ * A map type that is meant to work with OSCQuery.
+ * Provides an always-existent root node.
+ */
 template<typename Map>
-class SimpleParameterMap
+class basic_map
 {
     Map m_map;
-    static auto makeRootNode()
+    static auto make_root_node()
     {
       typename Map::value_type root;
       root.description = std::string("root node");
@@ -47,10 +53,10 @@ class SimpleParameterMap
     using size_type = typename Map::size_type;
     using value_type = typename base_map_type::value_type;
 
-    constexpr SimpleParameterMap()
-    { add(makeRootNode()); }
+    constexpr basic_map()
+    { insert(make_root_node()); }
 
-    SimpleParameterMap& operator=(Map&& map)
+    basic_map& operator=(Map&& map)
     {
       m_map = std::move(map);
       return *this;
@@ -90,6 +96,9 @@ class SimpleParameterMap
     FORWARD_FUN_CONST(m_map, auto, begin)
     FORWARD_FUN_CONST(m_map, auto, end)
 
+    // TODO add insert_and_assign
+    // See boost doc with rollback, too.
+    FORWARD_FUN(m_map, auto, insert)
 
     template<typename Key,
              typename Updater>
@@ -115,13 +124,6 @@ class SimpleParameterMap
       param_index.replace(param_index.find(replacement.destination), replacement);
     }
 
-
-    // TODO rename in insert + add insert_and_assign
-    // See boost doc with rollback, too.
-    template<typename Element>
-    auto add(Element&& e)
-    { m_map.insert(e); }
-
     template<typename Key>
     auto remove(Key&& k)
     {
@@ -134,7 +136,7 @@ class SimpleParameterMap
       // If the root node was removed we reinstate it
       if(size() == 0)
       {
-        add(makeRootNode());
+        insert(make_root_node());
       }
     }
 

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project(Coppa)
 
-find_package(Asio)
+find_package(Boost 1.58 REQUIRED COMPONENTS system thread)
 find_package(Threads REQUIRED)
 add_subdirectory(oscpack)
 
@@ -33,7 +33,7 @@ target_include_directories(coppa INTERFACE
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests")
 
 target_compile_features(coppa INTERFACE cxx_decltype_auto cxx_constexpr cxx_noexcept cxx_variadic_templates cxx_lambda_init_captures)
-target_link_libraries(coppa INTERFACE "${Asio_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)
+target_link_libraries(coppa INTERFACE "${Boost_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)
 
 
 # Examples and tests

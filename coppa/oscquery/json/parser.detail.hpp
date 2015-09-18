@@ -16,7 +16,7 @@ namespace json
 {
 using val_t = json_value::type;
 
-static void json_assert(bool val)
+inline void json_assert(bool val)
 {
     if(!val)
         throw BadRequestException{};
@@ -24,29 +24,28 @@ static void json_assert(bool val)
 
 namespace detail
 {
-// TODO -> inline
-static const auto& valToString(const json_value& val)
+inline const auto& valToString(const json_value& val)
 {
   json_assert(val.is(val_t::string));
   return val.as<std::string>();
 }
-static const auto& valToArray(const json_value& val)
+inline const auto& valToArray(const json_value& val)
 {
   json_assert(val.is(val_t::array));
   return val.as<json_array>();
 }
-static const auto& valToMap(const json_value& val)
+inline const auto& valToMap(const json_value& val)
 {
   json_assert(val.is(val_t::map));
   return val.as<json_map>();
 }
-static int valToInt(const json_value& val)
+inline int valToInt(const json_value& val)
 {
   json_assert(val.is(val_t::integer));
   return val.as<int>();
 }
 
-static auto jsonToTags(const json_value& val)
+inline auto jsonToTags(const json_value& val)
 {
   std::vector<Tag> tags;
   for(const auto& elt : valToArray(val))
@@ -55,12 +54,12 @@ static auto jsonToTags(const json_value& val)
   return tags;
 }
 
-static auto jsonToAccessMode(const json_value& val)
+inline auto jsonToAccessMode(const json_value& val)
 {
   return static_cast<Access::Mode>(valToInt(val));
 }
 
-static auto jsonToVariant(const json_value& val)
+inline auto jsonToVariant(const json_value& val)
 {
   switch(val.get_type())
   {
@@ -76,7 +75,7 @@ static auto jsonToVariant(const json_value& val)
 }
 
 
-static auto jsonToVariant_checked(const json_value& val, std::size_t type)
+inline auto jsonToVariant_checked(const json_value& val, std::size_t type)
 {
   switch(val.get_type())
   {
@@ -98,7 +97,7 @@ static auto jsonToVariant_checked(const json_value& val, std::size_t type)
   }
 }
 
-static auto jsonToVariantArray(const json_value& json_val)
+inline auto jsonToVariantArray(const json_value& json_val)
 {
   std::vector<Variant> v;
 
@@ -110,7 +109,7 @@ static auto jsonToVariantArray(const json_value& json_val)
   return v;
 }
 
-static auto jsonToClipModeArray(const json_value& val)
+inline auto jsonToClipModeArray(const json_value& val)
 {
   static const boost::bimap<std::string, ClipMode> clipmodeMap =
       boost::assign::list_of<boost::bimap<std::string, ClipMode>::relation>
@@ -132,7 +131,7 @@ static auto jsonToClipModeArray(const json_value& val)
   return vec;
 }
 
-static auto jsonToRangeArray(const json_value& val)
+inline auto jsonToRangeArray(const json_value& val)
 {
   std::vector<Range> ranges;
 
@@ -165,7 +164,7 @@ static auto jsonToRangeArray(const json_value& val)
   return ranges;
 }
 
-static auto jsonToRangeArray_checked(const json_value& val, const std::vector<std::size_t>& type_vec)
+inline auto jsonToRangeArray_checked(const json_value& val, const std::vector<std::size_t>& type_vec)
 {
   std::vector<Range> ranges;
 
@@ -201,7 +200,7 @@ static auto jsonToRangeArray_checked(const json_value& val, const std::vector<st
   return ranges;
 }
 
-static auto jsonToTypeVector(const json_value& val)
+inline auto jsonToTypeVector(const json_value& val)
 {
   std::vector<std::size_t> types_vec;
   for(const auto& c : val.get<std::string>())
@@ -226,7 +225,7 @@ static auto jsonToTypeVector(const json_value& val)
 }
 
 template<typename Map>
-static void readObject(Map& map, const json_map& obj)
+void readObject(Map& map, const json_map& obj)
 {
   // If it's a real parameter
   if(obj.find(key::full_path()) != obj.end())
@@ -307,7 +306,7 @@ static void readObject(Map& map, const json_map& obj)
       }
     }
 
-    map.add(p);
+    map.insert(p);
   }
 
   // Recurse on the children

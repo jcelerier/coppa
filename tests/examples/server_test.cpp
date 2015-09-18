@@ -56,7 +56,7 @@ int main()
       else
       { p.destination = randompath + "/" + name; }
 
-      dev.add(p);
+      dev.insert(p);
     }
   });
 

@@ -9,7 +9,7 @@ using namespace std;
 
 
 TEST_CASE( "map construction", "[oscquery][map]" ) {
-    SimpleParameterMap<ParameterMap> map;
+    basic_map<ParameterMap> map;
 
     REQUIRE(map.size() == 1);
     REQUIRE(map.has("/") == true);
@@ -22,13 +22,13 @@ TEST_CASE( "map element adding", "[oscquery][map]" ) {
 
   GIVEN( "A parameter map" ) {
 
-    SimpleParameterMap<ParameterMap> map;
+    basic_map<ParameterMap> map;
 
     WHEN( "A parameter is added as a child of a real node" ) {
       Parameter p = random_anonymous_parameter();
       p.destination = "/da";
 
-      map.add(p);
+      map.insert(p);
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 2 );
       }
@@ -42,7 +42,7 @@ TEST_CASE( "map element adding", "[oscquery][map]" ) {
       Parameter p = random_anonymous_parameter();
       p.destination = "/do/di/da/du";
 
-      map.add(p);
+      map.insert(p);
       THEN( "the capacity changes" ) {
         REQUIRE( map.size() == 2 );
       }
@@ -59,11 +59,11 @@ TEST_CASE( "map element adding", "[oscquery][map]" ) {
     WHEN( "A parameter is re-added" ) {
       Parameter p1 = random_anonymous_parameter();
       p1.destination = "/do/di/da/du";
-      map.add(p1);
+      map.insert(p1);
 
       Parameter p2 = random_anonymous_parameter();
       p2.destination = "/do/di/da/du";
-      map.add(p2);
+      map.insert(p2);
 
       THEN( "the capacity does not change" ) {
         REQUIRE( map.size() == 2 );
@@ -83,7 +83,7 @@ TEST_CASE( "map element adding", "[oscquery][map]" ) {
 
 TEST_CASE( "map element updating", "[oscquery][map]" ) {
   GIVEN( "A parameter map" ) {
-    SimpleParameterMap<ParameterMap> map;
+    basic_map<ParameterMap> map;
     Parameter p1 = random_anonymous_parameter();
     p1.destination = "/do/di/da/du";
     p1.description = "foo";
@@ -97,7 +97,7 @@ TEST_CASE( "map element updating", "[oscquery][map]" ) {
     REQUIRE(p1.destination == p2.destination);
     REQUIRE(p1.description != p2.description);
 
-    map.add(p1);
+    map.insert(p1);
 
     WHEN( "An existing parameter is replaced" )  {
       map.replace(p2);
@@ -157,7 +157,7 @@ TEST_CASE( "map element removing", "[oscquery][map]" ) {
 
   GIVEN( "A non-empty parameter map" ) {
 
-    SimpleParameterMap<ParameterMap> map;
+    basic_map<ParameterMap> map;
     setup_basic_map(map);
 
     REQUIRE(map.size() == 5);

@@ -24,7 +24,8 @@ class answerer
         // Here we handle the url elements relative to oscquery
         if(parameters.size() == 0)
         {
-          return json::writer::query_namespace(dev.unsafeMap(), path);
+          auto&& lock = dev.acquire_read_lock();
+          return json::writer::query_namespace(dev, path);
         }
         else
         {
@@ -69,7 +70,7 @@ class answerer
           if(!attributes.empty())
           {
             return json::writer::query_attributes(
-                  dev.unsafeMap().get(path),
+                  dev.get(path),
                   attributes);
           }
         }

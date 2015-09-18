@@ -13,13 +13,13 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
 
   GIVEN( "A non-empty parameter map" ) {
 
-    SimpleParameterMap<ParameterMap> map;
+    basic_map<ParameterMap> map;
     setup_basic_map(map);
 
     REQUIRE( map.size() == 5 );
 
     WHEN( "A basic path is added" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(
+      parser::path_added<basic_map<ParameterMap>>(
             map, json_map(
    R"_json_(
       { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "i" "ACCESS": 1 } }
@@ -44,7 +44,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     }
 
     WHEN( "A path with an int value is added" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(
+      parser::path_added<basic_map<ParameterMap>>(
             map,json_map(
     R"_json_(
       { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "i" "ACCESS": 1 "VALUE": [ 15 ], "RANGE": [ [0, 100, null] ]} }
@@ -73,7 +73,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     }
 
     WHEN( "A path with a float value is added" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(
+      parser::path_added<basic_map<ParameterMap>>(
             map,json_map(
       R"_json_(
         { "PATH_ADDED" : { "FULL_PATH" : "/a/b" "TYPE": "f" "ACCESS": 1 "VALUE": [ 15.5 ], "RANGE": [ [0.3, 10.4, null] ]} }
@@ -102,7 +102,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
     }
 
     WHEN( "A path with a string and an int value is added" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(
+      parser::path_added<basic_map<ParameterMap>>(
             map,json_map(
        R"_json_(
        { "PATH_ADDED" :
@@ -145,7 +145,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
 
 
     WHEN( "An existing path is added again" ) {
-      parser::path_added<SimpleParameterMap<ParameterMap>>(
+      parser::path_added<basic_map<ParameterMap>>(
             map,json_map(
          R"_json_(
          { "PATH_ADDED" :
@@ -196,13 +196,13 @@ TEST_CASE( "paths_added parsing", "[parser]" ) {
 
   GIVEN( "A non-empty parameter map" ) {
 
-    SimpleParameterMap<ParameterMap> map;
+    basic_map<ParameterMap> map;
     setup_basic_map(map);
 
     REQUIRE( map.size() == 5 );
 
     WHEN( "Paths are added" ) {
-      parser::paths_added<SimpleParameterMap<ParameterMap>>(
+      parser::paths_added<basic_map<ParameterMap>>(
             map,json_map(
                   R"_json_(
                   { "PATHS_ADDED" : [
@@ -263,7 +263,7 @@ TEST_CASE( "path_removed parsing", "[parser]" ) {
 
   GIVEN( "A non-empty parameter map" ) {
 
-    SimpleParameterMap<ParameterMap> map;
+    basic_map<ParameterMap> map;
     setup_basic_map(map);
 
     REQUIRE(map.size() == 5 );
@@ -306,7 +306,7 @@ TEST_CASE( "paths_removed parsing", "[parser]" ) {
 
   GIVEN( "A non-empty parameter map" ) {
 
-    SimpleParameterMap<ParameterMap> map;
+    basic_map<ParameterMap> map;
     setup_basic_map(map);
 
     REQUIRE(map.size() == 5 );
@@ -335,7 +335,7 @@ TEST_CASE( "path_changed parsing", "[parser]" ) {
 
   GIVEN( "A non-empty parameter map" ) {
 
-    SimpleParameterMap<ParameterMap> map;
+    basic_map<ParameterMap> map;
     setup_basic_map(map);
 
     REQUIRE(map.size() == 5 );

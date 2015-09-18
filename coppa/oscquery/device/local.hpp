@@ -23,7 +23,7 @@ namespace oscquery
  * An oscquery-compliant server.
  */
 class local_device : public coppa::local_device<
-    coppa::LockedParameterMap<coppa::oscquery::SimpleParameterMap<coppa::oscquery::ParameterMap>>,
+    coppa::locked_map<coppa::oscquery::basic_map<coppa::oscquery::ParameterMap>>,
     coppa::ws::server,
     coppa::oscquery::query_parser,
     coppa::oscquery::answerer,
@@ -40,7 +40,7 @@ class local_device : public coppa::local_device<
  * An oscquery-compliant server that syncs itself to the clients.
  */
 class synchronizing_local_device : public coppa::synchronizing_local_device<
-    coppa::LockedParameterMap<coppa::oscquery::SimpleParameterMap<coppa::oscquery::ParameterMap>>,
+    coppa::locked_map<coppa::oscquery::basic_map<coppa::oscquery::ParameterMap>>,
     coppa::ws::server,
     coppa::oscquery::query_parser,
     coppa::oscquery::answerer,

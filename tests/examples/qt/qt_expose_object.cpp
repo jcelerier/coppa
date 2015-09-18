@@ -66,7 +66,7 @@ void exposeQObject(Device& dev, QObject* obj, ThreadManager* mgr)
         break;
     }
 
-    dev.add(p);
+    dev.insert(p);
 
     // Connect the changes of parameters with Qt.
     dev.add_handler(
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
   int32_t count{};
   addValue(p, count);
 
-  dev.add(p);
+  dev.insert(p);
 
   // update the value from the gui.
   QObject::connect(pushbutton, &QPushButton::clicked,

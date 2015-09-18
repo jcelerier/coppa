@@ -26,12 +26,16 @@ class remote_query_client
   public:
     template<typename ParseHandler>
     remote_query_client(const std::string& uri, ParseHandler&& handler):
-      m_client{[=] (typename QueryProtocolClient::connection_handler hdl, const std::string& message)
-    {
-      if(message.empty())
-        return;
-      handler(message);
-    }},
+      m_client{
+        [=] (
+          typename QueryProtocolClient::connection_handler hdl,
+          const std::string& message)
+        {
+          if(message.empty())
+            return;
+          handler(message);
+        }
+    },
       m_serverURI{uri}
     {
     }
@@ -45,28 +49,31 @@ class remote_query_client
     }
 
     // Is blocking
-    void queryConnect()
+    void query_connect()
     { m_client.connect(m_serverURI); }
 
-    void queryConnectAsync()
+    void query_connect_async()
     {
       if(m_asyncServerThread.joinable())
         m_asyncServerThread.join();
       m_asyncServerThread = std::thread([&]{ m_client.connect(m_serverURI); });
     }
 
-    bool queryConnected() const
+    bool query_is_connected() const
     { return m_client.connected(); }
 
+    void query_close()
+    { m_client.close(); }
+
     // Ask for an update of a part of the namespace
-    void queryNamespace(const std::string& root = "/")
+    void query_request_namespace(const std::string& root = "/")
     { m_client.sendMessage(root); }
 
     // Ask for an update of a single attribute
-    void queryAttribute(const std::string& address, const std::string& attribute)
+    void query_request_attribute(const std::string& address, const std::string& attribute)
     { m_client.sendMessage(address + "?" + attribute); }
 
-    void listenAddress(const std::string& address, bool b)
+    void query_listen_address(const std::string& address, bool b)
     { m_client.sendMessage(address + "?listen=" + (b? "true" : "false")); }
 
     const std::string uri() const
@@ -92,11 +99,20 @@ template<
     typename RemoteMapBase>
 class remote_query_device : public RemoteMapBase, public QueryProtocolClient
 {
-    void on_queryServerMessage(const std::string& message)
+  public:
+    remote_query_device(const std::string& uri):
+      QueryProtocolClient{uri, [&] (const std::string& mess) { on_query_server_message(mess); }}
+    {
+
+    }
+
+    std::function<void()> onConnect;
+    std::function<void()> onUpdate;
+
+  private:
+    void on_query_server_message(const std::string& message)
     try
     {
-        // TODO the map is parsed twice. We should forward the json_map obtained here
-        // and have the parser functions take json_map's.
       auto data = Parser::parse(message);
       auto mt = Parser::messageType(data);
 
@@ -107,44 +123,48 @@ class remote_query_device : public RemoteMapBase, public QueryProtocolClient
       }
       else
       {
+        if(mt == MessageType::Namespace)
+        {
+          // It has its own lock
+          RemoteMapBase::replace(Parser::template parseNamespace<BaseMapType>(data));
+          if(onUpdate) onUpdate();
+          return;
+        }
+
+        auto&& lock = RemoteMapBase::locked_map().acquire_write_lock();
         switch(mt)
         {
-          case MessageType::Namespace:
-            RemoteMapBase::replace(Parser::template parseNamespace<BaseMapType>(data));
-            break;
-
-
           case MessageType::PathAdded:
-            Parser::template path_added<BaseMapType>(RemoteMapBase::safeMap(), data);
+            Parser::template path_added<BaseMapType>(RemoteMapBase::data_map(), data);
             break;
 
           case MessageType::PathChanged:
-            Parser::path_changed(RemoteMapBase::safeMap(), data);
+            Parser::path_changed(RemoteMapBase::data_map(), data);
             break;
 
           case MessageType::PathRemoved:
-            Parser::path_removed(RemoteMapBase::safeMap(), data);
+            Parser::path_removed(RemoteMapBase::data_map(), data);
             break;
 
           case MessageType::AttributesChanged:
-            Parser::attributes_changed(RemoteMapBase::safeMap(), data);
+            Parser::attributes_changed(RemoteMapBase::data_map(), data);
             break;
 
 
           case MessageType::PathsAdded:
-            Parser::template paths_added<BaseMapType>(RemoteMapBase::safeMap(), data);
+            Parser::template paths_added<BaseMapType>(RemoteMapBase::data_map(), data);
             break;
 
           case MessageType::PathsChanged:
-            Parser::paths_changed(RemoteMapBase::safeMap(), data);
+            Parser::paths_changed(RemoteMapBase::data_map(), data);
             break;
 
           case MessageType::PathsRemoved:
-            Parser::paths_removed(RemoteMapBase::safeMap(), data);
+            Parser::paths_removed(RemoteMapBase::data_map(), data);
             break;
 
           case MessageType::AttributesChangedArray:
-            Parser::attributes_changed_array(RemoteMapBase::safeMap(), data);
+            Parser::attributes_changed_array(RemoteMapBase::data_map(), data);
             break;
 
           case MessageType::Device:
@@ -160,15 +180,6 @@ class remote_query_device : public RemoteMapBase, public QueryProtocolClient
       std::cerr << "Error while parsing: " << e.what() << "  ==>  " << message;
     }
 
-  public:
-    remote_query_device(const std::string& uri):
-      QueryProtocolClient{uri, [&] (const std::string& mess) { on_queryServerMessage(mess); }}
-    {
-
-    }
-
-    std::function<void()> onConnect;
-    std::function<void()> onUpdate;
 };
 
 }

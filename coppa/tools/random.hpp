@@ -125,7 +125,7 @@ inline auto random_map()
 {
   using namespace coppa;
   using namespace coppa::oscquery;
-  SimpleParameterMap<coppa::oscquery::ParameterMap> map;
+  basic_map<coppa::oscquery::ParameterMap> map;
 
   auto maxsize = my_rand<int>() % 10000 + 1;
   for(int i = 0; i < maxsize; i++)
@@ -140,7 +140,7 @@ inline auto random_map()
     else
     { p.destination = randompath + "/" + name; }
 
-    map.add(p);
+    map.insert(p);
   }
 
   return map;
@@ -184,9 +184,9 @@ inline auto setup_basic_map(Map& map)
            });
 
   // Add them to the device
-  map.add(aParam);
-  map.add(bParam);
-  map.add(cParam);
-  map.add(anotherParam);
+  map.insert(aParam);
+  map.insert(bParam);
+  map.insert(cParam);
+  map.insert(anotherParam);
 
 }

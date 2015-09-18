@@ -51,7 +51,7 @@ int main()
         }
 
         auto start = std::chrono::steady_clock::now();
-        dev.add(p);
+        dev.insert(p);
         auto end = std::chrono::steady_clock::now();
         auto diff = end - start;
         std::cout << "Adding: " << dev.size() << "  " << std::chrono::duration <double, std::milli> (diff).count() << "" << std::endl;

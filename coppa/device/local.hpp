@@ -190,12 +190,13 @@ class synchronizing_local_device : private local_device<Args...>
     using parent_t::operator[];
 
     template<typename T>
-    void add(const T& parameter)
+    void insert(const T& parameter)
     {
-      parent_t::add(parameter);
+      parent_t::insert(parameter);
 
+      auto&& lock = parent_t::acquire_read_lock();
       auto message = parent_t::serializer_type::path_added(
-                       parent_t::unsafeMap(),
+                       parent_t::data_map(),
                        parameter.destination);
       for(auto& client : parent_t::clients())
       {
