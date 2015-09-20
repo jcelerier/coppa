@@ -11,6 +11,15 @@ namespace osc
  * Handles messages received via OSC in a OSCQuery device.
  *
  * TODO use it to make a client that is able to receive updates via OSC
+ * Note : this requires a server able to send updates
+ * via OSC too.
+ *
+ * We need to extend remote_client with an osc sender,
+ * and remote_device with an osc receiver.
+ *
+ * When connecting via WS a client should send its
+ * local port to the server.
+ *
  */
 class message_handler : public coppa::osc::receiver
 {
