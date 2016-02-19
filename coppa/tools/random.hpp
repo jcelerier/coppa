@@ -1,5 +1,5 @@
 #pragma once
-#include <coppa/oscquery/map.hpp>
+#include <coppa/oscquery/parameter.hpp>
 #include <random>
 
 // Found on stackoverflow
@@ -109,7 +109,7 @@ inline coppa::oscquery::Parameter random_anonymous_parameter()
   }
 
   param.description = my_rand<std::string>();
-  param.accessmode = static_cast<Access::Mode>(my_rand<int>() % 4);
+  param.access = static_cast<Access::Mode>(my_rand<int>() % 4);
 
   int ntags = my_rand<int>() % 10;
   for(int i = 0; i < ntags; i++)
@@ -155,7 +155,7 @@ inline auto setup_basic_map(Map& map)
   Parameter aParam;
   aParam.destination = "/da/da";
   addValue(aParam, 42, {{}, {}, {}});
-  aParam.accessmode = coppa::Access::Mode::Set;
+  aParam.access = coppa::Access::Mode::Set;
   aParam.tags = {"wow", "much tag"};
 
   Parameter bParam;
@@ -171,7 +171,7 @@ inline auto setup_basic_map(Map& map)
 
   Parameter anotherParam;
   anotherParam.destination = "/da/do";
-  anotherParam.accessmode = coppa::Access::Mode::Both;
+  anotherParam.access = coppa::Access::Mode::Both;
   addValue(anotherParam, 5, // Value
   {{}, {}, {4, 5, 6}}, // Range
            coppa::ClipMode::Both); // ClipMode

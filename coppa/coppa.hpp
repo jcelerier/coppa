@@ -71,13 +71,32 @@ struct Access
 {
     enum class Mode { None = 0, Get = 1, Set = 2, Both = 3 };
     coppa_name(Access)
-    Mode accessmode{};
+    Mode access{};
+};
+
+struct Bounding
+{
+    enum class Mode { Free = 0, Clip = 1, Wrap = 2, Fold = 3 };
+    coppa_name(Bounding)
+    Mode bounding{};
 };
 
 struct Destination
 {
     coppa_name(Destination)
     std::string destination;
+};
+
+template<typename Var_T>
+struct Range
+{
+    Var_T min;
+    Var_T max;
+    std::vector<Var_T> values;
+    bool operator==(const Range& other) const
+    {
+      return other.min == min && other.max == max && other.values == values;
+    }
 };
 
 enum class ClipMode { None, Low, High, Both };

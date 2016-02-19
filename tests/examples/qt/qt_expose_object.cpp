@@ -48,7 +48,7 @@ void exposeQObject(Device& dev, QObject* obj, ThreadManager* mgr)
     auto prop = obj->metaObject()->property(i);
 
     Parameter p;
-    p.accessmode = Access::Mode::Both;
+    p.access = Access::Mode::Both;
     p.destination = path + "/property/" + prop.name();
     p.description = prop.name();
     switch(prop.type())

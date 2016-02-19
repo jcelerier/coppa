@@ -1,10 +1,12 @@
 #pragma once
 #include <string>
-#include <vector>
 #include <map>
+#include <vector>
+#include <boost/container/static_vector.hpp>
+#include <boost/container/small_vector.hpp>
 #include <boost/algorithm/string.hpp>
 #include <coppa/exceptions/BadRequest.hpp>
-
+#include <coppa/string_view.hpp>
 namespace coppa
 {
 namespace oscquery
@@ -23,30 +25,38 @@ namespace oscquery
       static std::string parse(const std::string& request, Mapper&& mapper)
       {
         using namespace boost;
+        using boost::container::small_vector;
+        using boost::container::static_vector;
         using namespace std;
 
-        // Split on "?"
-        vector<string> uri_tokens;
-        split(uri_tokens, request, is_any_of("?"));
+        // Split on "?" 
+        static_vector<std::string, 3> uri_tokens;
+        try {
+          split(uri_tokens, request, is_any_of("?"));
+        }
+        catch(...) {
+          throw BadRequestException{"Too much '?'"};          
+        }
 
         // Parse the methods
-        map<string, string> arguments_map;
+        map<std::string, std::string> arguments_map;
         if(uri_tokens.size() > 1)
         {
-          if(uri_tokens.size() > 2)
-          {
-            throw BadRequestException{"Too much '?'"};
-          }
-
           // Then, split the &-separated arguments
-          vector<string> argument_tokens;
-          split(argument_tokens, uri_tokens.at(1), is_any_of("&"));
+          std::vector<string> argument_tokens;
+          boost::split(argument_tokens, uri_tokens.at(1), is_any_of("&"));
 
           // Finally, split these arguments at '=' and put them in a map
           for(const auto& arg : argument_tokens)
           {
-            vector<string> map_tokens;
-            split(map_tokens, arg, is_any_of("="));
+            static_vector<string, 3> map_tokens;
+            
+            try {
+              boost::split(map_tokens, arg, is_any_of("="));
+            }
+            catch(...) {
+              throw BadRequestException{"Too much '='"};          
+            }
 
             switch(map_tokens.size())
             {

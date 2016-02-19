@@ -2,9 +2,10 @@
 #include <coppa/oscquery/parameter.hpp>
 #include <coppa/oscquery/json/keys.hpp>
 #include <coppa/exceptions/BadRequest.hpp>
-
+#include <coppa/string_view.hpp>
 #include <base64/base64.h>
 #include <jeayeson/jeayeson.hpp>
+
 #include <boost/tokenizer.hpp>
 #include <boost/bimap.hpp>
 #include <boost/assign.hpp>
@@ -132,13 +133,14 @@ inline auto attributeToJson(const Destination& val) { return val.destination; }
 inline auto attributeToJson(const Values& val) { return getJsonValueArray(val); }
 inline auto attributeToJson(const Ranges& val) { return getJsonRangeArray(val); }
 inline auto attributeToJson(const ClipModes& val) { return getJsonClipModeArray(val); }
-inline auto attributeToJson(const Access& val) { return static_cast<int>(val.accessmode); }
+inline auto attributeToJson(const Access& val) { return static_cast<int>(val.access); }
 inline auto attributeToJson(const Description& val) { return val.description; }
 inline auto attributeToJson(const Tags& val) { return getJsonTags(val); }
 
+template<typename String>
 inline auto attributeToJsonValue(
     const Parameter& parameter,
-    const std::string& method
+    String method
     )
 {
   /**/ if(method == key::attribute<Values>())
@@ -172,7 +174,7 @@ inline void parameterToJson(
 
   // These attributes are always here
   obj.set(key::full_path(), parameter.destination);
-  obj.set(key::attribute<Access>(), static_cast<int>(parameter.accessmode));
+  obj.set(key::attribute<Access>(), static_cast<int>(parameter.access));
 
   // Potentially empty attributes :
   // Description

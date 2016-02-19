@@ -131,7 +131,7 @@ inline auto jsonToVariant_checked(const json_value& val, std::size_t type)
 
 inline auto jsonToVariantArray(const json_value& json_val)
 {
-  std::vector<Variant> v;
+  vector<Variant> v;
 
   for(const auto& val : valToArray(json_val))
     v.push_back(jsonToVariant(val));
@@ -142,9 +142,9 @@ inline auto jsonToVariantArray(const json_value& json_val)
 
 inline auto jsonToVariantArray_checked(
     const json_value& json_val,
-    const std::vector<std::size_t>& type_vec)
+    const vector<std::size_t>& type_vec)
 {
-  std::vector<Variant> v;
+  vector<Variant> v;
 
   auto arr = valToArray(json_val);
 
@@ -166,7 +166,7 @@ inline auto jsonToClipModeArray(const json_value& val)
       ("High", ClipMode::High)
       ("Both", ClipMode::Both);
 
-  std::vector<ClipMode> vec;
+  vector<ClipMode> vec;
   for(const json_value& value : valToArray(val))
   {
     auto it = clipmodeMap.left.find(valToString(value));
@@ -181,7 +181,7 @@ inline auto jsonToClipModeArray(const json_value& val)
 
 inline auto jsonToRangeArray(const json_value& val)
 {
-  std::vector<Range> ranges;
+  vector<Range> ranges;
 
   for(const json_value& range_val : valToArray(val))
   {
@@ -212,9 +212,11 @@ inline auto jsonToRangeArray(const json_value& val)
   return ranges;
 }
 
-inline auto jsonToRangeArray_checked(const json_value& val, const std::vector<std::size_t>& type_vec)
+inline auto jsonToRangeArray_checked(
+    const json_value& val, 
+    const vector<std::size_t>& type_vec)
 {
-  std::vector<Range> ranges;
+  vector<Range> ranges;
 
   int i = 0;
   for(const json_value& range_val : valToArray(val))
@@ -265,7 +267,7 @@ static std::size_t OSCToVariantType(char c)
 inline auto jsonToTypeVector(const json_value& val)
 {
   auto str = val.get<std::string>();
-  std::vector<std::size_t> types_vec(str.size());
+  vector<std::size_t> types_vec(str.size());
   std::transform(str.begin(), str.end(), types_vec.begin(), &OSCToVariantType);
 
   return types_vec;
@@ -292,7 +294,7 @@ void readObject(Map& map, const json_map& obj)
     // What about integer clipping ? should we use arbitrary precision math ??
     mapper(key::attribute<Description>(), p.description, &detail::valToString);
     mapper(key::attribute<Tags>(),        p.tags,        &detail::jsonToTags);
-    mapper(key::attribute<Access>(),      p.accessmode , &detail::jsonToAccessMode);
+    mapper(key::attribute<Access>(),      p.access , &detail::jsonToAccessMode);
 
     // Types
     auto type_it = obj.find(key::type());

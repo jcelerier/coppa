@@ -1,11 +1,10 @@
 #pragma once
 #include <coppa/coppa.hpp>
 #include <oscpack/osc/OscOutboundPacketStream.h>
-#include <boost/container/static_vector.hpp>
+#include <boost/container/small_vector.hpp>
 
 namespace oscpack
 {
-
 template<int BufferSize = 1024>
 class MessageGenerator
 {
@@ -62,7 +61,7 @@ class MessageGenerator
       subfunc(args...);
     }
 
-    boost::container::static_vector<char, BufferSize> buffer;
+    boost::container::small_vector<char, BufferSize> buffer;
     oscpack::OutboundPacketStream p{oscpack::OutboundPacketStream(buffer.data(), buffer.size())};
 };
 }

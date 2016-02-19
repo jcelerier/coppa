@@ -52,10 +52,10 @@ class writer
       return mapToJson(std::forward<Args>(args)...).to_string();
     }
 
-    template<typename... Args>
+    template<typename StringVec_T>
     static std::string query_attributes(
         const Parameter& param,
-        const std::vector<std::string>& methods)
+        const StringVec_T& methods)
     {
       using namespace detail;
       json_map map;

@@ -3,7 +3,7 @@
 #include <map>
 #include <vector>
 #include <coppa/exceptions/BadRequest.hpp>
-
+#include <coppa/string_view.hpp>
 namespace coppa {
 namespace oscquery {
 /**
@@ -59,6 +59,7 @@ class answerer
 
           // All the value-less parameters
           std::vector<std::string> attributes;
+          attributes.reserve(5);
           for(const auto& elt : parameters)
           {
             if(elt.second.empty())

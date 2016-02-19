@@ -38,7 +38,7 @@ inline oscpack::OutboundPacketStream& operator<<(
 
 inline oscpack::OutboundPacketStream& operator<<(
     oscpack::OutboundPacketStream& p,
-    const std::vector<coppa::oscquery::Variant>& values)
+    const coppa::oscquery::vector<coppa::oscquery::Variant>& values)
 {
   using namespace coppa;
 

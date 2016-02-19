@@ -121,7 +121,7 @@ class parser
         // TODO check that they are correct (and put in detail).
         mapper(key::attribute<Description>(), &Parameter::description, &valToString);
         mapper(key::attribute<Tags>(),        &Parameter::tags,        &jsonToTags);
-        mapper(key::attribute<Access>(),      &Parameter::accessmode,  &jsonToAccessMode);
+        mapper(key::attribute<Access>(),      &Parameter::access,  &jsonToAccessMode);
 
         auto type_it = obj.find(key::type());
         if(type_it != obj.end())

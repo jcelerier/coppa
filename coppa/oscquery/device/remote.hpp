@@ -1,5 +1,5 @@
 #pragma once
-#include <coppa/oscquery/map.hpp>
+#include <coppa/oscquery/parameter.hpp>
 #include <coppa/oscquery/osc/osc.hpp>
 #include <coppa/protocol/osc/oscsender.hpp>
 #include <coppa/protocol/osc/oscmessagegenerator.hpp>

@@ -74,7 +74,7 @@ void simpleTest()
                                   }); // Range
     anotherParam.clipmodes.push_back(coppa::ClipMode::None);
 
-    anotherParam.accessmode = coppa::AccessMode::Both;
+    anotherParam.access = coppa::AccessMode::Both;
 
     coppa::oscquery::ParameterMap map;
     map.insert(aParam);
@@ -122,7 +122,7 @@ void deviceTest()
     Parameter aParam;
     aParam.destination = "/da/da";
     addValue(aParam, 42, {{}, {}, {}});
-    aParam.accessmode = coppa::AccessMode::Set;
+    aParam.access = coppa::AccessMode::Set;
 
     Parameter bParam;
     bParam.destination = "/plop/plip/plap";
@@ -136,7 +136,7 @@ void deviceTest()
 
     Parameter anotherParam;
     anotherParam.destination = "/da/do";
-    anotherParam.accessmode = coppa::AccessMode::Both;
+    anotherParam.access = coppa::AccessMode::Both;
     addValue(anotherParam, 5, // Value
                            {{}, {}, {4, 5, 6}}, // Range
                            coppa::ClipMode::Both); // ClipMode

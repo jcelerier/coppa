@@ -5,7 +5,7 @@
 #include <QCoreApplication>
 #include <coppa/device/zeroconf_server.hpp>
 class zc_synchronizing_local_device : public coppa::synchronizing_local_device<
-    coppa::locked_map<coppa::oscquery::basic_map<coppa::oscquery::ParameterMap>>,
+    coppa::locked_map<coppa::basic_map<coppa::oscquery::ParameterMap>>,
     coppa::zeroconf_server<coppa::ws::server>,
     coppa::oscquery::query_parser,
     coppa::oscquery::answerer,
@@ -16,7 +16,7 @@ class zc_synchronizing_local_device : public coppa::synchronizing_local_device<
 {
   public:
     using coppa::synchronizing_local_device<
-    coppa::locked_map<coppa::oscquery::basic_map<coppa::oscquery::ParameterMap>>,
+    coppa::locked_map<coppa::basic_map<coppa::oscquery::ParameterMap>>,
     coppa::zeroconf_server<coppa::ws::server>,
     coppa::oscquery::query_parser,
     coppa::oscquery::answerer,

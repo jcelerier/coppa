@@ -37,7 +37,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         auto p = map.get("/a/b");
 
         REQUIRE(p.destination == "/a/b" );
-        REQUIRE(p.accessmode == Access::Mode::Get );
+        REQUIRE(p.access == Access::Mode::Get );
 
         REQUIRE(p.values.size() == 1);
         REQUIRE(p.values.front().which() == Variant(5).which());
@@ -69,7 +69,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         auto p = map.get("/a/b");
 
         REQUIRE(p.destination == "/a/b" );
-        REQUIRE(p.accessmode == Access::Mode::Get );
+        REQUIRE(p.access == Access::Mode::Get );
 
         REQUIRE(p.values.size() == 1);
         REQUIRE(p.ranges.size() == 1);
@@ -105,7 +105,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         auto p = map.get("/a/b");
 
         REQUIRE(p.destination == "/a/b" );
-        REQUIRE(p.accessmode == Access::Mode::Get );
+        REQUIRE(p.access == Access::Mode::Get );
 
         REQUIRE(p.values.size() == 1);
         REQUIRE(p.ranges.size() == 1);
@@ -141,7 +141,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         auto p = map.get("/a/b");
 
         REQUIRE(p.destination == "/a/b" );
-        REQUIRE(p.accessmode == Access::Mode::Get );
+        REQUIRE(p.access == Access::Mode::Get );
 
         REQUIRE(p.values.size() == 2);
         REQUIRE(p.ranges.size() == 2);
@@ -202,7 +202,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         auto p = map.get("/a/b");
 
         REQUIRE(p.destination == "/a/b" );
-        REQUIRE(p.accessmode == Access::Mode::Get );
+        REQUIRE(p.access == Access::Mode::Get );
 
         REQUIRE(p.values.size() == 2);
         REQUIRE(p.ranges.size() == 2);
@@ -266,7 +266,7 @@ TEST_CASE( "paths_added parsing", "[parser]" ) {
         auto p = map.get("/a/b");
 
         REQUIRE(p.destination == "/a/b" );
-        REQUIRE(p.accessmode == Access::Mode::Get );
+        REQUIRE(p.access == Access::Mode::Get );
 
         REQUIRE(p.values.size() == 1);
         REQUIRE(p.ranges.size() == 1);
@@ -278,7 +278,7 @@ TEST_CASE( "paths_added parsing", "[parser]" ) {
         auto p2 = map.get("/c/d");
 
         REQUIRE(p2.destination == "/c/d" );
-        REQUIRE(p2.accessmode == Access::Mode::Set );
+        REQUIRE(p2.access == Access::Mode::Set );
 
         REQUIRE(p2.values.size() == 2);
         REQUIRE(p2.ranges.size() == 2);

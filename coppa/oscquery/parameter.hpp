@@ -1,6 +1,7 @@
 #pragma once
 #include <coppa/coppa.hpp>
 #include <coppa/map.hpp>
+#include <boost/container/small_vector.hpp>
 
 namespace coppa
 {
@@ -13,11 +14,13 @@ using coppa::Description;
 using coppa::Destination;
 using coppa::Tags;
 using coppa::Generic;
+
 enum class Type { int_t, float_t, bool_t, string_t, generic_t };
 
 // TODO boost::recursive_variant
 // TODO map Type to the actual types somehow
 using Variant = eggs::variant<int, float, bool, std::string, Generic>;
+using Range = coppa::Range<Variant>;
 
 inline Type which(const Variant& var)
 {
@@ -37,33 +40,25 @@ inline char getOSCType(const Variant& value)
   }
 }
 
-struct Range
-{
-    Variant min;
-    Variant max;
-    std::vector<Variant> values;
-    bool operator==(const Range& other) const
-    {
-      return other.min == min && other.max == max && other.values == values;
-    }
-};
+template<typename T>
+using vector = boost::container::small_vector<T, 6>;
 
 struct Values
 {
     coppa_name(Values)
-    std::vector<Variant> values;
+    vector<Variant> values;
 };
 
 struct Ranges
 {
     coppa_name(Ranges)
-    std::vector<oscquery::Range> ranges;
+    vector<oscquery::Range> ranges;
 };
 
 struct ClipModes
 {
     coppa_name(ClipModes)
-    std::vector<ClipMode> clipmodes;
+    vector<ClipMode> clipmodes;
 };
 
 // TODO try one based on something like QVariantMap
@@ -83,7 +78,7 @@ inline bool operator==(const Parameter& lhs, const Parameter& rhs)
   return lhs.destination == rhs.destination
       && lhs.values == rhs.values
       && lhs.ranges == rhs.ranges
-      && lhs.accessmode == rhs.accessmode
+      && lhs.access == rhs.access
       && lhs.clipmodes == rhs.clipmodes
       && lhs.description == rhs.description
       && lhs.tags == rhs.tags;
@@ -133,6 +128,8 @@ inline void addDefaultValue(Parameter& parameter, std::size_t value_type_id)
       throw;
   }
 }
+
+using ParameterMap = ParameterMapType<Parameter>;
 
 }
 }

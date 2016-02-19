@@ -1,25 +1,53 @@
 #pragma once
-
 #include <coppa/coppa.hpp>
+
 namespace coppa
 {
 namespace ossia
 {
+using coppa::Access;
+using coppa::Bounding;
+using coppa::Alias;
+using coppa::Description;
+using coppa::Destination;
+using coppa::Tags;
+using coppa::Generic;
+
+enum class Type { impulse_t, bool_t, int_t, float_t, char_t, string_t, tuple_t, generic_t };
+struct Impulse {};
+struct Values;
+using Variant = eggs::variant<Impulse, bool, int, float, char, std::string, Values, Generic>;
+struct Values 
+{
+    std::vector<Variant> variants;
+};
+inline bool operator==(const Impulse& lhs, const Impulse& rhs)
+{ return true; }
+inline bool operator==(const Values& lhs, const Values& rhs)
+{ return lhs.variants == rhs.variants; }
+
 struct RepetitionFilter
 {
     coppa_name(RepetitionFilter)
     bool repetitionFilter;
 };
 
+template<typename ValueType> using Enum = std::vector<ValueType>;
+
+using Parameter = AttributeAggregate<
+  SimpleValue<Variant>,
+  Destination, 
+  Description,
+  Access,
+  Bounding,
+  RepetitionFilter>;
+/*
 template<typename ValueType>
 struct Interval
 {
     enum class Type { OpenOpen, OpenClosed, ClosedOpen, ClosedClosed } type;
     std::pair<ValueType, ValueType> range;
 };
-
-template<typename ValueType> using Enum = std::vector<ValueType>;
-enum class BoundingMode { Free, Clip, Wrap, Fold };
 
 template<typename ValueType>
 using DomainType = std::vector<eggs::variant<Interval<ValueType>, Enum<ValueType>>>;
@@ -71,7 +99,6 @@ class StandardComparator
     { return lhs == rhs; }
 };
 
-
 using Parameter = ParameterAdapter<SimpleValue<Variant>,
 Tags,
 Alias,
@@ -79,5 +106,6 @@ RepetitionFilter,
 Bounds<Variant,
 StandardComparator<Variant>,
 StandardComparator<Variant>>>;
+*/
 }
 }
