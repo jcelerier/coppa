@@ -85,8 +85,8 @@ class locked_map : private Map
     { return Map::operator[](i); }
 
     // These are of course unsafe, too
-    auto& data_map() { return static_cast<data_map_type&>(*this); }
-    auto& data_map() const { return static_cast<const data_map_type&>(*this); }
+    auto& get_data_map() { return static_cast<data_map_type&>(*this); }
+    auto& get_data_map() const { return static_cast<const data_map_type&>(*this); }
 
 
     auto size() const
@@ -179,10 +179,10 @@ class constant_map : private locked_map<Map>
   public:
     using parent_map_type = locked_map<Map>;
     using data_map_type = typename locked_map<Map>::data_map_type;
-    auto& locked_map() { return static_cast<parent_map_type&>(*this); }
-    auto& locked_map() const { return static_cast<parent_map_type&>(*this); }
-    auto& data_map() { return parent_map_type::data_map(); }
-    auto& data_map() const { return parent_map_type::data_map(); }
+    auto& get_locked_map() { return static_cast<parent_map_type&>(*this); }
+    auto& get_locked_map() const { return static_cast<parent_map_type&>(*this); }
+    auto& get_data_map() { return parent_map_type::get_data_map(); }
+    auto& get_data_map() const { return parent_map_type::get_data_map(); }
 
     using parent_map_type::has;
     using parent_map_type::get;
@@ -190,7 +190,7 @@ class constant_map : private locked_map<Map>
 
     template<typename Map_T>
     void replace(Map_T&& map)
-    { locked_map() = std::move(map); }
+    { get_locked_map() = std::move(map); }
 };
 
 /**

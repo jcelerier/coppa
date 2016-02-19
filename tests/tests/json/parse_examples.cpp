@@ -108,7 +108,7 @@ TEST_CASE( "parse all files without crashing", "[parser]" ) {
 }
 
 
-template<typename Map>
+template<typename Map, typename std::enable_if_t<std::is_class<typename Map::value_type>::value>* = nullptr>
 bool operator==(const Map& lhs, const Map& rhs)
 {
     bool b = lhs.size() == rhs.size();
@@ -137,7 +137,7 @@ TEST_CASE( "other examples parsing", "[parser]" ) {
   GIVEN( "An empty parameter map" ) {
 
       test_remote_device dev("");
-      auto map = dev.data_map();
+      auto map = dev.get_data_map();
 
 
       WHEN( "empty.json read" ) {
@@ -145,7 +145,7 @@ TEST_CASE( "other examples parsing", "[parser]" ) {
 
         THEN("nothing happens")
         {
-            bool map_eq = map == dev.data_map();
+            bool map_eq = map == dev.get_data_map();
             std::cerr << map.size() << " " << dev.size();
             REQUIRE( map_eq );
         }
@@ -155,7 +155,7 @@ TEST_CASE( "other examples parsing", "[parser]" ) {
 
           THEN("nothing happens")
           {
-              bool map_eq = map == dev.data_map();
+              bool map_eq = map == dev.get_data_map();
               std::cerr << map.size() << " " << dev.size();
               REQUIRE( map_eq );
           }
@@ -165,7 +165,7 @@ TEST_CASE( "other examples parsing", "[parser]" ) {
 
           THEN("nothing happens")
           {
-              bool map_eq = map == dev.data_map();
+              bool map_eq = map == dev.get_data_map();
               std::cerr << map.get("/").description << " " << dev.size();
               REQUIRE( map_eq );
           }
@@ -175,7 +175,7 @@ TEST_CASE( "other examples parsing", "[parser]" ) {
 
           THEN("the map changes")
           {
-              bool map_eq = map == dev.data_map();
+              bool map_eq = map == dev.get_data_map();
               std::cerr << dev.get("/baz").description << std::endl;
               REQUIRE( !map_eq );
           }
@@ -195,11 +195,11 @@ TEST_CASE("effects on map", "[general]") {
 
         // Set-up the initial namespace
         dev.message(read_json_file(base + "original.json"));
-        auto orig_map = coppa::oscquery::json::detail::mapToJson(dev.data_map(), "/");
+        auto orig_map = coppa::oscquery::json::detail::mapToJson(dev.get_data_map(), "/");
 
         // Apply a command
         dev.message(read_json_file(base + "message.json"));
-        auto result_map = coppa::oscquery::json::detail::mapToJson(dev.data_map(), "/");
+        auto result_map = coppa::oscquery::json::detail::mapToJson(dev.get_data_map(), "/");
 
         REQUIRE(result_map == read_json_map(base + "expected.json"));
     }

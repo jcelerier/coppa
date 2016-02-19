@@ -131,40 +131,40 @@ class remote_query_device : public RemoteMapBase, public QueryProtocolClient
           return;
         }
 
-        auto&& lock = RemoteMapBase::locked_map().acquire_write_lock();
+        auto&& lock = RemoteMapBase::get_locked_map().acquire_write_lock();
         switch(mt)
         {
           case MessageType::PathAdded:
-            Parser::template path_added<BaseMapType>(RemoteMapBase::data_map(), data);
+            Parser::template path_added<BaseMapType>(RemoteMapBase::get_data_map(), data);
             break;
 
           case MessageType::PathChanged:
-            Parser::path_changed(RemoteMapBase::data_map(), data);
+            Parser::path_changed(RemoteMapBase::get_data_map(), data);
             break;
 
           case MessageType::PathRemoved:
-            Parser::path_removed(RemoteMapBase::data_map(), data);
+            Parser::path_removed(RemoteMapBase::get_data_map(), data);
             break;
 
           case MessageType::AttributesChanged:
-            Parser::attributes_changed(RemoteMapBase::data_map(), data);
+            Parser::attributes_changed(RemoteMapBase::get_data_map(), data);
             break;
 
 
           case MessageType::PathsAdded:
-            Parser::template paths_added<BaseMapType>(RemoteMapBase::data_map(), data);
+            Parser::template paths_added<BaseMapType>(RemoteMapBase::get_data_map(), data);
             break;
 
           case MessageType::PathsChanged:
-            Parser::paths_changed(RemoteMapBase::data_map(), data);
+            Parser::paths_changed(RemoteMapBase::get_data_map(), data);
             break;
 
           case MessageType::PathsRemoved:
-            Parser::paths_removed(RemoteMapBase::data_map(), data);
+            Parser::paths_removed(RemoteMapBase::get_data_map(), data);
             break;
 
           case MessageType::AttributesChangedArray:
-            Parser::attributes_changed_array(RemoteMapBase::data_map(), data);
+            Parser::attributes_changed_array(RemoteMapBase::get_data_map(), data);
             break;
 
           case MessageType::Device:

@@ -22,7 +22,7 @@
     return object.fun(std::forward<Args>(args)...); \
     }
 
-#define FORWARD_LAMBDA(fun) [&] (auto&&... args) { return fun(std::forward<decltype(args)>(args)...); }
+#define FORWARD_LAMBDA(fun) [&] (auto&&... args) { return this->fun(std::forward<decltype(args)>(args)...); }
 
 #define GETTER(obj) auto& obj() noexcept { return m_##obj; }
 #define GETTER_CONST(obj) auto& obj() const noexcept { return m_##obj; }

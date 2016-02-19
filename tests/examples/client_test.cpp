@@ -29,11 +29,11 @@ int main()
     {
         this_thread::sleep_for(chrono::seconds(1));
 
-        const auto& theMap = dev.locked_map();
+        const auto& theMap = dev.get_locked_map();
         cout << endl << "Current addresses: " << endl;
 
         // Print the real parameters in the tree
-        for(auto&& elt : theMap.data_map())
+        for(auto&& elt : theMap.get_data_map())
         {
             cout << elt.destination << endl;
         }

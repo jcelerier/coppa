@@ -200,7 +200,7 @@ class synchronizing_local_device : private local_device<Args...>
 
       auto&& lock = parent_t::acquire_read_lock();
       auto message = parent_t::serializer_type::path_added(
-                       parent_t::data_map(),
+                       parent_t::get_data_map(),
                        parameter.destination);
       for(auto& client : parent_t::clients())
       {

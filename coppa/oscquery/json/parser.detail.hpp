@@ -248,7 +248,7 @@ inline auto jsonToRangeArray_checked(const json_value& val, const std::vector<st
   return ranges;
 }
 
-static constexpr std::size_t OSCToVariantType(char c)
+static std::size_t OSCToVariantType(char c)
 {
   switch(c)
   {
