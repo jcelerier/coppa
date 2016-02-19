@@ -6,12 +6,36 @@ namespace coppa
 {
 namespace oscquery
 {
+
 using coppa::Access;
 using coppa::Alias;
 using coppa::Description;
 using coppa::Destination;
-using coppa::Generic;
 using coppa::Tags;
+using coppa::Generic;
+enum class Type { int_t, float_t, bool_t, string_t, generic_t };
+
+// TODO boost::recursive_variant
+// TODO map Type to the actual types somehow
+using Variant = eggs::variant<int, float, bool, std::string, Generic>;
+
+inline Type which(const Variant& var)
+{
+  return static_cast<Type>(var.which());
+}
+
+inline char getOSCType(const Variant& value)
+{
+  switch(value.which())
+  {
+    case 0: return 'i';
+    case 1: return 'f';
+    case 2: return eggs::variants::get<bool>(value) ? 'T' : 'F';
+    case 3: return 's';
+    case 4: return 'b';
+    default: return 'N';
+  }
+}
 
 struct Range
 {

@@ -1,5 +1,6 @@
 #pragma once
 #include <coppa/coppa.hpp>
+#include <coppa/oscquery/parameter.hpp>
 #include <coppa/protocol/osc/oscreceiver.hpp>
 namespace coppa
 {
@@ -50,7 +51,7 @@ class message_handler : public coppa::osc::receiver
       for(auto it = m.ArgumentsBegin(); it != m.ArgumentsEnd(); ++it, ++i)
       {
         auto tag = it->TypeTag();
-        if(tag != getOSCType(v.values[i]))
+        if(tag != oscquery::getOSCType(v.values[i]))
           return;
       }
 
@@ -65,21 +66,21 @@ class message_handler : public coppa::osc::receiver
           // Note : how to handle mismatch between received osc messages
           // and the structure of the tree ?
           auto& elt = v.values[i];
-          switch((coppa::Type)elt.which())
+          switch(oscquery::which(elt))
           {
-            case Type::int_t:
+            case oscquery::Type::int_t:
               elt = it->AsInt32();
               break;
-            case Type::float_t:
+            case oscquery::Type::float_t:
               elt = it->AsFloat();
               break;
-            case Type::bool_t:
+            case oscquery::Type::bool_t:
               elt = it->AsBool();
               break;
-            case Type::string_t:
+            case oscquery::Type::string_t:
               elt = std::string(it->AsString());
               break;
-            case Type::generic_t:
+            case oscquery::Type::generic_t:
             {
               int n = 0;
               const char* data{};

@@ -1,7 +1,7 @@
 #pragma once
 #include <coppa/coppa.hpp>
 #include <oscpack/osc/OscOutboundPacketStream.h>
-#include <array>
+#include <boost/container/static_vector.hpp>
 
 namespace oscpack
 {
@@ -19,7 +19,9 @@ class MessageGenerator
     }
 
     template <typename... T>
-    const oscpack::OutboundPacketStream&  operator()(const std::string& name, const T&... args)
+    const oscpack::OutboundPacketStream&  operator()(
+        const std::string& name,
+        const T&... args)
     {
       p.Clear();
       p << oscpack::BeginBundleImmediate << oscpack::BeginMessage( name.c_str() );
@@ -28,44 +30,17 @@ class MessageGenerator
       return p;
     }
 
-    const oscpack::OutboundPacketStream&  operator()(const std::string& name,
-                                                 const std::vector<coppa::Variant>& values)
+    template<typename Val_T>
+    const oscpack::OutboundPacketStream& operator()(
+        const std::string& name,
+        const std::vector<Val_T>& values)
     {
-      using namespace eggs::variants;
-      using namespace coppa;
       p.Clear();
       p << oscpack::BeginBundleImmediate
-        << oscpack::BeginMessage( name.c_str() );
-      for(const auto& val : values)
-      {
-        switch((coppa::Type)val.which())
-        {
-          case Type::int_t:
-            p << get<int>(val);
-            break;
-          case Type::float_t:
-            p << get<float>(val);
-            break;
-          case Type::bool_t:
-            p << get<bool>(val);
-            break;
-          case Type::string_t:
-            p << get<std::string>(val).c_str();
-            break;
-          case Type::generic_t:
-          {
-            const auto& buf = get<coppa::Generic>(val);
-            oscpack::Blob b(buf.buf.data(), buf.buf.size()); // todo : use Generic instead and convert to hex / base64
-            p << b;
-            break;
-          }
-          default:
-            break;
-        }
-      }
-      p << oscpack::EndMessage
+        << oscpack::BeginMessage( name.c_str() )
+        << values
+        << oscpack::EndMessage
         << oscpack::EndBundle;
-
       return p;
     }
 
@@ -87,7 +62,7 @@ class MessageGenerator
       subfunc(args...);
     }
 
-    std::array<char, BufferSize> buffer;
+    boost::container::static_vector<char, BufferSize> buffer;
     oscpack::OutboundPacketStream p{oscpack::OutboundPacketStream(buffer.data(), buffer.size())};
 };
 }

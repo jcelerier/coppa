@@ -1,11 +1,12 @@
 #pragma once
+#include <coppa/oscquery/map.hpp>
+#include <coppa/oscquery/osc/osc.hpp>
 #include <coppa/protocol/osc/oscsender.hpp>
 #include <coppa/protocol/osc/oscmessagegenerator.hpp>
-#include <unordered_set>
 #include <coppa/oscquery/json/parser.hpp>
 #include <coppa/device/remote.hpp>
 #include <coppa/protocol/websockets/client.hpp>
-#include <coppa/oscquery/map.hpp>
+#include <unordered_set>
 namespace coppa
 {
 namespace oscquery

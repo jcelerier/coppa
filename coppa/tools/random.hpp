@@ -178,8 +178,8 @@ inline auto setup_basic_map(Map& map)
 
   addValue(anotherParam, std::string("plip"));
   addValue(anotherParam, 3.45f,  // Value
-  {coppa::Variant(0.0f), // Range min
-   coppa::Variant(5.5f), // Range max
+  {Variant(0.0f), // Range min
+   Variant(5.5f), // Range max
    {} // Range values
            });
 
