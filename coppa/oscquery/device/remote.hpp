@@ -16,18 +16,20 @@ namespace oscquery
  *
  * A device that mirrors a remote OSCQuery server.
  */
-class remote_device : public remote_query_device<
-    basic_map<ParameterMap>,
-    json::parser,
-    remote_query_client<ws::client, json::parser>,
-    remote_map_setter<basic_map<ParameterMap>, osc::sender>>
+class remote_device : 
+    public remote_query_device<
+        basic_map<ParameterMap>,
+        json::parser,
+        remote_query_client<
+            ws::client, 
+            json::parser>,
+        remote_map_setter<
+            locked_map<basic_map<ParameterMap>>, 
+            osc::sender>
+    >
 {
   public:
     using remote_query_device::remote_query_device;
-    void set(const std::string& addr, oscquery::Values& val)
-    {
-      remote_map_setter::set(addr, val.values);
-    }
 };
 }
 }

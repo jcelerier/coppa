@@ -10,7 +10,9 @@ int main()
   using namespace coppa::oscquery;
 
   // Create a device
-  synchronizing_local_device dev;
+  coppa::basic_map<coppa::oscquery::ParameterMap> base_map;
+  coppa::locked_map<coppa::basic_map<coppa::oscquery::ParameterMap>> locked_map(base_map);
+  synchronizing_local_device dev(locked_map);
   setup_basic_map(dev);
 
   std::mutex test_mutex;
@@ -28,7 +30,7 @@ int main()
       std::lock_guard<std::mutex> lock(test_mutex);
 
       v.values[0] = i++;
-      if(dev.has("da/do"))
+      if(dev.map().has("da/do"))
         dev.update_attributes("/da/do", v);
       else
         return;
@@ -45,8 +47,8 @@ int main()
       std::this_thread::sleep_for(std::chrono::milliseconds(200));
       std::lock_guard<std::mutex> lock(test_mutex);
 
-      auto size = dev.size();
-      auto randompath = dev[my_rand<int>() % size].destination;
+      auto size = dev.map().size();
+      auto randompath = dev.map()[my_rand<int>() % size].destination;
       Parameter p;
 
       // TODO empty names should not be allowed by ParameterMap

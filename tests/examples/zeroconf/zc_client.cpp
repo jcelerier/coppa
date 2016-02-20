@@ -46,9 +46,16 @@ class MainObj : public QObject
         using namespace std;
         using namespace coppa;
         using namespace coppa::oscquery;
-
+        
+        coppa::basic_map<coppa::oscquery::ParameterMap> base_map;
+        coppa::locked_map<coppa::basic_map<coppa::oscquery::ParameterMap>> locked_map(base_map);    
+        coppa::remote_map_setter<
+            coppa::locked_map<coppa::basic_map<coppa::oscquery::ParameterMap>>, 
+            coppa::osc::sender> map_setter(locked_map);
+        
         QString addr = QString("http://") + ipAddress + ":" + QString::number(data->port());
-        remote_device dev(addr.toStdString());
+        
+        remote_device dev(map_setter, addr.toStdString());
         dev.query_connect_async();
         while(!dev.query_is_connected())
           this_thread::sleep_for(chrono::milliseconds(100));
@@ -57,7 +64,7 @@ class MainObj : public QObject
 
         this_thread::sleep_for(chrono::seconds(1));
 
-        cerr <<  dev.size() << endl;
+        cerr <<  dev.map().size() << endl;
         exit(0);
 
       });

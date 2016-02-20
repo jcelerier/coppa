@@ -29,7 +29,7 @@ template<typename Map,
          typename Serializer,
          typename DataProtocolServer,
          typename DataProtocolHandler>
-class local_device : public Map
+class local_device 
 {
   public:
     using map_type = Map;
@@ -37,6 +37,11 @@ class local_device : public Map
     using query_answerer_type = QueryAnswerer;
     using serializer_type = Serializer;
 
+    auto& map() 
+    { return m_map; }
+    auto& map() const
+    { return m_map; }
+    
     GETTER(clients)
     GETTER_CONST(clients)
 
@@ -47,20 +52,26 @@ class local_device : public Map
 
     auto& receiver() { return m_data_server; }
 
-    local_device()
+    local_device(Map& map):
+      m_map{map}
     {
       initDataServer(1234);
       initQueryServer();
     }
 
-    local_device(int data_port)
+    local_device(
+        Map& map, 
+        int data_port):
+      m_map{map}
     {
       initDataServer(data_port);
       initQueryServer();
     }
 
     local_device(
+        Map& map, 
         QueryServer&& query_serv):
+      m_map{map},
       m_query_server{std::move(query_serv)}
     {
       initDataServer(1234);
@@ -68,8 +79,10 @@ class local_device : public Map
     }
 
     local_device(
+        Map& map, 
         QueryServer&& query_serv,
         DataProtocolServer&& data_serv):
+      m_map{map},
       m_data_server{std::move(data_serv)},
       m_query_server{std::move(query_serv)}
     {
@@ -92,23 +105,23 @@ class local_device : public Map
     template<typename Arg>
     void update(const std::string& path, Arg&& val)
     {
-      Map::update(path, std::forward<Arg>(val));
+      m_map.update(path, std::forward<Arg>(val));
 
       if(m_handlers.find(path) != std::end(m_handlers))
       {
-        m_handlers[path](Map::get(path));
+        m_handlers[path](m_map.get(path));
       }
     }
 
     template<typename Arg>
     void update_attributes(const std::string& path, Arg&& val)
     {
-      Map::update_attributes(path, std::forward<Arg>(val));
+      m_map.update_attributes(path, std::forward<Arg>(val));
 
       auto it = m_handlers.find(path);
       if(it != std::end(m_handlers))
       {
-        (it->second)(Map::get(path));
+        (it->second)(m_map.get(path));
       }
     }
 
@@ -116,6 +129,7 @@ class local_device : public Map
     { /* todo PATH_CHANGED */ }
 
   private:
+    Map& m_map;
     //// Data server behaviour ////
     DataProtocolServer m_data_server; // Note : why not directly a list of servers on a data-access layer???
 
@@ -189,19 +203,17 @@ class synchronizing_local_device : private local_device<Args...>
     using parent_t::add_handler;
     using parent_t::remove_handler;
     using parent_t::expose;
-
-    using parent_t::size;
-    using parent_t::has;
-    using parent_t::operator[];
-
+    
+    using parent_t::map;
+    
     template<typename T>
     void insert(const T& parameter)
     {
-      parent_t::insert(parameter);
+      map().insert(parameter);
 
-      auto&& lock = parent_t::acquire_read_lock();
+      auto&& lock = map().acquire_read_lock();
       auto message = parent_t::serializer_type::path_added(
-                       parent_t::get_data_map(),
+                       map().get_data_map(),
                        parameter.destination);
       for(auto& client : parent_t::clients())
       {
@@ -232,7 +244,7 @@ class synchronizing_local_device : private local_device<Args...>
         parent_t::query_server().send_message(client, message);
       }
     }
-
+    
     void rename(std::string oldPath, std::string newPath)
     { /* todo PATH_CHANGED */ }
 };

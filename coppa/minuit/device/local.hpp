@@ -26,7 +26,7 @@ namespace ossia
 template<typename Map,
          typename DataProtocolServer,
          typename DataProtocolHandler>
-class osc_local_device : public Map
+class osc_local_device
 {
     
   public:
@@ -35,18 +35,23 @@ class osc_local_device : public Map
     
     osc_local_device( 
         Map& map,
-        int data_port):
+        unsigned int data_port):
       m_map{map},
       m_data_server{data_port, [&] (const auto& m)
-      { DataProtocolHandler::on_messageReceived(*this, m); }}
+      { 
+        DataProtocolHandler::on_messageReceived(*this, m_map, m);
+      }}
     {
       m_data_server.run();
     }
     
+    auto& map() const 
+    { return m_map; }
+    
     template<typename String, typename Arg>
     void update(param_t<String> path, Arg&& val)
     {
-      if(bool ok = m_map.update(path, std::forward<Arg>(val)))
+      if(m_map.update(path, std::forward<Arg>(val)))
         on_value_changed.emit(m_map.get(path));
     }
     

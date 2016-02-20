@@ -24,13 +24,13 @@ class answerer
         // Here we handle the url elements relative to oscquery
         if(parameters.size() == 0)
         {
-          auto&& lock = dev.acquire_read_lock();
-          return json::writer::query_namespace(dev, path);
+          auto&& lock = dev.map().acquire_read_lock();
+          return json::writer::query_namespace(dev.map(), path);
         }
         else
         {
           // First check if we have the path
-          if(!dev.has(path))
+          if(!dev.map().has(path))
             throw PathNotFoundException{path};
 
           // Listen
@@ -71,7 +71,7 @@ class answerer
           if(!attributes.empty())
           {
             return json::writer::query_attributes(
-                  dev.get(path),
+                  dev.map().get(path),
                   attributes);
           }
         }

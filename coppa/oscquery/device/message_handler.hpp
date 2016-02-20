@@ -35,9 +35,10 @@ class message_handler : public coppa::osc::receiver
       oscquery::Parameter v;
       // Little dance for thread-safe access to the current value
       {
-        auto&& l = dev.acquire_read_lock();
-        auto node_it = dev.find(m.AddressPattern());
-        if(node_it == dev.end())
+        auto& map = dev.map();
+        auto&& l = map.acquire_read_lock();
+        auto node_it = map.find(m.AddressPattern());
+        if(node_it == map.end())
           return;
 
         v = *node_it;

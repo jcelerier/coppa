@@ -25,7 +25,10 @@ int main()
     using namespace coppa::oscquery;
 
     // Create a device
-    local_device dev;
+    
+    coppa::basic_map<coppa::oscquery::ParameterMap> base_map;
+    local_device::map_type locked_map(base_map);
+    local_device dev(locked_map);
 
     // A thread that will periodically add a parameter.
     std::thread parameterAddThread([&] ()
@@ -33,10 +36,10 @@ int main()
       while(true)
       {
         auto gstart = std::chrono::steady_clock::now();
-        auto randompath = dev[rand() % dev.size()].destination;
+        auto randompath = dev.map()[rand() % dev.map().size()].destination;
         auto gend = std::chrono::steady_clock::now();
         auto gdiff = gend - gstart;
-        std::cout << "Getting: " << dev.size() << "  " << std::chrono::duration <double, std::milli> (gdiff).count() << "" << std::endl;
+        std::cout << "Getting: " << dev.map().size() << "  " << std::chrono::duration <double, std::milli> (gdiff).count() << "" << std::endl;
 
         Parameter p;
         // TODO empty names should not be allowed by ParameterMap
@@ -51,10 +54,10 @@ int main()
         }
 
         auto start = std::chrono::steady_clock::now();
-        dev.insert(p);
+        dev.map().insert(p);
         auto end = std::chrono::steady_clock::now();
         auto diff = end - start;
-        std::cout << "Adding: " << dev.size() << "  " << std::chrono::duration <double, std::milli> (diff).count() << "" << std::endl;
+        std::cout << "Adding: " << dev.map().size() << "  " << std::chrono::duration <double, std::milli> (diff).count() << "" << std::endl;
       }
     });
 

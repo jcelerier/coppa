@@ -26,20 +26,26 @@ TEST_CASE( "parameter init", "[ossia][parameter]" ) {
     coppa::ossia::Parameter p;
 }
 
-struct mock_device
-{
+struct mock_locked_map
+{    
     Parameter p;
-    Variant v;
     
     bool acquire_read_lock() const { return true; }
     template<typename T>
     auto find(T) { return &p; }
     Parameter* end() { return nullptr; }
+};
+
+struct mock_device
+{
+    Variant v;
+    
+    mock_locked_map map;
     
     template<typename String, typename Fun>
     void update(String, Fun f)
     {
-      f(p);
+      f(map.p);
     }
 };
 
@@ -57,13 +63,13 @@ TEST_CASE( "message handler", "[ossia][message_handler]" ) {
     
     // Mock device
     mock_device d;
-    d.p.variants.push_back(int32_t{0});
+    d.map.p.variants.push_back(int32_t{0});
     
     // Test the parsing
-    coppa::ossia::message_handler::on_messageReceived(d, m);
+    coppa::ossia::message_handler::on_messageReceived(d, d.map, m);
     
     // Check parsing result
-    auto val = d.p.variants[0];
+    auto val = d.map.p.variants[0];
     REQUIRE(which(val) == Type::int_t);
     REQUIRE(get<int32_t>(val) == 64);
   }
@@ -91,37 +97,36 @@ TEST_CASE( "message handler", "[ossia][message_handler]" ) {
     
     // Mock device
     mock_device d;
-    d.p.variants.push_back(int32_t{0});
-    d.p.variants.push_back(Tuple{0.0f, 0.0f});
-    d.p.variants.push_back(int32_t{0});
+    d.map.p.variants.push_back(int32_t{0});
+    d.map.p.variants.push_back(Tuple{0.0f, 0.0f});
+    d.map.p.variants.push_back(int32_t{0});
     
     // Test the parsing
-    coppa::ossia::message_handler::on_messageReceived(d, m);
+    coppa::ossia::message_handler::on_messageReceived(d, d.map, m);
     
     // Check parsing result
     {
-      auto val = d.p.variants[0];
+      auto val = d.map.p.variants[0];
       REQUIRE(which(val) == Type::int_t);
       REQUIRE(get<int32_t>(val) == 9);
     }
     {
-      auto val = d.p.variants[1];
+      auto val = d.map.p.variants[1];
       REQUIRE(which(val) == Type::tuple_t);
       auto tpl = Tuple{f, f};
       REQUIRE(get<Tuple>(val) == tpl);
     } 
     {
-      auto val = d.p.variants[2];
+      auto val = d.map.p.variants[2];
       REQUIRE(which(val) == Type::int_t);
       REQUIRE(get<int32_t>(val) == 9);
     }
   }
 }
 
-#include <functional>
-
 TEST_CASE( "device", "[ossia][osc_local_device]" ) {
-  osc_local_impl::map_type map;
+  coppa::basic_map<ParameterMapType<coppa::ossia::Parameter>> base_map;
+  osc_local_impl::map_type map(base_map);
   
   osc_local_impl test(map, 1234);
   auto cb = [] (const Parameter& param) {

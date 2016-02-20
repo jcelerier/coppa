@@ -32,8 +32,10 @@ int main(int argc, char** argv)
     QCoreApplication app(argc, argv);
     using namespace coppa;
 
+    coppa::basic_map<coppa::oscquery::ParameterMap> map;
+    coppa::locked_map<coppa::basic_map<coppa::oscquery::ParameterMap>> lm(map);
     using query_server = coppa::zeroconf_server<coppa::ws::server>;
-    zc_synchronizing_local_device dev(query_server("A very nice device", 9002));
+    zc_synchronizing_local_device dev(lm, query_server("A very nice device", 9002));
     setup_basic_map(dev);
 
     dev.expose();

@@ -49,3 +49,18 @@ inline oscpack::OutboundPacketStream& operator<<(
 
   return p;
 }
+
+
+inline oscpack::OutboundPacketStream& operator<<(
+    oscpack::OutboundPacketStream& p,
+    const coppa::oscquery::Values& values)
+{
+  using namespace coppa;
+
+  for(const auto& val : values.values)
+  {
+    p << val;
+  }
+
+  return p;
+}

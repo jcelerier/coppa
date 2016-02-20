@@ -96,19 +96,30 @@ template<
     typename BaseMapType,
     typename Parser,
     typename QueryProtocolClient,
-    typename RemoteMapBase>
-class remote_query_device : public RemoteMapBase, public QueryProtocolClient
+    typename RemoteMapSetter>
+class remote_query_device : 
+    public QueryProtocolClient
 {
   public:
-    remote_query_device(const std::string& uri):
-      QueryProtocolClient{uri, [&] (const std::string& mess) { on_query_server_message(mess); }}
+    remote_query_device(RemoteMapSetter& map, const std::string& uri):
+      QueryProtocolClient{uri, [&] (const std::string& mess) { on_query_server_message(mess); }},
+      m_setter{map}
     {
 
     }
 
+    auto& map() 
+    { return m_setter.map(); }
+    
+    auto& map() const
+    { return m_setter.map(); }
+    
     std::function<void()> onConnect;
     std::function<void()> onUpdate;
 
+  protected:
+    RemoteMapSetter& m_setter;
+    
   private:
     void on_query_server_message(const std::string& message)
     try
@@ -118,7 +129,7 @@ class remote_query_device : public RemoteMapBase, public QueryProtocolClient
 
       if(mt == MessageType::Device)
       {
-        RemoteMapBase::connect(QueryProtocolClient::uri(), Parser::getPort(data));
+        m_setter.connect(QueryProtocolClient::uri(), Parser::getPort(data));
         if(onConnect) onConnect();
       }
       else
@@ -126,45 +137,45 @@ class remote_query_device : public RemoteMapBase, public QueryProtocolClient
         if(mt == MessageType::Namespace)
         {
           // It has its own lock
-          RemoteMapBase::replace(Parser::template parseNamespace<BaseMapType>(data));
+          map() = Parser::template parseNamespace<BaseMapType>(data);
           if(onUpdate) onUpdate();
           return;
         }
 
-        auto&& lock = RemoteMapBase::get_locked_map().acquire_write_lock();
+        auto&& lock = map().acquire_write_lock();
         switch(mt)
         {
           case MessageType::PathAdded:
-            Parser::template path_added<BaseMapType>(RemoteMapBase::get_data_map(), data);
+            Parser::template path_added<BaseMapType>(map().get_data_map(), data);
             break;
 
           case MessageType::PathChanged:
-            Parser::path_changed(RemoteMapBase::get_data_map(), data);
+            Parser::path_changed(map().get_data_map(), data);
             break;
 
           case MessageType::PathRemoved:
-            Parser::path_removed(RemoteMapBase::get_data_map(), data);
+            Parser::path_removed(map().get_data_map(), data);
             break;
 
           case MessageType::AttributesChanged:
-            Parser::attributes_changed(RemoteMapBase::get_data_map(), data);
+            Parser::attributes_changed(map().get_data_map(), data);
             break;
 
 
           case MessageType::PathsAdded:
-            Parser::template paths_added<BaseMapType>(RemoteMapBase::get_data_map(), data);
+            Parser::template paths_added<BaseMapType>(map().get_data_map(), data);
             break;
 
           case MessageType::PathsChanged:
-            Parser::paths_changed(RemoteMapBase::get_data_map(), data);
+            Parser::paths_changed(map().get_data_map(), data);
             break;
 
           case MessageType::PathsRemoved:
-            Parser::paths_removed(RemoteMapBase::get_data_map(), data);
+            Parser::paths_removed(map().get_data_map(), data);
             break;
 
           case MessageType::AttributesChangedArray:
-            Parser::attributes_changed_array(RemoteMapBase::get_data_map(), data);
+            Parser::attributes_changed_array(map().get_data_map(), data);
             break;
 
           case MessageType::Device:
@@ -179,7 +190,6 @@ class remote_query_device : public RemoteMapBase, public QueryProtocolClient
     {
       std::cerr << "Error while parsing: " << e.what() << "  ==>  " << message;
     }
-
 };
 
 }

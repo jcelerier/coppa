@@ -31,7 +31,19 @@ class local_device : public coppa::local_device<
     coppa::osc::receiver,
     coppa::osc::message_handler
     >
-{ };
+{ 
+  public:
+    using coppa::local_device<
+    coppa::locked_map<coppa::basic_map<coppa::oscquery::ParameterMap>>,
+    coppa::ws::server,
+    coppa::oscquery::query_parser,
+    coppa::oscquery::answerer,
+    coppa::oscquery::json::writer,
+    coppa::osc::receiver,
+    coppa::osc::message_handler
+    >::local_device;
+
+};
 
 
 /**
@@ -48,6 +60,18 @@ class synchronizing_local_device : public coppa::synchronizing_local_device<
     coppa::osc::receiver,
     coppa::osc::message_handler
     >
-{ };
+{
+  public:
+    using coppa::synchronizing_local_device<
+    coppa::locked_map<
+        coppa::basic_map<coppa::oscquery::ParameterMap>>,
+    coppa::ws::server,
+    coppa::oscquery::query_parser,
+    coppa::oscquery::answerer,
+    coppa::oscquery::json::writer,
+    coppa::osc::receiver,
+    coppa::osc::message_handler
+    >::synchronizing_local_device;
+};
 }
 }

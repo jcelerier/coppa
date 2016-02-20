@@ -171,9 +171,10 @@ class message_handler : public coppa::osc::receiver
       
     }
 
-    template<typename Device>
+    template<typename Device, typename Map>
     static void on_messageReceived(
         Device& dev,
+        Map& map,
         const oscpack::ReceivedMessage& m)
     {
       using namespace coppa;
@@ -184,9 +185,9 @@ class message_handler : public coppa::osc::receiver
       string_view address = m.AddressPattern();
       // Little dance for thread-safe access to the current value
       {
-        auto&& l = dev.acquire_read_lock();
-        auto node_it = dev.find(address);
-        if(node_it == dev.end())
+        auto&& l = map.acquire_read_lock();
+        auto node_it = map.find(address);
+        if(node_it == map.end())
           return;
 
         current_parameter = *node_it;

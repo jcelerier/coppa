@@ -162,7 +162,10 @@ int main(int argc, char** argv)
 
   ThreadManager* mgr = new ThreadManager;
   // Set-up coppa
-  synchronizing_local_device dev;
+  
+  coppa::basic_map<coppa::oscquery::ParameterMap> base_map;
+  coppa::locked_map<coppa::basic_map<coppa::oscquery::ParameterMap>> locked_map(base_map);
+  synchronizing_local_device dev(locked_map);
 
   // Automatically expose some objects
   exposeQObject(dev, g1, mgr);
