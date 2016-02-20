@@ -170,19 +170,19 @@ class message_handler : public coppa::osc::receiver
       return ++it;
       
     }
-
+    
     template<typename Device, typename Map>
-    static void on_messageReceived(
+    static void handleOSCMessage(
         Device& dev,
         Map& map,
+        string_view address,
         const oscpack::ReceivedMessage& m)
-    {
+    { 
       using namespace coppa;
       using coppa::ossia::Parameter;
       using eggs::variants::get;
-
+      
       Values current_parameter;
-      string_view address = m.AddressPattern();
       // Little dance for thread-safe access to the current value
       {
         auto&& l = map.acquire_read_lock();
@@ -219,7 +219,51 @@ class message_handler : public coppa::osc::receiver
             address,
             [&] (auto& v) {
         v.variants = current_parameter.variants;
-      });    
+      });  
+    }
+    
+    template<typename Device, typename Map>
+    static void on_messageReceived(
+        Device& dev,
+        Map& map,
+        const oscpack::ReceivedMessage& m,
+        const oscpack::IpEndpointName& ip)
+    {
+      handleOSCMessage(dev, map, m.AddressPattern(), m);
+    }
+};
+
+class minuit_message_handler : 
+    public coppa::osc::receiver
+{
+    
+    template<typename Device, typename Map>
+    static void handleMinuitMessage(
+        Device& dev,
+        Map& map,
+        string_view address,
+        const oscpack::ReceivedMessage& m)
+    { 
+    }
+    
+    template<typename Device, typename Map>
+    static void on_messageReceived(
+        Device& dev,
+        Map& map,
+        const oscpack::ReceivedMessage& m,
+        const oscpack::IpEndpointName& ip)
+    {
+      string_view address = m.AddressPattern();
+      // We have to check if it's a plain osc address, or a Minuit request address.
+      
+      if(address.size() > 0 && address[0] == '/')
+      {
+        message_handler::handleOSCMessage(dev, map, address, m);
+      }
+      else
+      {
+        handleMinuitMessage(dev, map, address, m);
+      }
     }
 };
 }

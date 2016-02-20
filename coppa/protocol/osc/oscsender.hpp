@@ -26,7 +26,7 @@ class sender
     sender& operator=(sender&&) = default;
 
     sender(const std::string& ip, const int port):
-      m_socket{std::make_unique<UdpTransmitSocket>(IpEndpointName(ip.c_str(), port))},
+      m_socket{std::make_unique<oscpack::UdpTransmitSocket>(oscpack::IpEndpointName(ip.c_str(), port))},
       m_ip(ip),
       m_port(port)
     {
@@ -47,7 +47,7 @@ class sender
       m_socket->Send( m.Data(), m.Size() );
     }
 
-    std::unique_ptr<UdpTransmitSocket> m_socket;
+    std::unique_ptr<oscpack::UdpTransmitSocket> m_socket;
     std::string m_ip;
     int m_port;
 

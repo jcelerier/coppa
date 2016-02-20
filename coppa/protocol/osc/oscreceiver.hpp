@@ -28,11 +28,11 @@ class listener: public oscpack::OscPacketListener
   protected:
     void ProcessMessage(
         const oscpack::ReceivedMessage& m,
-        const IpEndpointName& ip) override
+        const oscpack::IpEndpointName& ip) override
     {
       try
       {
-        m_messageHandler(m);
+        m_messageHandler(m, ip);
       }
       catch( std::exception& e )
       {
@@ -86,7 +86,7 @@ class receiver
 
     void run()
     {
-      m_runThread = std::thread(&UdpListeningReceiveSocket::Run, m_socket.get());
+      m_runThread = std::thread(&oscpack::UdpListeningReceiveSocket::Run, m_socket.get());
     }
 
     void stop()
@@ -116,8 +116,8 @@ class receiver
       {
         try
         {
-          m_socket = std::make_unique<UdpListeningReceiveSocket>
-                     (IpEndpointName(IpEndpointName::ANY_ADDRESS, m_port),
+          m_socket = std::make_unique<oscpack::UdpListeningReceiveSocket>
+                     (oscpack::IpEndpointName(oscpack::IpEndpointName::ANY_ADDRESS, m_port),
                       m_impl.get());
           ok = true;
         }
@@ -132,7 +132,7 @@ class receiver
 
   private:
     unsigned int m_port = 0;
-    std::unique_ptr<UdpListeningReceiveSocket> m_socket;
+    std::unique_ptr<oscpack::UdpListeningReceiveSocket> m_socket;
     std::unique_ptr<oscpack::OscPacketListener> m_impl;
 
     std::thread m_runThread;

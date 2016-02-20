@@ -136,7 +136,7 @@ class local_device
     void initDataServer(int port)
     {
       m_data_server = DataProtocolServer(port,
-                                         [&] (const auto& m)
+                                         [&] (const auto& m, const auto& ip)
       { DataProtocolHandler::on_messageReceived(*this, m); });
 
       m_data_server.run();
