@@ -13,3 +13,6 @@
 [submodule "base64"]
 	path = base64
 	url = https://github.com/tkislan/base64
+[submodule "nano-signal-slot"]
+	path = nano-signal-slot
+	url = https://github.com/NoAvailableAlias/nano-signal-slot

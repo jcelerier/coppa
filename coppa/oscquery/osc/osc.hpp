@@ -38,7 +38,7 @@ inline oscpack::OutboundPacketStream& operator<<(
 
 inline oscpack::OutboundPacketStream& operator<<(
     oscpack::OutboundPacketStream& p,
-    const coppa::oscquery::vector<coppa::oscquery::Variant>& values)
+    const coppa::vector<coppa::oscquery::Variant>& values)
 {
   using namespace coppa;
 
@@ -46,8 +46,6 @@ inline oscpack::OutboundPacketStream& operator<<(
   {
     p << val;
   }
-  p << oscpack::EndMessage
-    << oscpack::EndBundle;
 
   return p;
 }

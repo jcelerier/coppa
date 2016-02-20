@@ -30,7 +30,9 @@ target_include_directories(coppa INTERFACE
       "${CMAKE_CURRENT_SOURCE_DIR}/variant/include"
       "${CMAKE_CURRENT_SOURCE_DIR}/websocketpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/jeayeson/include/"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests")
+      "${CMAKE_CURRENT_SOURCE_DIR}/nano-signal-slots"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests"
+      )
 
 target_compile_features(coppa INTERFACE cxx_decltype_auto cxx_constexpr cxx_noexcept cxx_variadic_templates cxx_lambda_init_captures)
 target_link_libraries(coppa INTERFACE "${Boost_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)

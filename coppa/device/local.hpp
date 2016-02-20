@@ -105,9 +105,10 @@ class local_device : public Map
     {
       Map::update_attributes(path, std::forward<Arg>(val));
 
-      if(m_handlers.find(path) != std::end(m_handlers))
+      auto it = m_handlers.find(path);
+      if(it != std::end(m_handlers))
       {
-        m_handlers[path](Map::get(path));
+        (it->second)(Map::get(path));
       }
     }
 

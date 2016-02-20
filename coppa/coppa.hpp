@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <boost/container/small_vector.hpp>
+#include <oscpack/osc/OscTypes.h>
 #include <eggs/variant.hpp>
 
 #define FORWARD_CTOR(ctor, obj) \
@@ -119,6 +121,7 @@ struct Generic
     }
 };
 
-
+template<typename T>
+using vector = boost::container::small_vector<T, 6>;
 
 }

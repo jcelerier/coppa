@@ -2,15 +2,27 @@
 #include <coppa/minuit/parameter.hpp>
 #include <coppa/protocol/osc/oscreceiver.hpp>
 #include <oscpack/osc/OscTypes.h>
+#include <coppa/string_view.hpp>
+
+namespace oscpack
+{
+auto begin(const oscpack::ReceivedMessage& mes)
+{
+  return mes.ArgumentsBegin();
+}
+auto end(const oscpack::ReceivedMessage& mes)
+{
+  return mes.ArgumentsEnd();
+}
+}
 namespace coppa
 {
 namespace ossia 
 {
 class message_handler : public coppa::osc::receiver
 {
-  public:
-    
-    void assign(
+  public:    
+    static void assign_checked(
         const oscpack::ReceivedMessageArgument& arg, 
         Variant& elt)
     {
@@ -57,10 +69,51 @@ class message_handler : public coppa::osc::receiver
       }      
     }
     
-    Variant make(
+    
+    static void assign_unchecked(
+        const oscpack::ReceivedMessageArgument& arg, 
+        Variant& elt)
+    {
+      using namespace eggs::variants;
+      switch(which(elt))
+      {
+        case Type::impulse_t:
+          break;
+        case Type::bool_t:
+          elt = arg.TypeTag() == oscpack::TRUE_TYPE_TAG;
+          break;
+        case Type::int_t:
+          elt = arg.AsInt32Unchecked();
+          break;
+        case Type::float_t:
+          elt = arg.AsFloatUnchecked();
+          break;
+        case Type::char_t:
+          elt = arg.AsCharUnchecked();
+          break;
+        case Type::string_t:
+          elt = std::string(arg.AsStringUnchecked());
+          break;
+        case Type::generic_t:
+        {
+          int n = 0;
+          const char* data{};
+          arg.AsBlobUnchecked(reinterpret_cast<const void*&>(data), n);
+          elt = coppa::Generic{std::string(data, n)};
+          break;
+        }
+        case Type::tuple_t:
+          break;
+        default:
+          break;
+      }      
+    }
+    
+    static Variant make(
         const oscpack::ReceivedMessageArgument& arg)
     {
       using namespace eggs::variants;
+      using namespace oscpack;
       switch(arg.TypeTag())
       {
         case INT32_TYPE_TAG:
@@ -88,57 +141,34 @@ class message_handler : public coppa::osc::receiver
       }      
     }
     
-
-    template<typename Device>
-    static void handleImpulse(
-        Device& dev, 
-        const Parameter& v,
-        const oscpack::ReceivedMessage& m)
+    static oscpack::ReceivedMessageArgumentIterator handleArray(
+        oscpack::ReceivedMessageArgumentIterator it, 
+        Tuple& tuple)
     {
-      dev.update(
-            m.AddressPattern(),
-            [&] (auto& v) {
-        v.value = Impulse{};
-      });    
-    }
-    
-    template<typename Device>
-    static void handleOne(
-        Device& dev, 
-        const Parameter& param, 
-        const oscpack::ReceivedMessage& m)
-    {
-      auto arg = *m.ArgumentsBegin();
-      if(arg.TypeTag() == getOSCType(param.value))
+      using eggs::variants::get;
+      // First is the '['
+      char c = (++it)->TypeTag();
+      int i = 0;
+      while(c != oscpack::ARRAY_END_TYPE_TAG)
       {
-        dev.update(
-              m.AddressPattern(),
-              [&] (auto& v) {
-          assign(m, v.value);
-        });
-      }      
-    }
-    
-    template<typename Device>
-    static void handleTuple(
-        Device& dev, 
-        const Values& tpl, 
-        const oscpack::ReceivedMessage& m)
-    { 
-      tpl.clear();
-      tpl.reserve(m.ArgumentCount());
-            
-      // If everything is okay, we can update the device.
-      dev.update(
-            m.AddressPattern(),
-            [&] (auto& v) {
-        int i = 0;
-
-        for(auto it = m.ArgumentsBegin(); it != m.ArgumentsEnd(); ++it, ++i)
+        if(c != oscpack::ARRAY_BEGIN_TYPE_TAG)
         {
-          tpl.variants.push_back();
+          // Value case
+          assign_unchecked(*it, tuple.variants[i]);
+          ++it;
         }
-      });      
+        else
+        {
+          // Tuple case.
+          it = handleArray(it, get<Tuple>(tuple.variants[i]));
+        }
+        
+        c = it->TypeTag();
+        i++;
+      }
+      
+      return ++it;
+      
     }
 
     template<typename Device>
@@ -148,36 +178,47 @@ class message_handler : public coppa::osc::receiver
     {
       using namespace coppa;
       using coppa::ossia::Parameter;
+      using eggs::variants::get;
 
-      Parameter v;
+      Values current_parameter;
+      string_view address = m.AddressPattern();
       // Little dance for thread-safe access to the current value
       {
         auto&& l = dev.acquire_read_lock();
-        auto node_it = dev.find(m.AddressPattern());
+        auto node_it = dev.find(address);
         if(node_it == dev.end())
           return;
 
-        v = *node_it;
+        current_parameter = *node_it;
       }
 
       // First check the compatibility
-      if(v.is<Values>())
+      if(getOSCType(current_parameter) != m.TypeTags())
+        return;
+      
+      // Then write the arguments
+      auto end = m.ArgumentsEnd();
+      int i = 0;
+      for(auto it = m.ArgumentsBegin(); it != end; ++i)
       {
-        return handleTuple(dev, v, m);
-      }
-      else
-      {
-        switch(m.ArgumentCount())
+        if(!it->IsArrayBegin())
         {
-          case 0:
-            return handleImpulse(dev, v, m);
-          case 1:
-            return handleOne(dev, v, m);
-          default:
-            break;
+          // Value
+          assign_unchecked(*it, current_parameter.variants[i]);
+          ++it;
+        }
+        else
+        {
+          // Tuple
+          it = handleArray(it, get<Tuple>(current_parameter.variants[i]));
         }
       }
-
+      
+      dev.template update<string_view>(
+            address,
+            [&] (auto& v) {
+        v.variants = current_parameter.variants;
+      });    
     }
 };
 }

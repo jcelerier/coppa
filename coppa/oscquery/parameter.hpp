@@ -1,7 +1,6 @@
 #pragma once
 #include <coppa/coppa.hpp>
 #include <coppa/map.hpp>
-#include <boost/container/small_vector.hpp>
 
 namespace coppa
 {
@@ -29,19 +28,18 @@ inline Type which(const Variant& var)
 
 inline char getOSCType(const Variant& value)
 {
-  switch(value.which())
+  using eggs::variants::get;
+  using namespace oscpack;
+  switch(which(value))
   {
-    case 0: return 'i';
-    case 1: return 'f';
-    case 2: return eggs::variants::get<bool>(value) ? 'T' : 'F';
-    case 3: return 's';
-    case 4: return 'b';
-    default: return 'N';
+    case Type::int_t: return INT32_TYPE_TAG;
+    case Type::float_t: return FLOAT_TYPE_TAG;
+    case Type::bool_t: return get<bool>(value) ? TRUE_TYPE_TAG : FALSE_TYPE_TAG;
+    case Type::string_t: return STRING_TYPE_TAG;
+    case Type::generic_t: return BLOB_TYPE_TAG;
+    default: return NIL_TYPE_TAG;
   }
 }
-
-template<typename T>
-using vector = boost::container::small_vector<T, 6>;
 
 struct Values
 {

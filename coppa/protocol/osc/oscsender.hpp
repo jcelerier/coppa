@@ -32,8 +32,6 @@ class sender
     {
     }
 
-    virtual ~sender() = default;
-
     template<typename... Args>
     void send(const std::string& address, Args&&... args)
     {

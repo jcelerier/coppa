@@ -1,6 +1,7 @@
 #pragma once
 #include <coppa/coppa.hpp>
 #include <oscpack/osc/OscOutboundPacketStream.h>
+#include <array>
 #include <boost/container/small_vector.hpp>
 
 namespace oscpack
@@ -23,9 +24,9 @@ class MessageGenerator
         const T&... args)
     {
       p.Clear();
-      p << oscpack::BeginBundleImmediate << oscpack::BeginMessage( name.c_str() );
+      p << oscpack::BeginMessage( name.c_str() );
       subfunc(args...);
-
+      p << oscpack::EndMessage;
       return p;
     }
 
@@ -35,11 +36,9 @@ class MessageGenerator
         const std::vector<Val_T>& values)
     {
       p.Clear();
-      p << oscpack::BeginBundleImmediate
-        << oscpack::BeginMessage( name.c_str() )
+      p << oscpack::BeginMessage( name.c_str() )
         << values
-        << oscpack::EndMessage
-        << oscpack::EndBundle;
+        << oscpack::EndMessage;
       return p;
     }
 
@@ -51,7 +50,6 @@ class MessageGenerator
   private:
     void subfunc()
     {
-      p << oscpack::EndMessage << oscpack::EndBundle;
     }
 
     template <typename Arg1, typename... Args>
@@ -61,7 +59,7 @@ class MessageGenerator
       subfunc(args...);
     }
 
-    boost::container::small_vector<char, BufferSize> buffer;
-    oscpack::OutboundPacketStream p{oscpack::OutboundPacketStream(buffer.data(), buffer.size())};
+    std::array<char, BufferSize> buffer;
+    oscpack::OutboundPacketStream p{buffer.data(), buffer.size()};
 };
 }

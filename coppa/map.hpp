@@ -17,15 +17,17 @@ namespace coppa
 // We make maps on parameter with a destination
 namespace bmi = boost::multi_index;
 template<typename ParameterType>
-using ParameterMapType = bmi::multi_index_container<
-ParameterType,
-bmi::indexed_by<
-bmi::ordered_unique< // TODO compare performance with hashed_unique
-bmi::member<
-Destination,
-std::string,
-&Destination::destination>>,
-bmi::random_access<>>>;
+using ParameterMapType = 
+bmi::multi_index_container<
+  ParameterType,
+  bmi::indexed_by<
+    bmi::ordered_unique< // TODO compare performance with hashed_unique
+      bmi::member<
+        Destination,
+        std::string,
+        &Destination::destination>,
+      std::less<>>,
+    bmi::random_access<>>>;
 
 // Get all the parameters whose address begins with addr
 // TODO make an algorithm to rebase a map with a new root. (the inverse of this)
@@ -70,7 +72,7 @@ class basic_map
     auto make_update_fun(Arg&& arg)
     {
       return [&] (auto&& p) {
-        static_cast<Arg&&>(p) = arg;
+        static_cast<Arg&&>(p) = std::forward<Arg>(arg);
       };
     }
 
@@ -79,7 +81,7 @@ class basic_map
     {
       return [&] (auto&& p) {
         make_update_fun(std::forward<Args>(args)...)(p);
-        static_cast<Arg&&>(p) = arg;
+        static_cast<Arg&&>(p) = std::forward<Arg>(arg);
       };
     }
 
@@ -101,14 +103,14 @@ class basic_map
     template<typename Key>
     auto find(Key&& address) const
     {
-      return m_map.template get<0>().find(address);
+      return m_map.template get<0>().find(std::forward<Key>(address));
     }
 
     template<typename Key>
     bool has(Key&& address) const
     {
       decltype(auto) index = m_map.template get<0>();
-      return index.find(address) != index.end();
+      return index.find(std::forward<Key>(address)) != index.end();
     }
 
 
@@ -118,7 +120,11 @@ class basic_map
       return std::any_of(
             std::begin(m_map),
             std::end(m_map),
-            [&] (const typename Map::value_type& param) { return boost::starts_with(param.destination, address); });
+            [&] (const typename Map::value_type& param) {
+        return boost::starts_with(
+              param.destination, 
+              std::forward<Key>(address)); 
+      });
     }
 
     template<typename Key>
@@ -147,30 +153,35 @@ class basic_map
     auto update(Key&& address, Updater&& updater)
     {
       auto& param_index = m_map.template get<0>();
-      decltype(auto) param = param_index.find(address);
-      param_index.modify(param, std::forward<Updater>(updater));
+      auto it = param_index.find(std::forward<Key>(address));
+      if(it != param_index.end())
+        return param_index.modify(it, std::forward<Updater>(updater));
+      return false;
     }
 
     template<typename Key,
              typename... Args>
     auto update_attributes(Key&& address, Args&&... args)
     {
-      update(std::forward<Key>(address),
-             make_update_fun(std::forward<Args>(args)...));
+      return update(std::forward<Key>(address),
+                 make_update_fun(std::forward<Args>(args)...));
     }
 
     template<typename Element>
     auto replace(const Element& replacement)
     {
       auto& param_index = m_map.template get<0>();
-      param_index.replace(param_index.find(replacement.destination), replacement);
+      auto it = param_index.find(replacement.destination);
+      if(it != param_index.end())
+        return param_index.replace(it, replacement);
+      return false;
     }
 
     template<typename Key>
     auto remove(Key&& k)
     {
       // Remove the path and its children
-      for(auto&& elt : filter(*this, k))
+      for(auto&& elt : filter(*this, std::forward<Key>(k)))
       {
         m_map.template get<0>().erase(elt.destination);
       }
@@ -186,7 +197,7 @@ class basic_map
     void merge(Map_T&& other)
     {
       // TODO OPTIMIZEME
-      for(auto&& elt : other)
+      for(auto&& elt : std::forward<Map_T>(other))
       {
         if(has(elt.destination))
           replace(elt);
@@ -254,7 +265,7 @@ class locked_map : private Map
     locked_map& operator=(Map_T&& map)
     {
       auto&& l = acquire_write_lock();
-      static_cast<Map&>(*this) = std::move(map);
+      static_cast<Map&>(*this) = std::move(std::forward<Map_T>(map));
       return *this;
     }
 
@@ -262,63 +273,63 @@ class locked_map : private Map
     bool has(Key&& address) const
     {
       auto&& l = acquire_read_lock();
-      return Map::has(address);
+      return Map::has(std::forward<Key>(address));
     }
 
     template<typename Key>
     bool existing_path(Key&& address) const
     {
       auto&& l = acquire_read_lock();
-      return Map::existing_path(address);
+      return Map::existing_path(std::forward<Key>(address));
     }
 
     template<typename Key>
     auto get(Key&& address) const
     {
       auto&& l = acquire_read_lock();
-      return Map::get(address);
+      return Map::get(std::forward<Key>(address));
     }
 
     template<typename... Args>
-    void update(Args&&... args)
+    auto update(Args&&... args)
     {
       auto&& l = acquire_write_lock();
-      Map::update(std::forward<Args>(args)...);
+      return Map::update(std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    void update_attributes(Args&&... args)
+    auto update_attributes(Args&&... args)
     {
       auto&& l = acquire_write_lock();
-      Map::update_attributes(std::forward<Args>(args)...);
+      return Map::update_attributes(std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    void replace(Args&&... args)
+    auto replace(Args&&... args)
     {
       auto&& l = acquire_write_lock();
-      Map::replace(std::forward<Args>(args)...);
+      return Map::replace(std::forward<Args>(args)...);
     }
 
     template<typename Element>
     void insert(Element&& e)
     {
       auto&& l = acquire_write_lock();
-      Map::insert(e);
+      Map::insert(std::forward<Element>(e));
     }
 
     template<typename Key>
     void remove(Key&& k)
     {
       auto&& l = acquire_write_lock();
-      Map::remove(k);
+      Map::remove(std::forward<Key>(k));
     }
 
     template<typename Map_T>
     void merge(Map_T&& other)
     {
       auto&& l = acquire_write_lock();
-      Map::merge(std::move(other));
+      Map::merge(std::forward<Map_T>(other));
     }
 };
 

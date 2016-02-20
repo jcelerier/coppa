@@ -1,6 +1,6 @@
 #pragma once
 #include <coppa/coppa.hpp>
-
+#include <boost/container/static_vector.hpp>
 namespace coppa
 {
 namespace ossia
@@ -15,15 +15,136 @@ using coppa::Generic;
 
 enum class Type { impulse_t, bool_t, int_t, float_t, char_t, string_t, tuple_t, generic_t };
 struct Impulse {};
-struct Values;
-using Variant = eggs::variant<Impulse, bool, int, float, char, std::string, Values, Generic>;
-struct Values 
-{
+struct Tuple;
+using Variant = eggs::variant<Impulse, bool, int32_t, float, char, std::string, Tuple, Generic>;
+
+struct Tuple 
+{ 
+    Tuple() = default;
+    Tuple(std::initializer_list<Variant> lst):
+      variants(lst)
+    {
+      
+    }
+
     std::vector<Variant> variants;
 };
+
+/**
+ * @brief The Values struct
+ * Note : while the same in definition, Tuple and Values 
+ * differ in semantics.
+ * 
+ * Values is for storing the values in an OSC message : 
+ * /a/b/c iii 1 2 3
+ * -> Values{1, 2, 3}
+ * 
+ * Tuples is the oscpack array type : 
+ * /a/b/c i[[ii][ff]] 1 [[2, 3], [4.5, 5.2]]
+ * -> Values{1, Tuple{Tuple{2, 3}, Tuple{4.5, 5.2}}}
+ *
+ * Todo experiment for specific cases when n =< big_n
+ */
+struct Values
+{ 
+    vector<Variant> variants;
+};
+
+inline Type which(const Variant& var)
+{
+  return static_cast<Type>(var.which());
+}
+struct small_string
+{
+    boost::container::static_vector<char, 16> m_impl;
+    
+    small_string():
+      m_impl(1, 0)
+    {
+      
+    }
+
+    small_string(std::size_t size, char t):
+      m_impl(size, t)
+    {
+      m_impl.push_back(0);
+    }
+    
+    auto size() const { return m_impl.size(); }    
+    auto begin() const { return m_impl.begin(); }
+    auto end() const { return m_impl.end(); }
+    auto data() const { return m_impl.data(); }
+    
+    auto push_back(char c) { 
+      m_impl.back() = c;
+      m_impl.push_back(0); 
+    }
+    
+    void append(small_string src)
+    {
+      auto old_size = m_impl.size() - 1;
+      auto new_size = m_impl.size() + src.size() - 1;
+      m_impl.resize(new_size);
+      std::copy(src.begin(), src.end(), m_impl.begin() + old_size);
+    }
+   
+};
+small_string getOSCType(const Variant& value);
+small_string getOSCType(const Tuple& value);
+small_string getOSCType(const Values& value);
+
+
+inline small_string getOSCType(const Variant& value)
+{
+  using eggs::variants::get;
+  using namespace oscpack;
+  
+  switch(which(value))
+  {
+    case Type::impulse_t: return small_string(1, INFINITUM_TYPE_TAG);
+    case Type::int_t: return small_string(1, INT32_TYPE_TAG);
+    case Type::float_t: return small_string(1, FLOAT_TYPE_TAG);
+    case Type::bool_t: return small_string(1, get<bool>(value) ? TRUE_TYPE_TAG : FALSE_TYPE_TAG);
+    case Type::char_t: return small_string(1, CHAR_TYPE_TAG);
+    case Type::string_t: return small_string(1, STRING_TYPE_TAG);
+    case Type::tuple_t: return getOSCType(get<Tuple>(value));
+    case Type::generic_t: return  small_string(1, BLOB_TYPE_TAG);
+    default: return small_string(1, NIL_TYPE_TAG);
+  }
+}
+
+inline bool operator!=(const small_string& string, const char* ptr)
+{
+  return strcmp(string.data(), ptr);
+}
+
+small_string getOSCType(const Tuple& tuple)
+{
+  using namespace oscpack;
+  small_string str(1, ARRAY_BEGIN_TYPE_TAG);
+  for(const auto& val : tuple.variants)
+  {
+    str.append(getOSCType(val));
+  }
+  str.push_back(ARRAY_END_TYPE_TAG);
+  return str;
+}
+
+small_string getOSCType(const Values& values)
+{
+  using namespace oscpack;
+  small_string str;
+  for(const auto& val : values.variants)
+  {
+    str.append(getOSCType(val));
+  }
+  return str;
+}
+
+
 inline bool operator==(const Impulse& lhs, const Impulse& rhs)
 { return true; }
-inline bool operator==(const Values& lhs, const Values& rhs)
+inline bool operator==(const Tuple& lhs, const Tuple& rhs)
 { return lhs.variants == rhs.variants; }
 
 struct RepetitionFilter
@@ -35,7 +156,7 @@ struct RepetitionFilter
 template<typename ValueType> using Enum = std::vector<ValueType>;
 
 using Parameter = AttributeAggregate<
-  SimpleValue<Variant>,
+  Values,
   Destination, 
   Description,
   Access,
