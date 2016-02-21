@@ -7,6 +7,18 @@
 #include <functional>
 #include <iostream>
 
+namespace oscpack
+{
+auto begin(const oscpack::ReceivedMessage& mes)
+{
+  return mes.ArgumentsBegin();
+}
+auto end(const oscpack::ReceivedMessage& mes)
+{
+  return mes.ArgumentsEnd();
+}
+}
+
 namespace coppa
 {
 namespace osc

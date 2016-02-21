@@ -17,7 +17,7 @@ namespace coppa
 // We make maps on parameter with a destination
 namespace bmi = boost::multi_index;
 template<typename ParameterType>
-using ParameterMapType = 
+using ParameterMapType =
 bmi::multi_index_container<
   ParameterType,
   bmi::indexed_by<
@@ -43,6 +43,43 @@ auto filter(const Map& map, Key&& addr)
 
   return newmap;
 }
+
+
+// The map should be locked beforehand and be ordered
+template<typename Map>
+std::vector<string_view> get_children_names(
+    Map& map,
+    string_view addr)
+{
+  // TODO use "constructed" vector, or vector of string_view
+  // TODO http://howardhinnant.github.io/stack_alloc.html
+  // reply with the child addresses and their attributes.
+
+  int n = addr.size();
+  std::set<string_view> vec;
+  for(const auto& param : map)
+  {
+    if(boost::starts_with(param.destination, addr))
+    {
+      if(param.destination.size() == n)
+        continue;
+
+      int modulo = addr.back() != '/';
+      string_view remainder{param.destination.data() + n + modulo, param.destination.size() - n - modulo};
+      auto pos = remainder.find('/');
+      if(pos == std::string::npos)
+      {
+        vec.insert(remainder);
+      }
+      else
+      {
+        vec.insert(string_view(remainder.data(), pos));
+      }
+    }
+  }
+  return std::vector<string_view>(vec.begin(), vec.end());
+}
+
 
 bool isRoot(string_view address)
 {
@@ -127,8 +164,8 @@ class basic_map
             std::end(m_map),
             [&] (const typename Map::value_type& param) {
         return boost::starts_with(
-              param.destination, 
-              std::forward<Key>(address)); 
+              param.destination,
+              std::forward<Key>(address));
       });
     }
 
@@ -210,6 +247,11 @@ class basic_map
           insert(elt);
       }
     }
+
+    void clear()
+    {
+      m_map.clear();
+    }
 };
 
 
@@ -233,7 +275,7 @@ class locked_map
     constexpr locked_map(Map& source):
       m_map{source}
     {
-      
+
     }
 
     boost::shared_lock<boost::shared_mutex> acquire_read_lock() const
@@ -251,59 +293,59 @@ class locked_map
 
     // TODO would it be possible to have iterators wrapped so that
     // they would "carry" a lock with them ?
-    auto begin() { 
-      auto&& l = acquire_read_lock();
+    auto begin() {
+      auto l = acquire_read_lock();
       return m_map.begin();
     }
-    auto end() { 
-      auto&& l = acquire_read_lock();
+    auto end() {
+      auto l = acquire_read_lock();
       return m_map.end();
     }
-    auto begin() const { 
-      auto&& l = acquire_read_lock();
+    auto begin() const {
+      auto l = acquire_read_lock();
       return const_cast<const Map&>(m_map).begin();
     }
-    auto end() const { 
-      auto&& l = acquire_read_lock();
+    auto end() const {
+      auto l = acquire_read_lock();
       return const_cast<const Map&>(m_map).end();
     }
-    
+
     template<typename K>
-    auto find(K&& k) { 
-      auto&& l = acquire_read_lock();
+    auto find(K&& k) {
+      auto l = acquire_read_lock();
       return m_map.find(std::forward<K>(k));
     }
-    
+
     template<typename K>
-    auto find(K&& k) const { 
-      auto&& l = acquire_read_lock();
+    auto find(K&& k) const {
+      auto l = acquire_read_lock();
       return const_cast<const Map&>(m_map).find(std::forward<K>(k));
     }
 
     // operator[] to be locked explicitly from the outside since
     // it returns a ref.
-    auto& operator[](typename Map::size_type i) 
+    auto& operator[](typename Map::size_type i)
     { return m_map[i]; }
     auto& operator[](typename Map::size_type i) const
     { return const_cast<const Map&>(m_map)[i]; }
 
     // These are of course unsafe, too
-    data_map_type& get_data_map() 
+    data_map_type& get_data_map()
     { return static_cast<data_map_type&>(m_map); }
-    const data_map_type& get_data_map() const 
+    const data_map_type& get_data_map() const
     { return static_cast<const data_map_type&>(m_map); }
 
 
     auto size() const
     {
-      auto&& l = acquire_read_lock();
+      auto l = acquire_read_lock();
       return m_map.size();
     }
 
     template<typename Map_T>
     locked_map& operator=(Map_T&& map)
     {
-      auto&& l = acquire_write_lock();
+      auto l = acquire_write_lock();
       m_map = std::forward<Map_T>(map);
       return *this;
     }
@@ -311,64 +353,70 @@ class locked_map
     template<typename Key>
     bool has(Key&& address) const
     {
-      auto&& l = acquire_read_lock();
+      auto l = acquire_read_lock();
       return m_map.has(std::forward<Key>(address));
     }
 
     template<typename Key>
     bool existing_path(Key&& address) const
     {
-      auto&& l = acquire_read_lock();
+      auto l = acquire_read_lock();
       return m_map.existing_path(std::forward<Key>(address));
     }
 
     template<typename Key>
     auto get(Key&& address) const
     {
-      auto&& l = acquire_read_lock();
+      auto l = acquire_read_lock();
       return m_map.get(std::forward<Key>(address));
     }
 
     template<typename... Args>
     auto update(Args&&... args)
     {
-      auto&& l = acquire_write_lock();
+      auto l = acquire_write_lock();
       return m_map.update(std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     auto update_attributes(Args&&... args)
     {
-      auto&& l = acquire_write_lock();
+      auto l = acquire_write_lock();
       return m_map.update_attributes(std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     auto replace(Args&&... args)
     {
-      auto&& l = acquire_write_lock();
+      auto l = acquire_write_lock();
       return m_map.replace(std::forward<Args>(args)...);
     }
 
     template<typename Element>
     void insert(Element&& e)
     {
-      auto&& l = acquire_write_lock();
+      auto l = acquire_write_lock();
       m_map.insert(std::forward<Element>(e));
     }
 
     template<typename Key>
     void remove(Key&& k)
     {
-      auto&& l = acquire_write_lock();
+      auto l = acquire_write_lock();
       m_map.remove(std::forward<Key>(k));
     }
 
     template<typename Map_T>
     void merge(Map_T&& other)
     {
-      auto&& l = acquire_write_lock();
+      auto l = acquire_write_lock();
       m_map.merge(std::forward<Map_T>(other));
+    }
+
+    void clear()
+    {
+      auto l = acquire_write_lock();
+      m_map.clear();
     }
 };
 
@@ -385,24 +433,24 @@ class constant_map_view
     constant_map_view(Map& map):
       m_map{map}
     {
-      
+
     }
-    
+
     template<typename K>
-    auto has(K&& k) const 
+    auto has(K&& k) const
     { return m_map.has(std::forward<K>(k)); }
-    
+
     template<typename K>
-    auto get(K&& k) const 
+    auto get(K&& k) const
     { return m_map.get(std::forward<K>(k)); }
-    
+
     auto size() const
     { return m_map.size(); }
-    
+
     template<typename Map_T>
     void replace(Map_T&& map)
     { m_map = std::move(map); }
-    
+
   private:
     Map& m_map;
 };
@@ -420,24 +468,24 @@ class constant_map_view
  * - Also sets the local map
  */
 template<typename Map, typename DataProtocolSender>
-class remote_map_setter 
+class remote_map_setter
 {
   private:
     DataProtocolSender m_sender;
     Map& m_map;
 
   public:
-    remote_map_setter(Map& map): 
+    remote_map_setter(Map& map):
       m_map{map}
     {
-      
+
     }
-    
-    auto& map() 
+
+    auto& map()
     { return m_map; }
-    auto& map() const  
+    auto& map() const
     { return m_map; }
-    
+
     void connect(const std::string& uri, int port)
     { m_sender = DataProtocolSender{uri, port}; }
 

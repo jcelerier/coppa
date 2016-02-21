@@ -13,10 +13,11 @@ using coppa::Destination;
 using coppa::Tags;
 using coppa::Generic;
 
-enum class Type { impulse_t, bool_t, int_t, float_t, char_t, string_t, tuple_t, generic_t };
+enum class Type { none_t, impulse_t, bool_t, int_t, float_t, char_t, string_t, tuple_t, generic_t };
+struct None {};
 struct Impulse {};
 struct Tuple;
-using Variant = eggs::variant<Impulse, bool, int32_t, float, char, std::string, Tuple, Generic>;
+using Variant = eggs::variant<None, Impulse, bool, int32_t, float, char, std::string, Tuple, Generic>;
 
 struct Tuple
 {
@@ -142,6 +143,8 @@ small_string getOSCType(const Values& values)
 }
 
 
+inline bool operator==(const None& lhs, const None& rhs)
+{ return true; }
 inline bool operator==(const Impulse& lhs, const Impulse& rhs)
 { return true; }
 inline bool operator==(const Tuple& lhs, const Tuple& rhs)

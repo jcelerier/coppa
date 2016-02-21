@@ -66,7 +66,7 @@ TEST_CASE( "message handler", "[ossia][message_handler]" ) {
     d.map.p.variants.push_back(int32_t{0});
     oscpack::IpEndpointName ip;
     // Test the parsing
-    coppa::ossia::message_handler::on_messageReceived(d, d.map, m, ip);
+    coppa::ossia::osc_message_handler::on_messageReceived(d, d.map, m, ip);
     
     // Check parsing result
     auto val = d.map.p.variants[0];
@@ -103,7 +103,7 @@ TEST_CASE( "message handler", "[ossia][message_handler]" ) {
     
     // Test the parsing
     oscpack::IpEndpointName ip;
-    coppa::ossia::message_handler::on_messageReceived(d, d.map, m, ip);
+    coppa::ossia::osc_message_handler::on_messageReceived(d, d.map, m, ip);
     
     // Check parsing result
     {
