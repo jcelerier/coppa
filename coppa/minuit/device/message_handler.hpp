@@ -6,6 +6,157 @@
 #include <coppa/string_view.hpp>
 #include <boost/iterator/filter_iterator.hpp>
 
+#include <oscpack/osc/OscOutboundPacketStream.h>
+namespace coppa
+{
+namespace ossia
+{
+auto toMinuitType(const coppa::ossia::Parameter& parameter)
+{
+  // integer, decimal, string, generic, boolean, none, array.
+  switch(parameter.variants.size())
+  {
+    case 0:
+      return "none";
+    case 1:
+    {
+      switch(which(parameter.variants[0]))
+      {
+        case Type::int_t:
+          return "integer";
+        case Type::float_t:
+          return "decimal";
+        case Type::bool_t:
+          return "boolean";
+        case Type::string_t:
+          return "string";
+        case Type::generic_t:
+          return "generic";
+        default:
+          return "generic"; // TODO
+      }
+    }
+    default:
+      return "array";
+  }
+}
+
+
+auto toMinuitService(coppa::Access::Mode acc)
+{
+  switch(acc)
+  {
+    case Access::Mode::None:
+      return ""; // TODO
+    case Access::Mode::Both:
+      return "parameter";
+    case Access::Mode::Get:
+      return "return";
+    case Access::Mode::Set:
+      return "message";
+    default:
+      throw;
+  }
+}
+
+auto toMinuitBounding(coppa::Bounding::Mode b)
+{
+  switch(b)
+  {
+    case Bounding::Mode::Free:
+      return "free";
+    case Bounding::Mode::Clip:
+      return "clip";
+    case Bounding::Mode::Wrap:
+      return "wrap";
+    case Bounding::Mode::Fold:
+      return "fold";
+    default:
+      throw;
+  }
+}
+}
+}
+
+inline oscpack::OutboundPacketStream& operator<<(
+    oscpack::OutboundPacketStream& p,
+    const coppa::ossia::Variant& val);
+
+
+inline oscpack::OutboundPacketStream& operator<<(
+    oscpack::OutboundPacketStream& p,
+    const coppa::ossia::Values& values)
+{
+  using namespace coppa;
+
+  for(const auto& val : values.variants)
+  {
+    p << val;
+  }
+
+  return p;
+}
+
+inline oscpack::OutboundPacketStream& operator<<(
+    oscpack::OutboundPacketStream& p,
+    const coppa::ossia::Tuple& values)
+{
+  using namespace coppa;
+
+  p << oscpack::ArrayInitiator{};
+  for(const auto& val : values.variants)
+  {
+    p << val;
+  }
+  p << oscpack::ArrayTerminator{};
+
+  return p;
+}
+
+inline oscpack::OutboundPacketStream& operator<<(
+    oscpack::OutboundPacketStream& p,
+    const coppa::ossia::Variant& val)
+{
+  using namespace eggs::variants;
+  using namespace coppa::ossia;
+  switch(which(val))
+  {
+    case Type::float_t:
+      p << get<float>(val);
+      break;
+    case Type::int_t:
+      p << get<int>(val);
+      break;
+    case Type::impulse_t:
+      p << oscpack::InfinitumType{};
+      break;
+    case Type::bool_t:
+      p << get<bool>(val);
+      break;
+    case Type::string_t:
+      p << get<std::string>(val).c_str();
+      break;
+    case Type::char_t:
+      p << get<char>(val);
+      break;
+    case Type::tuple_t:
+    {
+      //p << get<Tuple>(val);
+      break;
+    }
+    case Type::generic_t:
+    {
+      const auto& buf = get<coppa::Generic>(val);
+      oscpack::Blob b(buf.buf.data(), buf.buf.size()); // todo : use Generic instead and convert to hex / base64
+      p << b;
+      break;
+    }
+    default:
+      break;
+  }
+
+  return p;
+}
 namespace oscpack
 {
 auto begin(const oscpack::ReceivedMessage& mes)
@@ -19,13 +170,13 @@ auto end(const oscpack::ReceivedMessage& mes)
 }
 namespace coppa
 {
-namespace ossia 
+namespace ossia
 {
 class message_handler : public coppa::osc::receiver
 {
-  public:    
+  public:
     static void assign_checked(
-        const oscpack::ReceivedMessageArgument& arg, 
+        const oscpack::ReceivedMessageArgument& arg,
         Variant& elt)
     {
       using namespace eggs::variants;
@@ -68,12 +219,12 @@ class message_handler : public coppa::osc::receiver
         }
         default:
           break;
-      }      
+      }
     }
-    
-    
+
+
     static void assign_unchecked(
-        const oscpack::ReceivedMessageArgument& arg, 
+        const oscpack::ReceivedMessageArgument& arg,
         Variant& elt)
     {
       using namespace eggs::variants;
@@ -108,9 +259,9 @@ class message_handler : public coppa::osc::receiver
           break;
         default:
           break;
-      }      
+      }
     }
-    
+
     static Variant make(
         const oscpack::ReceivedMessageArgument& arg)
     {
@@ -126,7 +277,7 @@ class message_handler : public coppa::osc::receiver
           return true;
         case FALSE_TYPE_TAG:
           return false;
-        case CHAR_TYPE_TAG: 
+        case CHAR_TYPE_TAG:
           return arg.AsCharUnchecked();
         case STRING_TYPE_TAG:
           return std::string(arg.AsStringUnchecked());
@@ -140,11 +291,11 @@ class message_handler : public coppa::osc::receiver
         default:
           return Impulse{};
           break;
-      }      
+      }
     }
-    
+
     static oscpack::ReceivedMessageArgumentIterator handleArray(
-        oscpack::ReceivedMessageArgumentIterator it, 
+        oscpack::ReceivedMessageArgumentIterator it,
         Tuple& tuple)
     {
       using eggs::variants::get;
@@ -164,25 +315,25 @@ class message_handler : public coppa::osc::receiver
           // Tuple case.
           it = handleArray(it, get<Tuple>(tuple.variants[i]));
         }
-        
+
         c = it->TypeTag();
         i++;
       }
-      
+
       return ++it;
     }
-    
+
     template<typename Device, typename Map>
     static void handleOSCMessage(
         Device& dev,
         Map& map,
         string_view address,
         const oscpack::ReceivedMessage& m)
-    { 
+    {
       using namespace coppa;
       using coppa::ossia::Parameter;
       using eggs::variants::get;
-      
+
       Values current_parameter;
       // The lock is already acquired in the parent
       {
@@ -196,7 +347,7 @@ class message_handler : public coppa::osc::receiver
       // First check the compatibility
       if(getOSCType(current_parameter) != m.TypeTags())
         return;
-      
+
       // Then write the arguments
       auto end = m.ArgumentsEnd();
       int i = 0;
@@ -214,14 +365,14 @@ class message_handler : public coppa::osc::receiver
           it = handleArray(it, get<Tuple>(current_parameter.variants[i]));
         }
       }
-      
+
       dev.template update<string_view>(
             address,
             [&] (auto& v) {
         v.variants = current_parameter.variants;
-      });  
+      });
     }
-    
+
     template<typename Device, typename Map>
     static void on_messageReceived(
         Device& dev,
@@ -239,35 +390,69 @@ enum class minuit_command : char
 enum class minuit_operation : char
 { Listen = 'l', Namespace = 'n', Get = 'g'};
 
-enum class minuit_attributes 
-{ Value, Type, Service, Priority, RangeBounds, Description, RepetitionFilter };
+enum class minuit_attributes
+{ Value, Type, Service, Priority, RangeBounds, RangeClipMode, Description, RepetitionFilter };
 
 enum class minuit_type
 { Application, Container, Data, None };
 
 
+minuit_attributes get_attribute(string_view str)
+{
+  // requires str.size() > 0
+  switch(str[0])
+  {
+    case 'v': // value
+      return minuit_attributes::Value;
+    case 't': // type
+      return minuit_attributes::Type;
+    case 's': // service
+      return minuit_attributes::Service;
+    case 'p': // priority
+      return minuit_attributes::Priority;
+    case 'r':
+    {
+      if(str.size() >= 6)
+      {
+        switch(str[5])
+        {
+          case 'B': // rangeBounds
+            return minuit_attributes::RangeBounds;
+          case 'C': // rangeClipMode
+            return minuit_attributes::RangeClipMode;
+          case 'i': // repetitionsFilter
+            return minuit_attributes::RepetitionFilter;
+        }
+      }
+      // if not returning, throw
+    }
+    default:
+      throw std::runtime_error("unhandled attribute");
+  }
+}
+
 minuit_command get_command(char str)
 {
-  switch(str) 
+  switch(str)
   {
     case '?':
-    case ':': 
+    case ':':
     case '!':
       return static_cast<minuit_command>(str);
-    default : 
+    default :
       throw std::runtime_error("unhandled command");
   }
 }
 
 minuit_operation get_operation(char str)
 {
-  switch(str) 
+  switch(str)
   {
     case 'l':
-    case 'n': 
+    case 'n':
     case 'g':
       return static_cast<minuit_operation>(str);
-    default : 
+    default :
       throw std::runtime_error("unhandled operation");
   }
 }
@@ -282,23 +467,23 @@ std::vector<Parameter> get_children(Map& map, string_view address)
 {
   std::vector<Parameter> vec;
   vec.reserve(4);
-  
-  // TODO have a filter( that returns iterators instead 
+
+  // TODO have a filter( that returns iterators instead
   // (with lexical ordering, it can return a begin - end pair of iterators)
   auto filtered = coppa::filter(map, address);
   filtered.template get<0>().erase(address.to_string()); // TODO why to_string
-  
+
   for(auto& child : filtered)
   {
     // There must be no slash at the end of the following address.
     string_view remaining{
-      child.destination.data() + address.size() + 1, 
+      child.destination.data() + address.size() + 1,
       child.destination.size() - (address.size() + 1)};
-    
+
     if(!remaining.find('/'))
       vec.push_back(child);
   }
-  
+
   return vec;
 }
 
@@ -323,10 +508,10 @@ std::vector<string_view> get_root_children_names(
 {
   std::vector<string_view> vec;
   vec.reserve(16); // we could maybe assume ln2(map.size()) ?
-  
+
   if(map.size() == 1)
     return vec;
-  
+
   // everything
   // we start at begin + 1 to ignore root
   auto it = map.begin();
@@ -335,58 +520,58 @@ std::vector<string_view> get_root_children_names(
     auto& child = *it;
     // There must be no slash at the end of the following address.
     string_view remaining{
-          child.destination.data() + 1, 
+          child.destination.data() + 1,
           child.destination.size() - 1};
-    
+
     if(remaining.find('/') == std::string::npos)
-      vec.push_back(remaining);    
+      vec.push_back(remaining);
   }
-  
+
   return vec;
 }
 
 
 template<typename Map>
 std::vector<string_view> get_nonroot_children_names(
-    Map& map, 
+    Map& map,
     string_view address)
 {
   std::vector<string_view> vec;
   vec.reserve(16);
-  
+
   auto filtered = filter_iterators(map, address);
   for(auto it = filtered.first; it != filtered.second; ++it)
   {
     auto& child = *it;
     // There must be no slash at the end of the following address.
     string_view remaining{
-      child.destination.data() + address.size() + 1, 
+      child.destination.data() + address.size() + 1,
       child.destination.size() - (address.size() + 1)};
-    
+
     if(!remaining.find('/'))
       vec.push_back(remaining);
   }
-  
+
   return vec;
 }
 
 template<typename Map>
 std::vector<string_view> get_children_names(
-    Map& map, 
+    Map& map,
     string_view address)
 {
   // TODO use "constructed" vector, or vector of string_view
   // TODO http://howardhinnant.github.io/stack_alloc.html
   // reply with the child addresses and their attributes.
-  
+
   if(isRoot(address))
   {
     return get_root_children_names(map);
   }
   else
-  { 
+  {
     return get_nonroot_children_names(map, address);
-  } 
+  }
 }
 
 struct parsed_namespace_minuit_request
@@ -403,83 +588,148 @@ struct handle_minuit;
 // Get
 template<>
 struct handle_minuit<
-    minuit_command::Request, 
+    minuit_command::Request,
     minuit_operation::Get>
 {
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-      
-    }    
+      string_view full_address{mess.ArgumentsBegin()->AsString()};
+      auto idx = full_address.find_first_of(":");
+
+      if(idx == std::string::npos)
+      {
+        // Value
+        auto it = map.find(full_address);
+        if(it != map.end())
+        {
+          dev.sender.send(dev.name() + ":get",
+                          full_address.data(),
+                          static_cast<const Values&>(*it)
+                          );
+        }
+      }
+      else
+      {
+        string_view address{full_address.data(), idx};
+
+        // Note : bug if address == "foo:"
+        auto attr = get_attribute(
+                      string_view(
+                        address.data() + idx + 1,
+                        full_address.size() - idx - 1));
+
+        auto it = map.find(address);
+        if(it != map.end())
+        {
+          switch(attr)
+          {
+            case minuit_attributes::Value:
+              dev.sender.send(dev.name() + ":get",
+                              address.data(),
+                              static_cast<const Values&>(*it)
+                              );
+              break;
+            case minuit_attributes::Type:
+              dev.sender.send(dev.name() + ":get",
+                              address.data(),
+                              toMinuitType(*it)
+                              );
+              break;
+            case minuit_attributes::RangeBounds:
+              break;
+            case minuit_attributes::RangeClipMode:
+              dev.sender.send(dev.name() + ":get",
+                              address.data(),
+                              toMinuitBounding(it->bounding)
+                              );
+              break;
+            case minuit_attributes::RepetitionFilter:
+              dev.sender.send(dev.name() + ":get",
+                              address.data(),
+                              it->repetitionFilter
+                              );
+              break;
+            case minuit_attributes::Service:
+              dev.sender.send(dev.name() + ":get",
+                              address.data(),
+                              toMinuitService(it->access)
+                              );
+              break;
+          }
+        }
+      }
+      }
+
 };
 
 template<>
 struct handle_minuit<
-    minuit_command::Answer, 
+    minuit_command::Answer,
     minuit_operation::Get>
 {
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-      
-    }    
+
+    }
 };
 
 
 template<>
 struct handle_minuit<
-    minuit_command::Error, 
+    minuit_command::Error,
     minuit_operation::Get>
 {
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-      
-    }    
+
+    }
 };
 
 // Listen
 template<>
 struct handle_minuit<
-    minuit_command::Request, 
+    minuit_command::Request,
     minuit_operation::Listen>
 {
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-      
-    }    
+
+    }
 };
 
 template<>
 struct handle_minuit<
-    minuit_command::Answer, 
+    minuit_command::Answer,
     minuit_operation::Listen>
 {
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-      
-    }    
+
+    }
 };
 
 
 template<>
 struct handle_minuit<
-    minuit_command::Error, 
+    minuit_command::Error,
     minuit_operation::Listen>
 {
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-      
-    }    
+
+    }
 };
 
 // Namespace
 template<>
 struct handle_minuit<
-    minuit_command::Request, 
+    minuit_command::Request,
     minuit_operation::Namespace>
 {
     template<typename Device, typename Children>
@@ -489,15 +739,15 @@ struct handle_minuit<
     {
       dev.sender.send(dev.name() + ":namespace",
                       "/",
-                      "Application", 
-                      "nodes={", 
-                               std::forward<Children>(c), 
+                      "Application",
+                      "nodes={",
+                               std::forward<Children>(c),
                             "}",
-                      "attributes={", 
+                      "attributes={",
                                  "}");
-      
+
     }
-    
+
     template<typename Device, typename Children>
     void handle_container(
         Device& dev,
@@ -506,15 +756,15 @@ struct handle_minuit<
     {
       dev.sender.send(dev.name() + ":namespace",
                       address.data(),
-                      "Container", 
-                      "nodes={", 
-                               c, 
+                      "Container",
+                      "nodes={",
+                               c,
                             "}",
-                      "attributes={", 
+                      "attributes={",
                                  "}");
-      
+
     }
-    
+
     template<typename Device>
     void handle_data(
         Device& dev,
@@ -522,8 +772,8 @@ struct handle_minuit<
     {
       dev.sender.send(dev.name() + ":namespace",
                       address.data(),
-                      "Data", 
-                      "attributes={", 
+                      "Data",
+                      "attributes={",
                                     "rangeBounds"      ,
                                     "rangeClipmode"    ,
                                     "type"             ,
@@ -532,12 +782,12 @@ struct handle_minuit<
                                     "priority"         ,
                                     "value"            ,
                                  "}");
-      
+
     }
 
     template<typename Device, typename Map>
     auto operator()(
-        Device& dev, 
+        Device& dev,
         Map& map,
         const oscpack::ReceivedMessage& mess)
     {
@@ -552,7 +802,7 @@ struct handle_minuit<
         if(it != map.end())
         {
           auto cld = get_children_names(map, address);
-          if(!cld.empty()) 
+          if(!cld.empty())
           {
             handle_container(dev, address, cld);
           }
@@ -567,38 +817,38 @@ struct handle_minuit<
 
 template<>
 struct handle_minuit<
-    minuit_command::Answer, 
+    minuit_command::Answer,
     minuit_operation::Namespace>
 {
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-      
-    }    
+
+    }
 };
 
 
 template<>
 struct handle_minuit<
-    minuit_command::Error, 
+    minuit_command::Error,
     minuit_operation::Namespace>
 {
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-      
-    }    
+
+    }
 };
 
 
 
 
-// Namespace request : 
+// Namespace request :
 // app?namespace addr
 
-// Namespace answer : 
+// Namespace answer :
 // app:namespace addr minuit_type nodes={ n1 n2 n3 } attributes={ foo bar baz }
-class minuit_message_handler : 
+class minuit_message_handler :
     public coppa::osc::receiver
 {
   public:
@@ -608,15 +858,15 @@ class minuit_message_handler :
         Map& map,
         string_view address,
         const oscpack::ReceivedMessage& m)
-    { 
+    {
       // Look for either ':' or '?'
       auto idx = address.find_first_of(":?!");
-      
+
       if(idx != std::string::npos)
       {
         //string_view application(address.data(), idx);
         //string_view request(address.data() + idx + 1, address.size() - application.size() - 1);
-        
+
         //std::cerr << application << " " << request << std::endl;
         auto req = get_command(address[idx]);
         auto op = get_operation(*(address.data() + idx + 1));
@@ -631,7 +881,7 @@ class minuit_message_handler :
                 break;
               case minuit_operation::Get:
                 handle_minuit<minuit_command::Answer, minuit_operation::Get>{}(dev, map, m);
-                break;                
+                break;
               case minuit_operation::Namespace:
                 handle_minuit<minuit_command::Answer, minuit_operation::Namespace>{}(dev, map, m);
                 break;
@@ -649,7 +899,7 @@ class minuit_message_handler :
                 break;
               case minuit_operation::Get:
                 handle_minuit<minuit_command::Request, minuit_operation::Get>{}(dev, map, m);
-                break;                
+                break;
               case minuit_operation::Namespace:
                 handle_minuit<minuit_command::Request, minuit_operation::Namespace>{}(dev, map, m);
                 break;
@@ -657,7 +907,7 @@ class minuit_message_handler :
                 break;
             }
             break;
-          }            
+          }
           case minuit_command::Error: // Receiving an error
           {
             switch(op)
@@ -667,7 +917,7 @@ class minuit_message_handler :
                 break;
               case minuit_operation::Get:
                 handle_minuit<minuit_command::Error, minuit_operation::Get>{}(dev, map, m);
-                break;                
+                break;
               case minuit_operation::Namespace:
                 handle_minuit<minuit_command::Error, minuit_operation::Namespace>{}(dev, map, m);
                 break;
@@ -675,16 +925,16 @@ class minuit_message_handler :
                 break;
             }
             break;
-          }  
+          }
           default:
             break;
         }
       }
-      
-      // For minuit address, the request is the address pattern, 
+
+      // For minuit address, the request is the address pattern,
       // and the arugments may contain the address of type 's', and the OSC stuff.
     }
-    
+
     template<typename Device, typename Map>
     static void on_messageReceived(
         Device& dev,
@@ -692,11 +942,11 @@ class minuit_message_handler :
         const oscpack::ReceivedMessage& m,
         const oscpack::IpEndpointName& ip)
     {
-      auto l = map.acquire_read_lock();      
+      auto l = map.acquire_read_lock();
       string_view address{m.AddressPattern()};
       std::cerr << "received " << address << " " << m.ArgumentsBegin()->AsString() << "\n";
       // We have to check if it's a plain osc address, or a Minuit request address.
-      
+
       if(address.size() > 0 && address[0] == '/')
       {
         message_handler::handleOSCMessage(dev, map.get_data_map(), address, m);

@@ -18,13 +18,13 @@ struct Impulse {};
 struct Tuple;
 using Variant = eggs::variant<Impulse, bool, int32_t, float, char, std::string, Tuple, Generic>;
 
-struct Tuple 
-{ 
+struct Tuple
+{
     Tuple() = default;
     Tuple(std::initializer_list<Variant> lst):
       variants(lst)
     {
-      
+
     }
 
     std::vector<Variant> variants;
@@ -32,21 +32,21 @@ struct Tuple
 
 /**
  * @brief The Values struct
- * Note : while the same in definition, Tuple and Values 
+ * Note : while the same in definition, Tuple and Values
  * differ in semantics.
- * 
- * Values is for storing the values in an OSC message : 
+ *
+ * Values is for storing the values in an OSC message :
  * /a/b/c iii 1 2 3
  * -> Values{1, 2, 3}
- * 
- * Tuples is the oscpack array type : 
+ *
+ * Tuples is the oscpack array type :
  * /a/b/c i[[ii][ff]] 1 [[2, 3], [4.5, 5.2]]
  * -> Values{1, Tuple{Tuple{2, 3}, Tuple{4.5, 5.2}}}
  *
  * Todo experiment for specific cases when n =< big_n
  */
 struct Values
-{ 
+{
     vector<Variant> variants;
 };
 
@@ -57,11 +57,11 @@ inline Type which(const Variant& var)
 struct small_string
 {
     boost::container::static_vector<char, 16> m_impl;
-    
+
     small_string():
       m_impl(1, 0)
     {
-      
+
     }
 
     small_string(std::size_t size, char t):
@@ -69,17 +69,17 @@ struct small_string
     {
       m_impl.push_back(0);
     }
-    
-    auto size() const { return m_impl.size(); }    
+
+    auto size() const { return m_impl.size(); }
     auto begin() const { return m_impl.begin(); }
     auto end() const { return m_impl.end(); }
     auto data() const { return m_impl.data(); }
-    
-    auto push_back(char c) { 
+
+    auto push_back(char c) {
       m_impl.back() = c;
-      m_impl.push_back(0); 
+      m_impl.push_back(0);
     }
-    
+
     void append(small_string src)
     {
       auto old_size = m_impl.size() - 1;
@@ -87,7 +87,7 @@ struct small_string
       m_impl.resize(new_size);
       std::copy(src.begin(), src.end(), m_impl.begin() + old_size);
     }
-   
+
 };
 small_string getOSCType(const Variant& value);
 small_string getOSCType(const Tuple& value);
@@ -98,7 +98,7 @@ inline small_string getOSCType(const Variant& value)
 {
   using eggs::variants::get;
   using namespace oscpack;
-  
+
   switch(which(value))
   {
     case Type::impulse_t: return small_string(1, INFINITUM_TYPE_TAG);
@@ -150,14 +150,14 @@ inline bool operator==(const Tuple& lhs, const Tuple& rhs)
 struct RepetitionFilter
 {
     coppa_name(RepetitionFilter)
-    bool repetitionFilter;
+    bool repetitionFilter{};
 };
 
 template<typename ValueType> using Enum = std::vector<ValueType>;
 
 using Parameter = AttributeAggregate<
   Values,
-  Destination, 
+  Destination,
   Description,
   Access,
   Bounding,
