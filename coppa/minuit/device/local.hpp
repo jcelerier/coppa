@@ -25,24 +25,32 @@ namespace ossia
 // IPC ?
 template<typename Map,
          typename DataProtocolServer,
-         typename DataProtocolHandler>
+         typename DataProtocolHandler,
+         typename DataProtocolSender
+         >
 class osc_local_device
 {
   public:
     using map_type = Map;
-    using parent_t = osc_local_device<Map, DataProtocolServer, DataProtocolHandler>;
+    using parent_t = osc_local_device<Map, DataProtocolServer, DataProtocolHandler, DataProtocolSender>;
     
     osc_local_device( 
         Map& map,
-        unsigned int data_port):
+        unsigned int in_port,
+        std::string out_ip,
+        unsigned int out_port):
       m_map{map},
-      m_data_server{data_port, [&] (const auto& m, const auto& ip)
+      m_data_server{in_port, [&] (const auto& m, const auto& ip)
       { 
         DataProtocolHandler::on_messageReceived(*this, m_map, m, ip);
-      }}
+      }},
+      sender{out_ip, out_port}
     {
       m_data_server.run();
     }
+    
+    std::string name() const 
+    { return "tutu"; }
     
     auto& map() const 
     { return m_map; }
@@ -55,20 +63,30 @@ class osc_local_device
     }
     
     Nano::Signal<void(const Parameter&)> on_value_changed;
-  
+    
+    DataProtocolSender sender;
   private:
     Map& m_map;
-    DataProtocolServer m_data_server;
+    DataProtocolServer m_data_server; 
 };
 
 class osc_local_impl : public osc_local_device<
     coppa::locked_map<coppa::basic_map<ParameterMapType<coppa::ossia::Parameter>>>,
     coppa::osc::receiver,
-    coppa::ossia::message_handler>
+    coppa::ossia::message_handler,
+    coppa::osc::sender>
 {
     using parent_t::osc_local_device;
 };
-    
+
+class minuit_local_impl : public osc_local_device<
+    coppa::locked_map<coppa::basic_map<ParameterMapType<coppa::ossia::Parameter>>>,
+    coppa::osc::receiver,
+    coppa::ossia::minuit_message_handler,
+    coppa::osc::sender>
+{
+    using parent_t::osc_local_device;
+};
 
 // Remote OSC device : 
 // Can just send data to the outside

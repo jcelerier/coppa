@@ -1,5 +1,6 @@
 #pragma once
 #include <coppa/minuit/parameter.hpp>
+#include <coppa/map.hpp>
 #include <coppa/protocol/osc/oscreceiver.hpp>
 #include <oscpack/osc/OscTypes.h>
 #include <coppa/string_view.hpp>
@@ -168,7 +169,6 @@ class message_handler : public coppa::osc::receiver
       }
       
       return ++it;
-      
     }
     
     template<typename Device, typename Map>
@@ -233,10 +233,221 @@ class message_handler : public coppa::osc::receiver
     }
 };
 
+enum class minuit_command : char
+{ Request = '?', Answer = ':', Error = '!' };
+
+enum class minuit_operation : char
+{ Listen = 'l', Namespace = 'n', Get = 'g'};
+
+enum class minuit_attributes 
+{ Value, Type, Service, Priority, RangeBounds, Description, RepetitionFilter };
+
+enum class minuit_type
+{ Application, Container, Data, None };
+
+
+minuit_command get_command(char str)
+{
+  switch(str) 
+  {
+    case '?':
+    case ':': 
+    case '!':
+      return static_cast<minuit_command>(str);
+    default : 
+      throw std::runtime_error("unhandled command");
+  }
+}
+
+minuit_operation get_operation(char str)
+{
+  switch(str) 
+  {
+    case 'l':
+    case 'n': 
+    case 'g':
+      return static_cast<minuit_operation>(str);
+    default : 
+      throw std::runtime_error("unhandled operation");
+  }
+}
+
+minuit_operation get_operation(string_view str)
+{
+  return get_operation(str[0]);
+}
+
+template<typename Map>
+std::vector<Parameter> get_children(Map& map, string_view address)
+{
+  std::vector<Parameter> vec;
+  vec.reserve(4);
+  
+  // TODO have a filter( that returns iterators instead
+  auto filtered = coppa::filter(map, address);
+  filtered.template get<0>().erase(address.to_string()); // TODO why to_string
+  
+  for(auto& child : filtered)
+  {
+    // There must be no slash at the end of the following address.
+    string_view remaining{
+      child.destination.data() + address.size() + 1, 
+      child.destination.size() - (address.size() + 1)};
+    
+    if(!remaining.find('/'))
+      vec.push_back(child);
+  }
+  
+  return vec;
+}
+
+struct parsed_namespace_minuit_request
+{
+    string_view address_pattern;
+    string_view attribute;
+    boost::container::small_vector<string_view, 16> nodes;
+    boost::container::small_vector<minuit_attributes, 8> attributes;
+};
+
+template<minuit_command Req, minuit_operation Op>
+struct handle_minuit;
+
+// Get
+template<>
+struct handle_minuit<
+    minuit_command::Request, 
+    minuit_operation::Get>
+{
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      
+    }    
+};
+
+template<>
+struct handle_minuit<
+    minuit_command::Answer, 
+    minuit_operation::Get>
+{
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      
+    }    
+};
+
+
+template<>
+struct handle_minuit<
+    minuit_command::Error, 
+    minuit_operation::Get>
+{
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      
+    }    
+};
+
+// Listen
+template<>
+struct handle_minuit<
+    minuit_command::Request, 
+    minuit_operation::Listen>
+{
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      
+    }    
+};
+
+template<>
+struct handle_minuit<
+    minuit_command::Answer, 
+    minuit_operation::Listen>
+{
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      
+    }    
+};
+
+
+template<>
+struct handle_minuit<
+    minuit_command::Error, 
+    minuit_operation::Listen>
+{
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      
+    }    
+};
+
+// Namespace
+template<>
+struct handle_minuit<
+    minuit_command::Request, 
+    minuit_operation::Namespace>
+{
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      string_view address{mess.ArgumentsBegin()->AsString()};
+      auto it = map.find(address);
+      if(it != map.end())
+      {
+        // reply with the child addresses and their attributes.
+        std::string reply_address = dev.name() + ":namespace";
+        for(auto child : get_children(map, address))
+        {
+          dev.sender.send(reply_address, address.data(), "nodes={", child.destination.c_str(), "}");
+        }
+      }
+    }
+};
+
+template<>
+struct handle_minuit<
+    minuit_command::Answer, 
+    minuit_operation::Namespace>
+{
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      
+    }    
+};
+
+
+template<>
+struct handle_minuit<
+    minuit_command::Error, 
+    minuit_operation::Namespace>
+{
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      
+    }    
+};
+
+
+
+
+// Namespace request : 
+// app?namespace addr
+
+// Namespace answer : 
+// app:namespace addr minuit_type nodes={ n1 n2 n3 } attributes={ foo bar baz }
 class minuit_message_handler : 
     public coppa::osc::receiver
 {
-    
+  public:
     template<typename Device, typename Map>
     static void handleMinuitMessage(
         Device& dev,
@@ -244,6 +455,80 @@ class minuit_message_handler :
         string_view address,
         const oscpack::ReceivedMessage& m)
     { 
+      // Look for either ':' or '?'
+      auto idx = address.find_first_of(":?!");
+      
+      if(idx != std::string::npos)
+      {
+        //string_view application(address.data(), idx);
+        //string_view request(address.data() + idx + 1, address.size() - application.size() - 1);
+        
+        //std::cerr << application << " " << request << std::endl;
+        auto req = get_command(address[idx]);
+        auto op = get_operation(*(address.data() + idx + 1));
+        switch(req)
+        {
+          case minuit_command::Answer: // Receiving an answer
+          {
+            switch(op)
+            {
+              case minuit_operation::Listen:
+                handle_minuit<minuit_command::Answer, minuit_operation::Listen>{}(dev, map, m);
+                break;
+              case minuit_operation::Get:
+                handle_minuit<minuit_command::Answer, minuit_operation::Get>{}(dev, map, m);
+                break;                
+              case minuit_operation::Namespace:
+                handle_minuit<minuit_command::Answer, minuit_operation::Namespace>{}(dev, map, m);
+                break;
+              default:
+                break;
+            }
+            break;
+          }
+          case minuit_command::Request: // Receiving a request
+          {
+            switch(op)
+            {
+              case minuit_operation::Listen:
+                handle_minuit<minuit_command::Request, minuit_operation::Listen>{}(dev, map, m);
+                break;
+              case minuit_operation::Get:
+                handle_minuit<minuit_command::Request, minuit_operation::Get>{}(dev, map, m);
+                break;                
+              case minuit_operation::Namespace:
+                handle_minuit<minuit_command::Request, minuit_operation::Namespace>{}(dev, map, m);
+                break;
+              default:
+                break;
+            }
+            break;
+          }            
+          case minuit_command::Error: // Receiving an error
+          {
+            switch(op)
+            {
+              case minuit_operation::Listen:
+                handle_minuit<minuit_command::Error, minuit_operation::Listen>{}(dev, map, m);
+                break;
+              case minuit_operation::Get:
+                handle_minuit<minuit_command::Error, minuit_operation::Get>{}(dev, map, m);
+                break;                
+              case minuit_operation::Namespace:
+                handle_minuit<minuit_command::Error, minuit_operation::Namespace>{}(dev, map, m);
+                break;
+              default:
+                break;
+            }
+            break;
+          }  
+          default:
+            break;
+        }
+      }
+      
+      // For minuit address, the request is the address pattern, 
+      // and the arugments may contain the address of type 's', and the OSC stuff.
     }
     
     template<typename Device, typename Map>
@@ -253,7 +538,7 @@ class minuit_message_handler :
         const oscpack::ReceivedMessage& m,
         const oscpack::IpEndpointName& ip)
     {
-      string_view address = m.AddressPattern();
+      string_view address{m.AddressPattern()};
       // We have to check if it's a plain osc address, or a Minuit request address.
       
       if(address.size() > 0 && address[0] == '/')
