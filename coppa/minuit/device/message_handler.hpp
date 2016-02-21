@@ -119,29 +119,30 @@ inline oscpack::OutboundPacketStream& operator<<(
 {
   using namespace eggs::variants;
   using namespace coppa::ossia;
+  // See TTOscSocket::SendMessage;
   switch(which(val))
   {
     case Type::float_t:
       p << get<float>(val);
       break;
     case Type::int_t:
-      p << get<int>(val);
+      p << get<int32_t>(val);
       break;
     case Type::impulse_t:
-      p << oscpack::InfinitumType{};
+      // Seems like ossia isn't implemented like this : p << oscpack::InfinitumType{};
       break;
     case Type::bool_t:
-      p << get<bool>(val);
+      p << int32_t(get<bool>(val));
       break;
     case Type::string_t:
       p << get<std::string>(val).c_str();
       break;
     case Type::char_t:
-      p << get<char>(val);
+      p << int32_t(get<char>(val));
       break;
     case Type::tuple_t:
     {
-      //p << get<Tuple>(val);
+      p << get<Tuple>(val);
       break;
     }
     case Type::generic_t:
@@ -462,116 +463,39 @@ minuit_operation get_operation(string_view str)
   return get_operation(str[0]);
 }
 
-template<typename Map>
-std::vector<Parameter> get_children(Map& map, string_view address)
-{
-  std::vector<Parameter> vec;
-  vec.reserve(4);
-
-  // TODO have a filter( that returns iterators instead
-  // (with lexical ordering, it can return a begin - end pair of iterators)
-  auto filtered = coppa::filter(map, address);
-  filtered.template get<0>().erase(address.to_string()); // TODO why to_string
-
-  for(auto& child : filtered)
-  {
-    // There must be no slash at the end of the following address.
-    string_view remaining{
-      child.destination.data() + address.size() + 1,
-      child.destination.size() - (address.size() + 1)};
-
-    if(!remaining.find('/'))
-      vec.push_back(child);
-  }
-
-  return vec;
-}
-
 // The map should be locked beforehand and be ordered
-template<typename Map, typename Key>
-auto filter_iterators(const Map& map, Key&& addr)
-{
-  auto pred = [&] (auto& val) {
-    return boost::starts_with(val.destination, addr);
-  };
-
-  auto addr_it = map.find(addr);
-  return std::make_pair(
-        boost::make_filter_iterator(pred, ++addr_it, map.end()),
-        boost::make_filter_iterator(pred, map.end(), map.end()));
-}
-
-
-template<typename Map>
-std::vector<string_view> get_root_children_names(
-    Map& map)
-{
-  std::vector<string_view> vec;
-  vec.reserve(16); // we could maybe assume ln2(map.size()) ?
-
-  if(map.size() == 1)
-    return vec;
-
-  // everything
-  // we start at begin + 1 to ignore root
-  auto it = map.begin();
-  for(it++; it != map.end(); ++it)
-  {
-    auto& child = *it;
-    // There must be no slash at the end of the following address.
-    string_view remaining{
-          child.destination.data() + 1,
-          child.destination.size() - 1};
-
-    if(remaining.find('/') == std::string::npos)
-      vec.push_back(remaining);
-  }
-
-  return vec;
-}
-
-
-template<typename Map>
-std::vector<string_view> get_nonroot_children_names(
-    Map& map,
-    string_view address)
-{
-  std::vector<string_view> vec;
-  vec.reserve(16);
-
-  auto filtered = filter_iterators(map, address);
-  for(auto it = filtered.first; it != filtered.second; ++it)
-  {
-    auto& child = *it;
-    // There must be no slash at the end of the following address.
-    string_view remaining{
-      child.destination.data() + address.size() + 1,
-      child.destination.size() - (address.size() + 1)};
-
-    if(!remaining.find('/'))
-      vec.push_back(remaining);
-  }
-
-  return vec;
-}
-
 template<typename Map>
 std::vector<string_view> get_children_names(
     Map& map,
-    string_view address)
+    string_view addr)
 {
   // TODO use "constructed" vector, or vector of string_view
   // TODO http://howardhinnant.github.io/stack_alloc.html
   // reply with the child addresses and their attributes.
 
-  if(isRoot(address))
+  int n = addr.size();
+  std::set<string_view> vec;
+  for(const auto& param : map)
   {
-    return get_root_children_names(map);
+    if(boost::starts_with(param.destination, addr))
+    {
+      if(param.destination.size() == n)
+        continue;
+
+      int modulo = addr.back() != '/';
+      string_view remainder{param.destination.data() + n + modulo, param.destination.size() - n - modulo};
+      auto pos = remainder.find('/');
+      if(pos == std::string::npos)
+      {
+        vec.insert(remainder);
+      }
+      else
+      {
+        vec.insert(string_view(remainder.data(), pos));
+      }
+    }
   }
-  else
-  {
-    return get_nonroot_children_names(map, address);
-  }
+  return std::vector<string_view>(vec.begin(), vec.end());
 }
 
 struct parsed_namespace_minuit_request
@@ -626,13 +550,13 @@ struct handle_minuit<
           {
             case minuit_attributes::Value:
               dev.sender.send(dev.name() + ":get",
-                              address.data(),
+                              full_address.data(),
                               static_cast<const Values&>(*it)
                               );
               break;
             case minuit_attributes::Type:
               dev.sender.send(dev.name() + ":get",
-                              address.data(),
+                              full_address.data(),
                               toMinuitType(*it)
                               );
               break;
@@ -640,19 +564,19 @@ struct handle_minuit<
               break;
             case minuit_attributes::RangeClipMode:
               dev.sender.send(dev.name() + ":get",
-                              address.data(),
+                              full_address.data(),
                               toMinuitBounding(it->bounding)
                               );
               break;
             case minuit_attributes::RepetitionFilter:
               dev.sender.send(dev.name() + ":get",
-                              address.data(),
+                              full_address.data(),
                               it->repetitionFilter
                               );
               break;
             case minuit_attributes::Service:
               dev.sender.send(dev.name() + ":get",
-                              address.data(),
+                              full_address.data(),
                               toMinuitService(it->access)
                               );
               break;
@@ -741,7 +665,7 @@ struct handle_minuit<
                       "/",
                       "Application",
                       "nodes={",
-                               std::forward<Children>(c),
+                               c,
                             "}",
                       "attributes={",
                                  "}");
@@ -798,18 +722,14 @@ struct handle_minuit<
       }
       else
       {
-        auto it = map.find(address);
-        if(it != map.end())
+        auto cld = get_children_names(map, address);
+        if(!cld.empty())
         {
-          auto cld = get_children_names(map, address);
-          if(!cld.empty())
-          {
-            handle_container(dev, address, cld);
-          }
-          else
-          {
-            handle_data(dev, address);
-          }
+          handle_container(dev, address, cld);
+        }
+        else
+        {
+          handle_data(dev, address);
         }
       }
     }

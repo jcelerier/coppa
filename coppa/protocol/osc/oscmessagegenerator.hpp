@@ -5,16 +5,16 @@
 #include <boost/container/small_vector.hpp>
 #include <coppa/string_view.hpp>
 
-
+#include <iostream>
 inline oscpack::OutboundPacketStream& operator<<(
     oscpack::OutboundPacketStream& p,
     const std::vector<coppa::string_view>& values)
 {
   using namespace coppa;
 
-  for(const auto& val : values)
+  for(auto val : values)
   {
-    p << val.data();
+    p << val;
   }
 
   return p;
