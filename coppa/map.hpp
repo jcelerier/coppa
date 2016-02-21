@@ -10,7 +10,7 @@
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
-
+#include <coppa/string_view.hpp>
 #include <type_traits>
 namespace coppa
 {
@@ -42,6 +42,11 @@ auto filter(const Map& map, Key&& addr)
   }
 
   return newmap;
+}
+
+bool isRoot(string_view address)
+{
+  return address.size() == 1;
 }
 
 

@@ -50,7 +50,7 @@ class osc_local_device
     }
     
     std::string name() const 
-    { return "tutu"; }
+    { return "newDevice"; }
     
     auto& map() const 
     { return m_map; }

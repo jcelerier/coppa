@@ -4,6 +4,7 @@
 #include <coppa/protocol/osc/oscreceiver.hpp>
 #include <oscpack/osc/OscTypes.h>
 #include <coppa/string_view.hpp>
+#include <boost/iterator/filter_iterator.hpp>
 
 namespace oscpack
 {
@@ -183,9 +184,8 @@ class message_handler : public coppa::osc::receiver
       using eggs::variants::get;
       
       Values current_parameter;
-      // Little dance for thread-safe access to the current value
+      // The lock is already acquired in the parent
       {
-        auto&& l = map.acquire_read_lock();
         auto node_it = map.find(address);
         if(node_it == map.end())
           return;
@@ -283,7 +283,8 @@ std::vector<Parameter> get_children(Map& map, string_view address)
   std::vector<Parameter> vec;
   vec.reserve(4);
   
-  // TODO have a filter( that returns iterators instead
+  // TODO have a filter( that returns iterators instead 
+  // (with lexical ordering, it can return a begin - end pair of iterators)
   auto filtered = coppa::filter(map, address);
   filtered.template get<0>().erase(address.to_string()); // TODO why to_string
   
@@ -299,6 +300,93 @@ std::vector<Parameter> get_children(Map& map, string_view address)
   }
   
   return vec;
+}
+
+// The map should be locked beforehand and be ordered
+template<typename Map, typename Key>
+auto filter_iterators(const Map& map, Key&& addr)
+{
+  auto pred = [&] (auto& val) {
+    return boost::starts_with(val.destination, addr);
+  };
+
+  auto addr_it = map.find(addr);
+  return std::make_pair(
+        boost::make_filter_iterator(pred, ++addr_it, map.end()),
+        boost::make_filter_iterator(pred, map.end(), map.end()));
+}
+
+
+template<typename Map>
+std::vector<string_view> get_root_children_names(
+    Map& map)
+{
+  std::vector<string_view> vec;
+  vec.reserve(16); // we could maybe assume ln2(map.size()) ?
+  
+  if(map.size() == 1)
+    return vec;
+  
+  // everything
+  // we start at begin + 1 to ignore root
+  auto it = map.begin();
+  for(it++; it != map.end(); ++it)
+  {
+    auto& child = *it;
+    // There must be no slash at the end of the following address.
+    string_view remaining{
+          child.destination.data() + 1, 
+          child.destination.size() - 1};
+    
+    if(remaining.find('/') == std::string::npos)
+      vec.push_back(remaining);    
+  }
+  
+  return vec;
+}
+
+
+template<typename Map>
+std::vector<string_view> get_nonroot_children_names(
+    Map& map, 
+    string_view address)
+{
+  std::vector<string_view> vec;
+  vec.reserve(16);
+  
+  auto filtered = filter_iterators(map, address);
+  for(auto it = filtered.first; it != filtered.second; ++it)
+  {
+    auto& child = *it;
+    // There must be no slash at the end of the following address.
+    string_view remaining{
+      child.destination.data() + address.size() + 1, 
+      child.destination.size() - (address.size() + 1)};
+    
+    if(!remaining.find('/'))
+      vec.push_back(remaining);
+  }
+  
+  return vec;
+}
+
+template<typename Map>
+std::vector<string_view> get_children_names(
+    Map& map, 
+    string_view address)
+{
+  // TODO use "constructed" vector, or vector of string_view
+  // TODO http://howardhinnant.github.io/stack_alloc.html
+  // reply with the child addresses and their attributes.
+  
+  if(isRoot(address))
+  {
+    return get_root_children_names(map);
+  }
+  else
+  { 
+    return get_nonroot_children_names(map, address);
+  } 
 }
 
 struct parsed_namespace_minuit_request
@@ -394,18 +482,84 @@ struct handle_minuit<
     minuit_command::Request, 
     minuit_operation::Namespace>
 {
+    template<typename Device, typename Children>
+    void handle_root(
+        Device& dev,
+        Children&& c)
+    {
+      dev.sender.send(dev.name() + ":namespace",
+                      "/",
+                      "Application", 
+                      "nodes={", 
+                               std::forward<Children>(c), 
+                            "}",
+                      "attributes={", 
+                                 "}");
+      
+    }
+    
+    template<typename Device, typename Children>
+    void handle_container(
+        Device& dev,
+        string_view address,
+        Children&& c)
+    {
+      dev.sender.send(dev.name() + ":namespace",
+                      address.data(),
+                      "Container", 
+                      "nodes={", 
+                               c, 
+                            "}",
+                      "attributes={", 
+                                 "}");
+      
+    }
+    
+    template<typename Device>
+    void handle_data(
+        Device& dev,
+        string_view address)
+    {
+      dev.sender.send(dev.name() + ":namespace",
+                      address.data(),
+                      "Data", 
+                      "attributes={", 
+                                    "rangeBounds"      ,
+                                    "rangeClipmode"    ,
+                                    "type"             ,
+                                    "repetitionsFilter",
+                                    "service"          ,
+                                    "priority"         ,
+                                    "value"            ,
+                                 "}");
+      
+    }
+
     template<typename Device, typename Map>
-    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    auto operator()(
+        Device& dev, 
+        Map& map,
+        const oscpack::ReceivedMessage& mess)
     {
       string_view address{mess.ArgumentsBegin()->AsString()};
-      auto it = map.find(address);
-      if(it != map.end())
+      if(isRoot(address))
       {
-        // reply with the child addresses and their attributes.
-        std::string reply_address = dev.name() + ":namespace";
-        for(auto child : get_children(map, address))
+        handle_root(dev, get_children_names(map, address));
+      }
+      else
+      {
+        auto it = map.find(address);
+        if(it != map.end())
         {
-          dev.sender.send(reply_address, address.data(), "nodes={", child.destination.c_str(), "}");
+          auto cld = get_children_names(map, address);
+          if(!cld.empty()) 
+          {
+            handle_container(dev, address, cld);
+          }
+          else
+          {
+            handle_data(dev, address);
+          }
         }
       }
     }
@@ -538,16 +692,18 @@ class minuit_message_handler :
         const oscpack::ReceivedMessage& m,
         const oscpack::IpEndpointName& ip)
     {
+      auto l = map.acquire_read_lock();      
       string_view address{m.AddressPattern()};
+      std::cerr << "received " << address << " " << m.ArgumentsBegin()->AsString() << "\n";
       // We have to check if it's a plain osc address, or a Minuit request address.
       
       if(address.size() > 0 && address[0] == '/')
       {
-        message_handler::handleOSCMessage(dev, map, address, m);
+        message_handler::handleOSCMessage(dev, map.get_data_map(), address, m);
       }
       else
       {
-        handleMinuitMessage(dev, map, address, m);
+        handleMinuitMessage(dev, map.get_data_map(), address, m);
       }
     }
 };
