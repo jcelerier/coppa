@@ -34,13 +34,25 @@ class MessageGenerator
       operator()(name, args...);
     }
 
-    template <typename... T>
-    const oscpack::OutboundPacketStream&  operator()(
+    template<typename... T>
+    const oscpack::OutboundPacketStream& operator()(
         const std::string& name,
         const T&... args)
     {
       p.Clear();
-      p << oscpack::BeginMessage( name.c_str() );
+      p << oscpack::BeginMessageN( name );
+      subfunc(args...);
+      p << oscpack::EndMessage;
+      return p;
+    }
+
+    template<int N, typename... T>
+    const oscpack::OutboundPacketStream& operator()(
+        small_string_base<N> name,
+        const T&... args)
+    {
+      p.Clear();
+      p << oscpack::BeginMessageN( name );
       subfunc(args...);
       p << oscpack::EndMessage;
       return p;
@@ -52,7 +64,7 @@ class MessageGenerator
         const std::vector<Val_T>& values)
     {
       p.Clear();
-      p << oscpack::BeginMessage( name.c_str() )
+      p << oscpack::BeginMessageN( name )
         << values
         << oscpack::EndMessage;
       return p;

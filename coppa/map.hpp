@@ -141,7 +141,6 @@ class basic_map
       return *this;
     }
 
-
     template<typename Key>
     auto find(Key&& address) const
     {
@@ -201,11 +200,30 @@ class basic_map
       return false;
     }
 
+
+    template<typename Iterator,
+             typename Updater>
+    auto update_it(Iterator it, Updater&& updater)
+    {
+      auto& param_index = m_map.template get<0>();
+      if(it != param_index.end())
+        return param_index.modify(it, std::forward<Updater>(updater));
+      return false;
+    }
+
     template<typename Key,
              typename... Args>
     auto update_attributes(Key&& address, Args&&... args)
     {
       return update(std::forward<Key>(address),
+                 make_update_fun(std::forward<Args>(args)...));
+    }
+
+    template<typename Key,
+             typename... Args>
+    auto update_attributes_it(Key&& address, Args&&... args)
+    {
+      return update_it(std::forward<Key>(address),
                  make_update_fun(std::forward<Args>(args)...));
     }
 
@@ -372,6 +390,13 @@ class locked_map
     }
 
     template<typename... Args>
+    auto update_it(Args&&... args)
+    {
+      auto l = acquire_write_lock();
+      return m_map.update_it(std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
     auto update(Args&&... args)
     {
       auto l = acquire_write_lock();
@@ -383,6 +408,13 @@ class locked_map
     {
       auto l = acquire_write_lock();
       return m_map.update_attributes(std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    auto update_attributes_it(Args&&... args)
+    {
+      auto l = acquire_write_lock();
+      return m_map.update_attributes_it(std::forward<Args>(args)...);
     }
 
     template<typename... Args>

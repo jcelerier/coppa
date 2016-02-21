@@ -50,19 +50,64 @@ auto to_minuit_type_text(const coppa::ossia::Parameter& parameter)
   }
 }
 
+auto from_minuit_type_text(string_view str)
+{
+  Values v;
+  // integer, decimal, string, generic, boolean, none, array.
+
+  switch(str[0])
+  {
+    case 'i': // integer
+      v.variants.push_back(int32_t{});
+    case 'd': // decimal
+      v.variants.push_back(float{});
+    case 's': // string
+      v.variants.push_back(std::string{});
+    case 'b': // boolean
+      v.variants.push_back(bool{});
+    case 'g': // generic
+      v.variants.push_back(Generic{});
+    case 'n': // none
+      break;
+    case 'a': // array
+      break;
+    default:
+      throw;
+  }
+
+  return v; // none
+}
+
 
 auto to_minuit_service_text(coppa::Access::Mode acc)
 {
   switch(acc)
   {
     case Access::Mode::None:
-      return ""; // TODO
+      return "none"; // TODO
     case Access::Mode::Both:
       return "parameter";
     case Access::Mode::Get:
       return "return";
     case Access::Mode::Set:
       return "message";
+    default:
+      throw;
+  }
+}
+
+Access from_minuit_service_text(string_view str)
+{
+  switch(str[0])
+  {
+    case 'n':
+      return Access{Access::Mode::None};
+    case 'p':
+      return Access{Access::Mode::Both};
+    case 'r':
+      return Access{Access::Mode::Get};
+    case 'm':
+      return Access{Access::Mode::Set};
     default:
       throw;
   }
@@ -85,6 +130,23 @@ auto to_minuit_bounding_text(coppa::Bounding::Mode b)
   }
 }
 
+
+Bounding from_minuit_bounding_text(string_view str)
+{
+  switch(str[2]) // only unique character
+  {
+    case 'e': // frEe
+      return Bounding{Bounding::Mode::Free};
+    case 'i': // clIp
+      return Bounding{Bounding::Mode::Clip};
+    case 'a': // wrAp
+      return Bounding{Bounding::Mode::Wrap};
+    case 'l': // foLd
+      return Bounding{Bounding::Mode::Fold};
+    default:
+      throw;
+  }
+}
 
 minuit_attributes get_attribute(string_view str)
 {

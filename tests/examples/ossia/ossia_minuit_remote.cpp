@@ -26,7 +26,8 @@ void refresh(minuit_remote_impl& remote)
   remote.map().clear();
 
   // first request namespace
-  remote.sender.send(remote.name() + "?namespace", "/");
+  const char * root = "/";
+  remote.sender.send(remote.name() + "?namespace", root);
 }
 
 int main()

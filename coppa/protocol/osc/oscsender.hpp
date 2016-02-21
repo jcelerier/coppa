@@ -35,14 +35,26 @@ class sender
     template<typename... Args>
     void send(const std::string& address, Args&&... args)
     {
-      send(m_gen(address, std::forward<Args>(args)...));
+      send_impl(m_gen(
+                  address,
+                  std::forward<Args>(args)...));
     }
+
+
+    template<int N, typename... Args>
+    void send(oscpack::small_string_base<N> address, Args&&... args)
+    {
+      send_impl(m_gen(
+                  address,
+                  std::forward<Args>(args)...));
+    }
+
 
     const std::string& ip() const { return m_ip; }
     int port() const { return m_port; }
 
   private:
-    void send(const oscpack::OutboundPacketStream& m)
+    void send_impl(const oscpack::OutboundPacketStream& m)
     {
       m_socket->Send( m.Data(), m.Size() );
     }

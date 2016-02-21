@@ -2,8 +2,8 @@
 #include <experimental/string_view>
 #include <type_traits>
 #include <functional>
-
-namespace coppa 
+#include <oscpack/osc/SmallString.h>
+namespace coppa
 {
 using string_view = std::experimental::string_view;
 //using string_view = std::string;
@@ -11,12 +11,12 @@ using string_view = std::experimental::string_view;
 template<typename T, typename Enable = void>
 struct param_traits
 {
-    
+
 };
 
 template<typename T>
 struct param_traits<
-    T, 
+    T,
     std::enable_if_t<
       std::is_same<T, std::string>::value
     >
@@ -27,9 +27,20 @@ struct param_traits<
 
 template<typename T>
 struct param_traits<
-    T, 
+    T,
     std::enable_if_t<
       std::is_same<T, coppa::string_view>::value
+    >
+  >
+{
+    using type = T;
+};
+
+template<typename T>
+struct param_traits<
+    T,
+    std::enable_if_t<
+      std::is_same<T, oscpack::small_string>::value
     >
   >
 {

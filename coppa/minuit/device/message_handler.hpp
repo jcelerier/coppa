@@ -6,6 +6,7 @@
 #include <coppa/protocol/osc/oscreceiver.hpp>
 #include <oscpack/osc/OscTypes.h>
 #include <oscpack/osc/OscOutboundPacketStream.h>
+#include <oscpack/osc/OscDebug.h>
 
 namespace coppa
 {
@@ -116,9 +117,9 @@ class minuit_message_handler :
         const oscpack::ReceivedMessage& m,
         const oscpack::IpEndpointName& ip)
     {
-      auto l = map.acquire_read_lock();
+      auto l = map.acquire_write_lock();
       string_view address{m.AddressPattern()};
-      std::cerr << "received " << address << " " << m.ArgumentsBegin()->AsString() << "\n";
+      oscpack::debug(std::cerr, m);
       // We have to check if it's a plain osc address, or a Minuit request address.
 
       if(address.size() > 0 && address[0] == '/')

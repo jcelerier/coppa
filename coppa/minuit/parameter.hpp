@@ -1,10 +1,12 @@
 #pragma once
 #include <coppa/coppa.hpp>
 #include <boost/container/static_vector.hpp>
+#include <oscpack/osc/SmallString.h>
 namespace coppa
 {
 namespace ossia
 {
+using oscpack::small_string;
 using coppa::Access;
 using coppa::Bounding;
 using coppa::Alias;
@@ -55,41 +57,7 @@ inline Type which(const Variant& var)
 {
   return static_cast<Type>(var.which());
 }
-struct small_string
-{
-    boost::container::static_vector<char, 16> m_impl;
 
-    small_string():
-      m_impl(1, 0)
-    {
-
-    }
-
-    small_string(std::size_t size, char t):
-      m_impl(size, t)
-    {
-      m_impl.push_back(0);
-    }
-
-    auto size() const { return m_impl.size(); }
-    auto begin() const { return m_impl.begin(); }
-    auto end() const { return m_impl.end(); }
-    auto data() const { return m_impl.data(); }
-
-    auto push_back(char c) {
-      m_impl.back() = c;
-      m_impl.push_back(0);
-    }
-
-    void append(small_string src)
-    {
-      auto old_size = m_impl.size() - 1;
-      auto new_size = m_impl.size() + src.size() - 1;
-      m_impl.resize(new_size);
-      std::copy(src.begin(), src.end(), m_impl.begin() + old_size);
-    }
-
-};
 small_string getOSCType(const Variant& value);
 small_string getOSCType(const Tuple& value);
 small_string getOSCType(const Values& value);

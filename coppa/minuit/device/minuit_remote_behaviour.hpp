@@ -3,15 +3,6 @@
 #include <coppa/string_view.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
 
-/*
-struct parsed_namespace_minuit_request
-{
-    string_view address_pattern;
-    string_view attribute;
-    boost::container::small_vector<string_view, 16> nodes;
-    boost::container::small_vector<minuit_attributes, 8> attributes;
-};*/
-
 namespace coppa
 {
 namespace ossia
@@ -33,9 +24,73 @@ struct minuit_remote_behaviour<
     minuit_command::Answer,
     minuit_operation::Get>
 {
+    Values get_values(
+        oscpack::ReceivedMessageArgumentIterator beg_it,
+        oscpack::ReceivedMessageArgumentIterator end_it)
+    {
+      Values v;
+      return v;
+    }
+
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
+      auto mess_it = mess.ArgumentsBegin();
+      string_view full_address{mess_it->AsString()};
+      auto idx = full_address.find_first_of(":");
+
+      if(idx == std::string::npos)
+      {
+        // Value
+          map.update_attributes(
+                full_address,
+                this->get_values(mess_it, mess.ArgumentsEnd()));
+      }
+      else
+      {
+        string_view address{full_address.data(), idx};
+
+        // Note : bug if address == "foo:"
+        auto attr = get_attribute(
+                      string_view(
+                        address.data() + idx + 1,
+                        full_address.size() - idx - 1));
+
+        ++mess_it;
+        // mess_it is now at the first argument after the address:attribute
+
+        switch(attr)
+        {
+          case minuit_attributes::Value:
+            map.update_attributes(
+                  address,
+                  this->get_values(mess_it, mess.ArgumentsEnd()));
+            break;
+          case minuit_attributes::Type:
+            // default-initialize with the type
+            map.update_attributes(
+                  address,
+                  from_minuit_type_text(mess_it->AsString()));
+            break;
+          case minuit_attributes::RangeBounds:
+            break;
+          case minuit_attributes::RangeClipMode:
+            map.update_attributes(
+                  address,
+                  from_minuit_bounding_text(mess_it->AsString()));
+            break;
+          case minuit_attributes::RepetitionFilter:
+            map.update_attributes(
+                  address,
+                  RepetitionFilter{mess_it->AsBool()});
+            break;
+          case minuit_attributes::Service:
+            map.update_attributes(
+                  address,
+                  from_minuit_service_text(mess_it->AsString()));
+            break;
+        }
+      }
 
     }
 };
@@ -70,39 +125,115 @@ struct minuit_remote_behaviour<
     minuit_command::Answer,
     minuit_operation::Namespace>
 {
-    auto get_nodes(
+    template<typename Str>
+    auto get_container(
+        Str s,
         oscpack::ReceivedMessageArgumentIterator beg_it,
-        oscpack::ReceivedMessageArgumentIterator end_it
-        )
+        oscpack::ReceivedMessageArgumentIterator end_it)
     {
-      std::vector<string_view> nodes;
-      auto nodes_beg_it = find_if(beg_it, end_it, [] (const auto& mess) {
-        return mess.IsString() && string_view(mess.AsStringUnchecked()) == "nodes={";
+      std::vector<string_view> elements;
+      auto nodes_beg_it = find_if(beg_it, end_it, [=] (const auto& mess) {
+        return mess.IsString() && string_view(mess.AsStringUnchecked()) == s;
       });
 
       ++nodes_beg_it; // It will point on the first past "nodes={".
       if(nodes_beg_it == end_it)
-        return nodes;
+        return elements;
 
       auto nodes_end_it = find_if(nodes_beg_it, end_it, [] (const auto& mess) {
         return mess.IsString() && string_view(mess.AsStringUnchecked()) == "}";
       });
 
       if(nodes_end_it == end_it)
-        return nodes;
+        return elements;
 
       for(auto it = nodes_beg_it; it != nodes_end_it; ++it)
       {
-        nodes.push_back(it->AsStringUnchecked());
+        elements.push_back(it->AsStringUnchecked());
       }
 
-      return nodes;
+      return elements;
+    }
+
+    auto get_nodes(
+        oscpack::ReceivedMessageArgumentIterator beg_it,
+        oscpack::ReceivedMessageArgumentIterator end_it
+        )
+    {
+      return get_container("nodes={", beg_it, end_it);
+    }
+
+    auto get_attributes(
+        oscpack::ReceivedMessageArgumentIterator beg_it,
+        oscpack::ReceivedMessageArgumentIterator end_it
+        )
+    {
+      return get_container("attributes={", beg_it, end_it);
+    }
+
+    template<typename Device, typename Map>
+    auto handle_container(
+        Device& dev,
+        Map& map,
+        string_view address,
+        oscpack::ReceivedMessageArgumentIterator beg_it,
+        oscpack::ReceivedMessageArgumentIterator end_it)
+    {
+      using namespace oscpack;
+      small_string_base<32> sub_request{dev.name()};
+      sub_request.append("?namespace");
+
+      // Get the sub-nodes
+      for(auto node : get_nodes(beg_it, end_it))
+      {
+        // Creation of the address
+        Parameter p;
+        p.destination.reserve(address.size() + 1 + node.size());
+        p.destination.append(address.data(), address.size());
+        if(p.destination.back() != '/')
+          p.destination.push_back('/');
+        p.destination.append(node.data(), node.size());
+
+        // Actual operation on the map
+        map.insert(p);
+
+        // request children
+        dev.sender.send(sub_request, string_view(p.destination));
+      }
+
+    }
+
+    template<typename Device, typename Map>
+    auto handle_data(
+        Device& dev,
+        Map& map,
+        string_view address,
+        oscpack::ReceivedMessageArgumentIterator beg_it,
+        oscpack::ReceivedMessageArgumentIterator end_it)
+    {
+      using namespace oscpack;
+      auto it = map.find(address);
+      if(it != map.end())
+      {
+        small_string_base<32> sub_request{dev.name()};
+        sub_request.append("?get");
+
+        for(auto attrib : get_attributes(beg_it, end_it))
+        {
+          // name?get address:attribute
+          auto str = address.to_string();
+          str.push_back(':');
+          str.append(attrib.begin(), attrib.end());
+          dev.sender.send(sub_request, string_view(str));
+        }
+      }
+
+
     }
 
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-
       auto it = mess.ArgumentsBegin();
       string_view address = it->AsString();
       auto type = get_type((++it)->AsString()[0]);
@@ -111,42 +242,18 @@ struct minuit_remote_behaviour<
         case minuit_type::Application:
         case minuit_type::Container:
         {
-          // Get the sub-nodes
-          auto nodes = get_nodes(it, mess.ArgumentsEnd());
-
-          for(auto node : nodes)
-          {
-            std::string actual_address{address.to_string()};
-            if(actual_address.back() != '/')
-              actual_address.push_back('/');
-            actual_address.append(node.to_string());
-            map.insert(actual_address);
-
-            dev.sender.send(dev.name() + "?namespace", string_view(actual_address));
-          }
-
+          handle_container(dev, map, address, it, mess.ArgumentsEnd());
           break;
         }
         case minuit_type::Data:
         {
-          // Just add the node
+          handle_data(dev, map, address, it, mess.ArgumentsEnd());
           break;
         }
         case minuit_type::None:
           // just add the node ?
           break;
       }
-
-      std::cerr << mess.AddressPattern() << " ";
-      for(auto arg : mess)
-      {
-        if(arg.IsString())
-        {
-          std::cerr << arg.AsString() << " ";
-        }
-      }
-
-      std::cerr << "\n";
     }
 };
 
