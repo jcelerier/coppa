@@ -22,7 +22,6 @@ class osc_message_handler : public coppa::osc::receiver
       using coppa::ossia::Parameter;
       using eggs::variants::get;
 
-      ValueMaker<strict_error_handler, ConversionMode::StrictIgnore> convert;
       Values current_parameter;
       // The lock is already acquired in the parent
       {
@@ -38,12 +37,13 @@ class osc_message_handler : public coppa::osc::receiver
         return;
 
       // Then write the arguments
-      auto end = m.ArgumentsEnd();
-      int i = 0;
-      for(auto it = m.ArgumentsBegin(); it != end; ++i)
-      {
-        it = convert(it, current_parameter.variants[i]);
-      }
+
+      values_reader<
+          strict_error_handler,
+          conversion_mode::Prechecked>{}(
+             m.ArgumentsBegin(),
+             m.ArgumentsEnd(),
+             current_parameter);
 
       dev.template update<string_view>(
             address,

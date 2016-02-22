@@ -50,6 +50,13 @@ struct Tuple
  */
 struct Values
 {
+    Values() = default;
+    Values(std::initializer_list<Variant> lst):
+      variants(lst)
+    {
+
+    }
+
     vector<Variant> variants;
 };
 

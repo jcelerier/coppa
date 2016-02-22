@@ -2,6 +2,7 @@
 #include <oscpack/osc/OscReceivedElements.h>
 #include <coppa/minuit/parameter.hpp>
 #include <oscpack/osc/OscTypesTraits.h>
+#include <coppa/exceptions/BadRequest.hpp>
 
 namespace coppa
 {
@@ -20,7 +21,7 @@ struct strict_error_handler
 {
     template<typename T>
     auto operator()(T t) {
-      throw;
+      throw InvalidInputException{};
       return t;
     }
 };
@@ -67,7 +68,7 @@ std::string convert_string(oscpack::ReceivedMessageArgument arg)
 
 
 
-inline oscpack::ReceivedMessageArgumentIterator skipArray(
+inline oscpack::ReceivedMessageArgumentIterator skip_array(
     oscpack::ReceivedMessageArgumentIterator it)
 {
   using eggs::variants::get;
@@ -83,7 +84,7 @@ inline oscpack::ReceivedMessageArgumentIterator skipArray(
     else
     {
       // Tuple case.
-      it = skipArray(it);
+      it = skip_array(it);
     }
 
     c = it->TypeTag();
@@ -113,6 +114,7 @@ oscpack::ReceivedMessageArgumentIterator read_array(
     }
     else
     {
+      // TODO in some cases this should maybe be an error ?
       tuple.variants.resize(tuple.variants.size() + 1);
       it = f(it, tuple.variants.back());
     }
@@ -193,14 +195,14 @@ oscpack::ReceivedMessageArgumentIterator convert_tuple(
 // strict-pre checked : we checked beforehand that the message layout was the same than the
 //                      Values layout and can safely convert without checks.
 // replace : replace the local type to the incoming value
-enum class ConversionMode
-{ StrictConvert, StrictIgnore, StrictPreChecked, Replace  };
+enum class conversion_mode
+{ Convert, Ignore, Prechecked, Replace  };
 
-template<typename ErrorHandler, ConversionMode>
-struct ValueMaker;
+template<typename ErrorHandler, conversion_mode>
+struct value_maker;
 
 template<typename ErrorHandler>
-struct ValueMaker<ErrorHandler, ConversionMode::StrictConvert>
+struct value_maker<ErrorHandler, conversion_mode::Convert>
 {
     auto operator()(
         oscpack::ReceivedMessageArgumentIterator arg,
@@ -209,7 +211,7 @@ struct ValueMaker<ErrorHandler, ConversionMode::StrictConvert>
       using namespace oscpack;
       using namespace eggs::variants;
       struct vis {
-          ValueMaker<ErrorHandler, ConversionMode::StrictConvert>& parent;
+          value_maker<ErrorHandler, conversion_mode::Convert>& parent;
           oscpack::ReceivedMessageArgumentIterator& it;
 
           using return_type = void;
@@ -243,8 +245,14 @@ struct ValueMaker<ErrorHandler, ConversionMode::StrictConvert>
             ++it;
           }
           return_type operator()(Tuple& t) const {
-            t.variants.clear();
-            it = convert_tuple<ErrorHandler>(parent, it, t);
+            if(it->IsArrayBegin())
+            {
+              it = convert_tuple<ErrorHandler>(parent, it, t);
+            }
+            else
+            {
+              it = skip_array(ErrorHandler{}(it));
+            }
           }
           return_type operator()(Generic& val) const {
             int n = 0;
@@ -263,7 +271,7 @@ struct ValueMaker<ErrorHandler, ConversionMode::StrictConvert>
 
 
 template<typename ErrorHandler>
-struct ValueMaker<ErrorHandler, ConversionMode::StrictPreChecked>
+struct value_maker<ErrorHandler, conversion_mode::Prechecked>
 {
     auto operator()(
         oscpack::ReceivedMessageArgumentIterator arg,
@@ -272,7 +280,7 @@ struct ValueMaker<ErrorHandler, ConversionMode::StrictPreChecked>
       using namespace oscpack;
       using namespace eggs::variants;
       struct vis {
-          ValueMaker<ErrorHandler, ConversionMode::StrictPreChecked>& parent;
+          value_maker<ErrorHandler, conversion_mode::Prechecked>& parent;
           oscpack::ReceivedMessageArgumentIterator& it;
 
           using return_type = void;
@@ -319,7 +327,7 @@ struct ValueMaker<ErrorHandler, ConversionMode::StrictPreChecked>
             int n = 0;
             const char* data{};
             it->AsBlobUnchecked(reinterpret_cast<const void*&>(data), n);
-            val = coppa::Generic{data, n};
+            val = coppa::Generic{std::string(data, n)};
             ++it;
           }
 
@@ -332,7 +340,7 @@ struct ValueMaker<ErrorHandler, ConversionMode::StrictPreChecked>
 
 
 template<typename ErrorHandler>
-struct ValueMaker<ErrorHandler, ConversionMode::StrictIgnore>
+struct value_maker<ErrorHandler, conversion_mode::Ignore>
 {
     auto operator()(
         oscpack::ReceivedMessageArgumentIterator arg,
@@ -341,7 +349,7 @@ struct ValueMaker<ErrorHandler, ConversionMode::StrictIgnore>
       using namespace oscpack;
       using namespace eggs::variants;
       struct vis {
-          ValueMaker<ErrorHandler, ConversionMode::StrictIgnore>& parent;
+          value_maker<ErrorHandler, conversion_mode::Ignore>& parent;
           oscpack::ReceivedMessageArgumentIterator& it;
 
           using return_type = void;
@@ -391,7 +399,7 @@ struct ValueMaker<ErrorHandler, ConversionMode::StrictIgnore>
             else
             {
               // Move the iterator to the end of the array
-              it = skipArray(it);
+              it = skip_array(it);
             }
           }
 
@@ -415,7 +423,7 @@ struct ValueMaker<ErrorHandler, ConversionMode::StrictIgnore>
 
 
 template<typename ErrorHandler>
-struct ValueMaker<ErrorHandler, ConversionMode::Replace>
+struct value_maker<ErrorHandler, conversion_mode::Replace>
 {
     auto operator()(
         oscpack::ReceivedMessageArgumentIterator it,
@@ -425,48 +433,142 @@ struct ValueMaker<ErrorHandler, ConversionMode::Replace>
       using namespace oscpack;
 
       auto& arg = *it;
-      switch(arg.TypeTag())
+      auto type = arg.TypeTag();
+      if(type == ARRAY_BEGIN_TYPE_TAG)
       {
-        case INT32_TYPE_TAG:
-          elt = arg.AsInt32Unchecked();
-        case FLOAT_TYPE_TAG:
-          elt = arg.AsFloatUnchecked();
-        case TRUE_TYPE_TAG:
-          elt = true;
-        case FALSE_TYPE_TAG:
-          elt = false;
-        case CHAR_TYPE_TAG:
-          elt = arg.AsCharUnchecked();
-        case STRING_TYPE_TAG:
-          elt = std::string(arg.AsStringUnchecked());
-        case oscpack::ARRAY_BEGIN_TYPE_TAG:
+        Tuple t;
+        it = read_array(*this, it, t);
+        elt = t;
+        return it;
+      }
+      else
+      {
+        switch(type)
         {
-          Tuple t;
-          it = read_array(*this, it, t);
-          elt = t;
-          break;
+          case INT32_TYPE_TAG:
+            elt = arg.AsInt32Unchecked();
+            break;
+          case FLOAT_TYPE_TAG:
+            elt = arg.AsFloatUnchecked();
+            break;
+          case TRUE_TYPE_TAG:
+            elt = true;
+            break;
+          case FALSE_TYPE_TAG:
+            elt = false;
+            break;
+          case CHAR_TYPE_TAG:
+            elt = arg.AsCharUnchecked();
+            break;
+          case STRING_TYPE_TAG:
+            elt = std::string(arg.AsStringUnchecked());
+            break;
+          case BLOB_TYPE_TAG:
+          {
+            int n = 0;
+            const char* data{};
+            arg.AsBlobUnchecked(reinterpret_cast<const void*&>(data), n);
+            elt = coppa::Generic{std::string(data, n)};
+            break;
+          }
+            // Arrays should be handled elsewhere
+          default:
+            elt = Impulse{}; // ? or not ?
+            break;
         }
-        case BLOB_TYPE_TAG:
-        {
-          int n = 0;
-          const char* data{};
-          arg.AsBlobUnchecked(reinterpret_cast<const void*&>(data), n);
-          elt = coppa::Generic{std::string(data, n)};
-        }
-          // Arrays should be handled elsewhere
-        default:
-          elt = Impulse{}; // ? or not ?
-          break;
+
+        return ++it;
       }
     }
 };
 
-/*
-template<typename ErrorHandler>
-struct ValueMaker<ErrorHandler, ConversionMode::Init>
-{
 
+// Used to read all the Values in an OSC message.
+template<typename ErrorHandler, conversion_mode Conv>
+struct values_reader;
+
+
+template<typename ErrorHandler>
+struct values_reader<ErrorHandler, conversion_mode::Convert>
+{
+    void operator()(
+        oscpack::ReceivedMessageArgumentIterator it,
+        oscpack::ReceivedMessageArgumentIterator end_it,
+        Values& source
+        )
+    {
+      value_maker<
+          ErrorHandler,
+          conversion_mode::Convert> converter;
+
+      int max_values = source.variants.size();
+      for(int i = 0; it != end_it && i < max_values; i++)
+      {
+        it = converter(it, source.variants[i]);
+      }
+    }
 };
-*/
+
+
+template<typename ErrorHandler>
+struct values_reader<ErrorHandler, conversion_mode::Ignore>
+{
+    void operator()(
+        oscpack::ReceivedMessageArgumentIterator it,
+        oscpack::ReceivedMessageArgumentIterator end_it,
+        Values& source
+        )
+    {
+      // Should we ignore the whole message,
+      // or still accept the "correct" part ?
+      // TODO
+      assert(false);
+    }
+};
+
+
+template<typename ErrorHandler>
+struct values_reader<ErrorHandler, conversion_mode::Prechecked>
+{
+    void operator()(
+        oscpack::ReceivedMessageArgumentIterator it,
+        oscpack::ReceivedMessageArgumentIterator end_it,
+        Values& source
+        )
+    {
+      value_maker<
+          ErrorHandler,
+          conversion_mode::Prechecked> converter;
+
+      for(int i = 0; it != end_it; i++)
+      {
+        it = converter(it, source.variants[i]);
+      }
+    }
+};
+
+template<typename ErrorHandler>
+struct values_reader<ErrorHandler, conversion_mode::Replace>
+{
+    void operator()(
+        oscpack::ReceivedMessageArgumentIterator it,
+        oscpack::ReceivedMessageArgumentIterator end_it,
+        Values& source
+        )
+    {
+      value_maker<
+          ErrorHandler,
+          conversion_mode::Replace> converter;
+
+      source.variants.clear();
+      while(it != end_it)
+      {
+        Variant v;
+        it = converter(it, v);
+        source.variants.push_back(std::move(v));
+      }
+    }
+};
+
 }
 }

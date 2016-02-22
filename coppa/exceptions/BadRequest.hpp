@@ -9,6 +9,7 @@ class PathNotFoundException: public std::domain_error
     PathNotFoundException(const std::string& message):
       std::domain_error{"Requested path not found : " + message} { }
 };
+
 class BadRequestException: public std::domain_error
 {
   public:
@@ -18,3 +19,14 @@ class BadRequestException: public std::domain_error
     BadRequestException(const std::string& message):
       std::domain_error{"Bad request : " + message} { }
 };
+
+class InvalidInputException: public std::domain_error
+{
+  public:
+    InvalidInputException():
+      std::domain_error{"Invalid input"} { }
+
+    InvalidInputException(const std::string& message):
+      std::domain_error{"Invalid input : " + message} { }
+};
+
