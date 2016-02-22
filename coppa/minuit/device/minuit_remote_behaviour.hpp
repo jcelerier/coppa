@@ -74,33 +74,33 @@ struct minuit_remote_behaviour<
 
         switch(attr)
         {
-          case minuit_attributes::Value:
+          case minuit_attribute::Value:
             map.update_attributes(
                   address,
                   this->get_values(mess_it, mess.ArgumentsEnd()));
             break;
-          case minuit_attributes::Type:
+          case minuit_attribute::Type:
             // default-initialize with the type
             map.update_attributes(
                   address,
                   from_minuit_type_text(mess_it->AsString()));
             break;
-          case minuit_attributes::RangeBounds:
+          case minuit_attribute::RangeBounds:
             map.update_attributes(
                   address,
                   this->get_range(mess_it, mess.ArgumentsEnd()));
             break;
-          case minuit_attributes::RangeClipMode:
+          case minuit_attribute::RangeClipMode:
             map.update_attributes(
                   address,
                   from_minuit_bounding_text(mess_it->AsString()));
             break;
-          case minuit_attributes::RepetitionFilter:
+          case minuit_attribute::RepetitionFilter:
             map.update_attributes(
                   address,
                   RepetitionFilter{mess_it->AsBool()});
             break;
-          case minuit_attributes::Service:
+          case minuit_attribute::Service:
             map.update_attributes(
                   address,
                   from_minuit_service_text(mess_it->AsString()));

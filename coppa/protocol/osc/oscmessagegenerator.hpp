@@ -1,6 +1,7 @@
 #pragma once
 #include <coppa/coppa.hpp>
 #include <oscpack/osc/OscOutboundPacketStream.h>
+#include <coppa/minuit/osc/osc.hpp>
 #include <array>
 #include <boost/container/small_vector.hpp>
 #include <coppa/string_view.hpp>
@@ -37,6 +38,18 @@ class MessageGenerator
     template<typename... T>
     const oscpack::OutboundPacketStream& operator()(
         const std::string& name,
+        const T&... args)
+    {
+      p.Clear();
+      p << oscpack::BeginMessageN( name );
+      subfunc(args...);
+      p << oscpack::EndMessage;
+      return p;
+    }
+
+    template<typename... T>
+    const oscpack::OutboundPacketStream& operator()(
+        coppa::string_view name,
         const T&... args)
     {
       p.Clear();

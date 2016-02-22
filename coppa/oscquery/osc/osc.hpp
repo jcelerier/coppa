@@ -8,6 +8,7 @@ inline oscpack::OutboundPacketStream& operator<<(
 {
   using namespace eggs::variants;
   using namespace coppa::oscquery;
+  // TODO visitor
   switch(which(val))
   {
     case Type::int_t:

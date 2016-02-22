@@ -47,6 +47,7 @@ inline oscpack::OutboundPacketStream& operator<<(
 {
   using namespace eggs::variants;
   using namespace coppa::ossia;
+  // TODO visitor
   // See TTOscSocket::SendMessage;
   switch(which(val))
   {

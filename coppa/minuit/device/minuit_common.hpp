@@ -16,7 +16,7 @@ enum class minuit_operation : char
 enum class minuit_type : char
 { Application = 'A', Container = 'C', Data = 'D', None = 'n' };
 
-enum class minuit_attributes
+enum class minuit_attribute
 { Value, Type, Service, Priority, RangeBounds, RangeClipMode, Description, RepetitionFilter };
 
 
@@ -148,19 +148,45 @@ Bounding from_minuit_bounding_text(string_view str)
   }
 }
 
-minuit_attributes get_attribute(string_view str)
+
+auto to_minuit_attribute_text(minuit_attribute str)
+{
+  switch(str) // only unique character
+  {
+    case minuit_attribute::Value:
+      return "value";
+    case minuit_attribute::Service:
+      return "service";
+    case minuit_attribute::Type:
+      return "type";
+    case minuit_attribute::Priority:
+      return "priority";
+    case minuit_attribute::RangeBounds:
+      return "rangeBounds";
+    case minuit_attribute::RangeClipMode:
+      return "clipMode";
+    case minuit_attribute::Description:
+      return "description";
+    case minuit_attribute::RepetitionFilter:
+      return "repetitionFilter";
+    default:
+      throw;
+  }
+}
+
+minuit_attribute get_attribute(string_view str)
 {
   // requires str.size() > 0
   switch(str[0])
   {
     case 'v': // value
-      return minuit_attributes::Value;
+      return minuit_attribute::Value;
     case 't': // type
-      return minuit_attributes::Type;
+      return minuit_attribute::Type;
     case 's': // service
-      return minuit_attributes::Service;
+      return minuit_attribute::Service;
     case 'p': // priority
-      return minuit_attributes::Priority;
+      return minuit_attribute::Priority;
     case 'r':
     {
       if(str.size() >= 6)
@@ -168,11 +194,11 @@ minuit_attributes get_attribute(string_view str)
         switch(str[5])
         {
           case 'B': // rangeBounds
-            return minuit_attributes::RangeBounds;
+            return minuit_attribute::RangeBounds;
           case 'C': // rangeClipMode
-            return minuit_attributes::RangeClipMode;
+            return minuit_attribute::RangeClipMode;
           case 'i': // repetitionsFilter
-            return minuit_attributes::RepetitionFilter;
+            return minuit_attribute::RepetitionFilter;
         }
       }
       // if not returning, throw

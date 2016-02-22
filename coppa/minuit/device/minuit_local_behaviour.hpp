@@ -58,37 +58,37 @@ struct minuit_local_behaviour<
         {
           switch(attr)
           {
-            case minuit_attributes::Value:
+            case minuit_attribute::Value:
               dev.sender.send(dev.name() + ":get",
                               full_address.data(),
                               static_cast<const Values&>(*it)
                               );
               break;
-            case minuit_attributes::Type:
+            case minuit_attribute::Type:
               dev.sender.send(dev.name() + ":get",
                               full_address.data(),
                               to_minuit_type_text(*it)
                               );
               break;
-            case minuit_attributes::RangeBounds:
+            case minuit_attribute::RangeBounds:
               dev.sender.send(dev.name() + ":get",
                               full_address.data(),
                               static_cast<const Range&>(*it)
                               );
               break;
-            case minuit_attributes::RangeClipMode:
+            case minuit_attribute::RangeClipMode:
               dev.sender.send(dev.name() + ":get",
                               full_address.data(),
                               to_minuit_bounding_text(it->bounding)
                               );
               break;
-            case minuit_attributes::RepetitionFilter:
+            case minuit_attribute::RepetitionFilter:
               dev.sender.send(dev.name() + ":get",
                               full_address.data(),
                               it->repetitionFilter
                               );
               break;
-            case minuit_attributes::Service:
+            case minuit_attribute::Service:
               dev.sender.send(dev.name() + ":get",
                               full_address.data(),
                               to_minuit_service_text(it->access)
@@ -97,7 +97,7 @@ struct minuit_local_behaviour<
           }
         }
       }
-      }
+    }
 
 };
 
@@ -108,9 +108,12 @@ struct minuit_local_behaviour<
     minuit_operation::Listen>
 {
     template<typename Device, typename Map>
-    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    auto operator()(
+        Device& dev,
+        Map& map,
+        const oscpack::ReceivedMessage& mess)
     {
-
+      // Add the address to the listeners
     }
 };
 

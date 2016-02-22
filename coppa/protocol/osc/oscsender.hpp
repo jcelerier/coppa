@@ -41,6 +41,15 @@ class sender
     }
 
 
+    template<typename... Args>
+    void send(string_view address, Args&&... args)
+    {
+      send_impl(m_gen(
+                  address,
+                  std::forward<Args>(args)...));
+    }
+
+
     template<int N, typename... Args>
     void send(oscpack::small_string_base<N> address, Args&&... args)
     {

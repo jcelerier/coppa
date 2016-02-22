@@ -54,6 +54,8 @@ add_executable(ossia_osc_server "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/ossi
 target_link_libraries(ossia_osc_server coppa)
 add_executable(ossia_minuit_remote "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/ossia/ossia_minuit_remote.cpp")
 target_link_libraries(ossia_minuit_remote coppa)
+add_executable(ossia_minuit_listener_local "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/ossia/ossia_minuit_listener_local.cpp")
+target_link_libraries(ossia_minuit_listener_local coppa)
 
 add_executable(test_oscquery_map "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/oscquery/map.cpp")
 target_link_libraries(test_oscquery_map coppa)
