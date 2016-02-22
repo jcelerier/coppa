@@ -20,9 +20,10 @@ int main()
   auto p3 = make_parameter("/titi/plop");
   auto p4 = make_parameter("/foo/bar/baz");
   auto p5 = make_parameter("/foo/blah");
-  p5.access = Access::Mode::Get;
 
   p2.variants.push_back(0.5f);
+  p2.min = -25.f;
+  p2.max = 25.f;
 
   p3.variants.push_back(std::string("fuu"));
 
@@ -31,6 +32,7 @@ int main()
   p5.variants.push_back(3);
   p5.variants.push_back(4);
   p5.variants.push_back(1);
+  p5.access = Access::Mode::Get;
 
   base_map.insert(p1);
   base_map.insert(p2);

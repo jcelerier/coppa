@@ -39,10 +39,6 @@ class minuit_message_handler :
 
       if(idx != std::string::npos)
       {
-        //string_view application(address.data(), idx);
-        //string_view request(address.data() + idx + 1, address.size() - application.size() - 1);
-
-        //std::cerr << application << " " << request << std::endl;
         auto req = get_command(address[idx]);
         auto op = get_operation(*(address.data() + idx + 1));
         switch(req)
@@ -117,17 +113,18 @@ class minuit_message_handler :
         const oscpack::ReceivedMessage& m,
         const oscpack::IpEndpointName& ip)
     {
-      auto l = map.acquire_write_lock();
       string_view address{m.AddressPattern()};
       oscpack::debug(std::cerr, m);
-      // We have to check if it's a plain osc address, or a Minuit request address.
 
+      // We have to check if it's a plain osc address, or a Minuit request address.
       if(address.size() > 0 && address[0] == '/')
       {
-        osc_message_handler::handleOSCMessage(dev, map.get_data_map(), address, m);
+        lax_osc_handler{}(dev, Values{None{}}, address, m);
       }
       else
       {
+        // Handling of the Minuit protocol
+        auto l = map.acquire_read_lock();
         handleMinuitMessage(dev, map.get_data_map(), address, m);
       }
     }
