@@ -230,7 +230,6 @@ class minuit_listening_local_device
           cmd += ":";
           cmd += to_minuit_attribute_text(minuit_attribute::Value);
 
-          std::cerr << "sending" << string_view(addr) << " " << string_view(cmd) << " " << eggs::variants::get<float>(res.variants[0]) << "\n";
           client.sender.send(
                 string_view(addr),
                 string_view(cmd),

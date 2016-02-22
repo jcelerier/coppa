@@ -97,7 +97,7 @@ template<
     typename Parser,
     typename QueryProtocolClient,
     typename RemoteMapSetter>
-class remote_query_device : 
+class remote_query_device :
     public QueryProtocolClient
 {
   public:
@@ -108,18 +108,21 @@ class remote_query_device :
 
     }
 
-    auto& map() 
+    auto& map()
     { return m_setter.map(); }
-    
+
     auto& map() const
     { return m_setter.map(); }
-    
+
+    auto& setter() const
+    { return m_setter; }
+
     std::function<void()> onConnect;
     std::function<void()> onUpdate;
 
   protected:
     RemoteMapSetter& m_setter;
-    
+
   private:
     void on_query_server_message(const std::string& message)
     try

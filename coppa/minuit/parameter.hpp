@@ -94,7 +94,7 @@ inline bool operator!=(const small_string& string, const char* ptr)
   return strcmp(string.data(), ptr);
 }
 
-small_string getOSCType(const Tuple& tuple)
+inline small_string getOSCType(const Tuple& tuple)
 {
   using namespace oscpack;
   small_string str(1, ARRAY_BEGIN_TYPE_TAG);
@@ -106,7 +106,7 @@ small_string getOSCType(const Tuple& tuple)
   return str;
 }
 
-small_string getOSCType(const Values& values)
+inline small_string getOSCType(const Values& values)
 {
   using namespace oscpack;
   small_string str;

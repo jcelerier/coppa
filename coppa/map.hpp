@@ -81,7 +81,7 @@ std::vector<string_view> get_children_names(
 }
 
 
-bool isRoot(string_view address)
+inline bool isRoot(string_view address)
 {
   return address.size() == 1;
 }
