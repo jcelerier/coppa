@@ -198,7 +198,7 @@ inline auto jsonToRangeArray(const json_value& val)
     {
       for(const auto& enum_val : valToArray(thirdElement))
       {
-        range.values.push_back(jsonToVariant(enum_val));
+        range.range_values.push_back(jsonToVariant(enum_val));
       }
     }
     else
@@ -213,7 +213,7 @@ inline auto jsonToRangeArray(const json_value& val)
 }
 
 inline auto jsonToRangeArray_checked(
-    const json_value& val, 
+    const json_value& val,
     const vector<std::size_t>& type_vec)
 {
   vector<Range> ranges;
@@ -235,7 +235,7 @@ inline auto jsonToRangeArray_checked(
     {
       for(const auto& enum_val : valToArray(thirdElement))
       {
-        range.values.push_back(jsonToVariant_checked(enum_val, current_type));
+        range.range_values.push_back(jsonToVariant_checked(enum_val, current_type));
       }
     }
     else
@@ -326,7 +326,7 @@ void readObject(Map& map, const json_map& obj)
           const auto& elt = p.ranges[i];
           json_assert(elt.min.which() == elt.min.npos || elt.min.which() == type_vec[i]);
           json_assert(elt.max.which() == elt.max.npos || elt.max.which() == type_vec[i]);
-          for(const auto& range_elt : elt.values)
+          for(const auto& range_elt : elt.range_values)
           {
             json_assert(range_elt.which() == range_elt.npos || range_elt.which() == type_vec[i]);
           }

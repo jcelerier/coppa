@@ -227,5 +227,6 @@ minuit_operation get_operation(string_view str)
   return get_operation(str[0]);
 }
 
+
 }
 }

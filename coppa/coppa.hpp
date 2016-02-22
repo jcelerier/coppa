@@ -94,10 +94,10 @@ struct Range
 {
     Var_T min;
     Var_T max;
-    std::vector<Var_T> values;
+    std::vector<Var_T> range_values;
     bool operator==(const Range& other) const
     {
-      return other.min == min && other.max == max && other.values == values;
+      return other.min == min && other.max == max && other.range_values == range_values;
     }
 };
 

@@ -77,7 +77,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         REQUIRE(get<int>(p.values.front()) == 15);
         REQUIRE(get<int>(p.ranges.front().min) == 0);
         REQUIRE(get<int>(p.ranges.front().max) == 100);
-        REQUIRE(p.ranges.front().values.empty());
+        REQUIRE(p.ranges.front().range_values.empty());
 
         REQUIRE(p.description.empty());
         REQUIRE(p.tags.empty());
@@ -113,7 +113,7 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         REQUIRE(get<float>(p.values.front()) == 15.5f);
         REQUIRE(get<float>(p.ranges.front().min) == 0.3f);
         REQUIRE(get<float>(p.ranges.front().max) == 10.4f);
-        REQUIRE(p.ranges.front().values.empty());
+        REQUIRE(p.ranges.front().range_values.empty());
 
         REQUIRE(p.description.empty());
         REQUIRE(p.tags.empty());
@@ -150,14 +150,14 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         const auto& stringRange = p.ranges.front();
         REQUIRE(!stringRange.min);
         REQUIRE(!stringRange.max);
-        REQUIRE(stringRange.values.size() == 2);
-        REQUIRE(std::find(begin(stringRange.values), end(stringRange.values), Variant(std::string("yodee"))) != end(stringRange.values));
-        REQUIRE(std::find(begin(stringRange.values), end(stringRange.values), Variant(std::string("yaho"))) != end(stringRange.values));
+        REQUIRE(stringRange.range_values.size() == 2);
+        REQUIRE(std::find(begin(stringRange.range_values), end(stringRange.range_values), Variant(std::string("yodee"))) != end(stringRange.range_values));
+        REQUIRE(std::find(begin(stringRange.range_values), end(stringRange.range_values), Variant(std::string("yaho"))) != end(stringRange.range_values));
 
         const auto& intRange = p.ranges.back();
         REQUIRE(!intRange.min);
         REQUIRE(!intRange.max);
-        REQUIRE(intRange.values.empty());
+        REQUIRE(intRange.range_values.empty());
 
         REQUIRE(p.description.empty());
         REQUIRE(p.tags.empty());
@@ -211,14 +211,14 @@ TEST_CASE( "path_added parsing", "[parser]" ) {
         const auto& stringRange = p.ranges.front();
         REQUIRE(!stringRange.min);
         REQUIRE(!stringRange.max);
-        REQUIRE(stringRange.values.size() == 2);
-        REQUIRE(std::find(begin(stringRange.values), end(stringRange.values), Variant(std::string("yodee"))) != end(stringRange.values));
-        REQUIRE(std::find(begin(stringRange.values), end(stringRange.values), Variant(std::string("yaho"))) != end(stringRange.values));
+        REQUIRE(stringRange.range_values.size() == 2);
+        REQUIRE(std::find(begin(stringRange.range_values), end(stringRange.range_values), Variant(std::string("yodee"))) != end(stringRange.range_values));
+        REQUIRE(std::find(begin(stringRange.range_values), end(stringRange.range_values), Variant(std::string("yaho"))) != end(stringRange.range_values));
 
         const auto& intRange = p.ranges.back();
         REQUIRE(!intRange.min);
         REQUIRE(!intRange.max);
-        REQUIRE(intRange.values.empty());
+        REQUIRE(intRange.range_values.empty());
 
         REQUIRE(p.description.empty());
         REQUIRE(p.tags.empty());
@@ -287,14 +287,14 @@ TEST_CASE( "paths_added parsing", "[parser]" ) {
         const auto& stringRange = p2.ranges.front();
         REQUIRE(!stringRange.min);
         REQUIRE(!stringRange.max);
-        REQUIRE(stringRange.values.size() == 2);
-        REQUIRE(std::find(begin(stringRange.values), end(stringRange.values), Variant(std::string("yodee"))) != end(stringRange.values));
-        REQUIRE(std::find(begin(stringRange.values), end(stringRange.values), Variant(std::string("yaho"))) != end(stringRange.values));
+        REQUIRE(stringRange.range_values.size() == 2);
+        REQUIRE(std::find(begin(stringRange.range_values), end(stringRange.range_values), Variant(std::string("yodee"))) != end(stringRange.range_values));
+        REQUIRE(std::find(begin(stringRange.range_values), end(stringRange.range_values), Variant(std::string("yaho"))) != end(stringRange.range_values));
 
         const auto& intRange = p2.ranges.back();
         REQUIRE(!intRange.min);
         REQUIRE(!intRange.max);
-        REQUIRE(intRange.values.empty());
+        REQUIRE(intRange.range_values.empty());
 
         REQUIRE(p2.description.empty());
         REQUIRE(p2.tags.empty());

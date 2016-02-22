@@ -71,6 +71,10 @@ struct minuit_local_behaviour<
                               );
               break;
             case minuit_attributes::RangeBounds:
+              dev.sender.send(dev.name() + ":get",
+                              full_address.data(),
+                              static_cast<const Range&>(*it)
+                              );
               break;
             case minuit_attributes::RangeClipMode:
               dev.sender.send(dev.name() + ":get",

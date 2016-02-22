@@ -88,12 +88,12 @@ inline json_array getJsonRangeArray(
     else
     { addValueToJsonArray(range_subarray, range.max); }
 
-    if(range.values.empty())
+    if(range.range_values.empty())
     { range_subarray.push_back(json_value::null_t{}); }
     else
     {
       json_array range_values_array;
-      for(auto& elt : range.values)
+      for(auto& elt : range.range_values)
       {
         addValueToJsonArray(range_values_array, elt);
       }

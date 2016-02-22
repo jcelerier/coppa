@@ -125,9 +125,10 @@ struct RepetitionFilter
 };
 
 template<typename ValueType> using Enum = std::vector<ValueType>;
-
+using Range = coppa::Range<Variant>;
 using Parameter = AttributeAggregate<
   Values,
+  Range,
   Destination,
   Description,
   Access,

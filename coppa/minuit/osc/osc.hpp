@@ -86,5 +86,19 @@ inline oscpack::OutboundPacketStream& operator<<(
 
   return p;
 }
+
+
+
+inline oscpack::OutboundPacketStream& operator<<(
+    oscpack::OutboundPacketStream& p,
+    const coppa::ossia::Range& range)
+{
+  using namespace coppa;
+
+  p << range.min << range.max;
+
+  return p;
+}
+
 }
 }

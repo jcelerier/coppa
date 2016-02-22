@@ -29,8 +29,21 @@ struct minuit_remote_behaviour<
         oscpack::ReceivedMessageArgumentIterator end_it)
     {
       Values v;
+      for(auto it = beg_it; it != end_it; ++it)
+      {
+        //v.variants.push_back(get_value(*it));
+      }
       return v;
     }
+
+    Range get_range(
+        oscpack::ReceivedMessageArgumentIterator beg_it,
+        oscpack::ReceivedMessageArgumentIterator end_it)
+    {
+      Range v;
+      return v;
+    }
+
 
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
@@ -73,6 +86,9 @@ struct minuit_remote_behaviour<
                   from_minuit_type_text(mess_it->AsString()));
             break;
           case minuit_attributes::RangeBounds:
+            map.update_attributes(
+                  address,
+                  this->get_range(mess_it, mess.ArgumentsEnd()));
             break;
           case minuit_attributes::RangeClipMode:
             map.update_attributes(
@@ -227,8 +243,6 @@ struct minuit_remote_behaviour<
           dev.sender.send(sub_request, string_view(str));
         }
       }
-
-
     }
 
     template<typename Device, typename Map>

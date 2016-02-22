@@ -78,7 +78,7 @@ inline coppa::oscquery::Range random_range()
     int n = my_rand<int>() % 50;
     for(int i = 0; i < n; i++)
     {
-      r.values.push_back(my_rand<T>());
+      r.range_values.push_back(my_rand<T>());
     }
   }
 
