@@ -10,7 +10,7 @@ option(OPTIMIZED "Heavily optimized build" FALSE)
 option(EXAMPLES "Build examples" FALSE)
 
 if(OPTIMIZED)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -flto")
 endif()
 
 find_package(Qt5 5.5 REQUIRED COMPONENTS Core Widgets Gui Multimedia )
@@ -48,6 +48,8 @@ target_link_libraries(client_test coppa)
 
 add_executable(benchmark "${CMAKE_CURRENT_SOURCE_DIR}/tests/benchmarks/benchmark.cpp")
 target_link_libraries(benchmark coppa)
+add_executable(minuit_send_perf "${CMAKE_CURRENT_SOURCE_DIR}/tests/benchmarks/minuit/send_perf.cpp")
+target_link_libraries(minuit_send_perf coppa)
 
 
 add_executable(ossia_osc_server "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/ossia/ossia_osc_server.cpp")

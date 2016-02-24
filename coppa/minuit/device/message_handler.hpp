@@ -114,7 +114,6 @@ class minuit_message_handler :
         const oscpack::IpEndpointName& ip)
     {
       string_view address{m.AddressPattern()};
-      oscpack::debug(std::cerr, m);
 
       // We have to check if it's a plain osc address, or a Minuit request address.
       if(address.size() > 0 && address[0] == '/')

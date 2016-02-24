@@ -44,8 +44,20 @@ int main()
 
   minuit_listening_local_device test(map, 9998, "127.0.0.1", 13579);
 
-  auto test_functor = [] (const Parameter& p) {
-    std::cerr << p.destination << std::endl;
+  auto t1 = std::chrono::high_resolution_clock::now();
+  auto test_functor = [&] (const Parameter& p) {
+    //if(p.destination == "/tutu")
+    {
+      if(which(p.variants[0]) == Type::int_t)
+      {
+        auto res = eggs::variants::get<int>(p.variants[0]);
+        if(res >= 9999990)
+        {
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cerr << "time " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "\n";
+        }
+      }
+    }
   };
 
   test.on_value_changed.connect(test_functor);
@@ -53,8 +65,10 @@ int main()
   while(true)
   {
     std::this_thread::sleep_for(std::chrono::seconds(1));
+    /*
     test.update<string_view>(p2.destination, [] (auto& param) {
-      param.variants[0] = float(rand());
+      param.variants[0] = int(rand());
     });
+    */
   }
 }
