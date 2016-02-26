@@ -13,6 +13,18 @@ enum class minuit_command : char
 enum class minuit_operation : char
 { Listen = 'l', Namespace = 'n', Get = 'g'};
 
+enum class minuit_action : int {
+  NamespaceRequest,
+  NamespaceReply,
+  NamespaceError,
+  GetRequest,
+  GetReply,
+  GetError,
+  ListenRequest,
+  ListenReply,
+  ListenError
+};
+
 enum class minuit_type : char
 { Application = 'A', Container = 'C', Data = 'D', None = 'n' };
 

@@ -196,8 +196,7 @@ struct minuit_remote_behaviour<
         oscpack::ReceivedMessageArgumentIterator end_it)
     {
       using namespace oscpack;
-      small_string_base<32> sub_request{dev.name()};
-      sub_request.append("?namespace");
+      auto sub_request = dev.nameTable.get_action(minuit_action::NamespaceRequest);
 
       // Get the sub-nodes
       for(auto node : get_nodes(beg_it, end_it))
@@ -216,7 +215,6 @@ struct minuit_remote_behaviour<
         // request children
         dev.sender.send(sub_request, string_view(p.destination));
       }
-
     }
 
     template<typename Device, typename Map>
@@ -231,8 +229,7 @@ struct minuit_remote_behaviour<
       auto it = map.find(address);
       if(it != map.end())
       {
-        small_string_base<32> sub_request{dev.name()};
-        sub_request.append("?get");
+        auto sub_request = dev.nameTable.get_action(minuit_action::GetRequest);
 
         for(auto attrib : get_attributes(beg_it, end_it))
         {

@@ -3,6 +3,7 @@
 #include <coppa/device/local.hpp>
 #include <coppa/minuit/device/message_handler.hpp>
 #include <coppa/minuit/device/minuit_local_behaviour.hpp>
+#include <coppa/minuit/device/minuit_remote_behaviour.hpp>
 #include <coppa/map.hpp>
 
 #include <coppa/protocol/osc/oscreceiver.hpp>
@@ -34,17 +35,17 @@ class osc_local_device
   public:
     using map_type = Map;
     using parent_t = osc_local_device<Map, DataProtocolServer, DataProtocolHandler, DataProtocolSender>;
+    using data_handler_t = DataProtocolHandler;
 
+    template<typename Handler>
     osc_local_device(
         Map& map,
         unsigned int in_port,
         std::string out_ip,
-        unsigned int out_port):
+        unsigned int out_port,
+        Handler h):
       m_map{map},
-      m_data_server{in_port, [&] (const auto& m, const auto& ip)
-      {
-        DataProtocolHandler::on_messageReceived(*this, m_map, m, ip);
-      }},
+      m_data_server{in_port, h},
       sender{out_ip, int(out_port)}
     {
       m_data_server.run();
@@ -77,7 +78,19 @@ class osc_local_impl : public osc_local_device<
     coppa::ossia::osc_message_handler,
     coppa::osc::sender>
 {
-    using parent_t::osc_local_device;
+  public:
+    osc_local_impl(
+        map_type& map,
+        unsigned int in_port,
+        std::string out_ip,
+        unsigned int out_port):
+      osc_local_device{map, in_port, out_ip, out_port,
+                       [&] (const auto& m, const auto& ip) {
+      data_handler_t::on_messageReceived(*this, this->map(), m, ip);
+    }}
+    {
+
+    }
 };
 
 class minuit_local_impl : public osc_local_device<
@@ -86,9 +99,52 @@ class minuit_local_impl : public osc_local_device<
     coppa::ossia::minuit_message_handler<minuit_local_behaviour>,
     coppa::osc::sender>
 {
-    using parent_t::osc_local_device;
+  public:
+    minuit_local_impl(
+        const std::string& name,
+        map_type& map,
+        unsigned int in_port,
+        std::string out_ip,
+        unsigned int out_port):
+      osc_local_device{map, in_port, out_ip, out_port,
+                       [&] (const auto& m, const auto& ip) {
+      data_handler_t::on_messageReceived(*this, this->map(), m, ip);
+    }},
+      nameTable{name}
+    {
+
+    }
+
+    minuit_name_table nameTable;
 };
 
+
+
+class minuit_remote_impl : public osc_local_device<
+    locked_map<basic_map<ParameterMapType<Parameter>>>,
+    osc::receiver,
+    minuit_message_handler<minuit_remote_behaviour>,
+    osc::sender>
+{
+  public:
+
+    minuit_remote_impl(
+        const std::string& name,
+        map_type& map,
+        unsigned int in_port,
+        std::string out_ip,
+        unsigned int out_port):
+      osc_local_device{map, in_port, out_ip, out_port,
+                       [&] (const auto& m, const auto& ip) {
+      data_handler_t::on_messageReceived(*this, this->map(), m, ip);
+    }},
+      nameTable{name}
+    {
+
+    }
+
+    minuit_name_table nameTable;
+};
 // Remote OSC device :
 // Can just send data to the outside
 // Consists in a map set by the user or loaded, and a sender

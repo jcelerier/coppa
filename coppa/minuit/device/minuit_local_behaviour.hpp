@@ -2,7 +2,7 @@
 #include <coppa/minuit/device/minuit_common.hpp>
 #include <coppa/string_view.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
-
+#include <coppa/minuit/device/minuit_name_table.hpp>
 namespace coppa
 {
 namespace ossia
@@ -37,7 +37,7 @@ struct minuit_local_behaviour<
         auto it = map.find(full_address);
         if(it != map.end())
         {
-          dev.sender.send(dev.name() + ":get",
+          dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
                           full_address.data(),
                           static_cast<const Values&>(*it)
                           );
@@ -59,37 +59,37 @@ struct minuit_local_behaviour<
           switch(attr)
           {
             case minuit_attribute::Value:
-              dev.sender.send(dev.name() + ":get",
+              dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
                               full_address.data(),
                               static_cast<const Values&>(*it)
                               );
               break;
             case minuit_attribute::Type:
-              dev.sender.send(dev.name() + ":get",
+              dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
                               full_address.data(),
                               to_minuit_type_text(*it)
                               );
               break;
             case minuit_attribute::RangeBounds:
-              dev.sender.send(dev.name() + ":get",
+              dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
                               full_address.data(),
                               static_cast<const Range&>(*it)
                               );
               break;
             case minuit_attribute::RangeClipMode:
-              dev.sender.send(dev.name() + ":get",
+              dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
                               full_address.data(),
                               to_minuit_bounding_text(it->bounding)
                               );
               break;
             case minuit_attribute::RepetitionFilter:
-              dev.sender.send(dev.name() + ":get",
+              dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
                               full_address.data(),
                               it->repetitionFilter
                               );
               break;
             case minuit_attribute::Service:
-              dev.sender.send(dev.name() + ":get",
+              dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
                               full_address.data(),
                               to_minuit_service_text(it->access)
                               );
@@ -98,7 +98,6 @@ struct minuit_local_behaviour<
         }
       }
     }
-
 };
 
 // Listen
@@ -128,7 +127,7 @@ struct minuit_local_behaviour<
         Device& dev,
         Children&& c)
     {
-      dev.sender.send(dev.name() + ":namespace",
+      dev.sender.send(dev.nameTable.get_action(minuit_action::NamespaceReply),
                       "/",
                       "Application",
                       "nodes={",
@@ -145,8 +144,8 @@ struct minuit_local_behaviour<
         string_view address,
         Children&& c)
     {
-      dev.sender.send(dev.name() + ":namespace",
-                      address.data(),
+      dev.sender.send(dev.nameTable.get_action(minuit_action::NamespaceReply),
+                      address,
                       "Container",
                       "nodes={",
                                c,
@@ -161,8 +160,8 @@ struct minuit_local_behaviour<
         Device& dev,
         string_view address)
     {
-      dev.sender.send(dev.name() + ":namespace",
-                      address.data(),
+      dev.sender.send(dev.nameTable.get_action(minuit_action::NamespaceReply),
+                      address,
                       "Data",
                       "attributes={",
                                     "rangeBounds"      ,

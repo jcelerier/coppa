@@ -194,6 +194,7 @@ class minuit_listening_local_device
 
     minuit_listening_local_device(
         map_type& map,
+        std::string name,
         unsigned int in_port,
         std::string out_ip,
         unsigned int out_port):
@@ -202,13 +203,14 @@ class minuit_listening_local_device
       {
         coppa::ossia::minuit_message_handler<minuit_listening_local_behaviour>::on_messageReceived(*this, m_map, m, ip);
       }},
-      client{out_ip, int(out_port)}
+      client{out_ip, int(out_port)},
+      nameTable{name}
     {
       m_server.run();
     }
 
-    std::string name() const
-    { return "newDevice"; }
+    auto name() const
+    { return nameTable.get_device_name(); }
 
     auto& map() const
     { return m_map; }
@@ -225,7 +227,7 @@ class minuit_listening_local_device
         if(it != client.listened.end())
         {
           // A:listen /WhereToListen:attribute value (each time the attribute change if the listening is turned on)
-          auto addr = name() + ":listen";
+          auto addr = nameTable.get_action(minuit_action::ListenReply);
           auto cmd = path.to_string();
           cmd += ":";
           cmd += to_minuit_attribute_text(minuit_attribute::Value);
@@ -243,9 +245,11 @@ class minuit_listening_local_device
 
     listener client;
     coppa::osc::sender& sender = client.sender;
+    minuit_name_table nameTable;
   private:
     map_type& m_map;
     coppa::osc::receiver m_server;
+
 };
 }
 }

@@ -42,7 +42,7 @@ int main()
   base_map.insert(p5);
   locked_map<basic_map<ParameterMapType<Parameter>>> map(base_map);
 
-  minuit_listening_local_device test(map, 9998, "127.0.0.1", 13579);
+  minuit_listening_local_device test(map, "newDevice", 9998, "127.0.0.1", 13579);
 
   auto t1 = std::chrono::high_resolution_clock::now();
   auto test_functor = [&] (const Parameter& p) {

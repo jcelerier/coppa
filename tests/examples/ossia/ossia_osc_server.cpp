@@ -41,7 +41,7 @@ int main()
   base_map.insert(p5);
   locked_map<basic_map<ParameterMapType<Parameter>>> map(base_map);
 
-  minuit_local_impl test(map, 9998, "127.0.0.1", 13579);
+  minuit_local_impl test("yatto", map, 9998, "127.0.0.1", 13579);
 
   auto test_functor = [] (const Parameter& p) {
     std::cerr << p.destination << std::endl;
