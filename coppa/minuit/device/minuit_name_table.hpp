@@ -20,19 +20,19 @@ class minuit_name_table
 
     void set_device_name(const std::string& name)
     {
-      set_device_name(name);
+      m_name = name;
 
-      m_actions[(int)minuit_action::NamespaceRequest] = name + "?namespace";
-      m_actions[(int)minuit_action::NamespaceReply]   = name + ":namespace";
-      m_actions[(int)minuit_action::NamespaceError]   = name + "!namespace";
+      m_actions[(int)minuit_action::NamespaceRequest] = m_name + "?namespace";
+      m_actions[(int)minuit_action::NamespaceReply]   = m_name + ":namespace";
+      m_actions[(int)minuit_action::NamespaceError]   = m_name + "!namespace";
 
-      m_actions[(int)minuit_action::GetRequest] = name + "?get";
-      m_actions[(int)minuit_action::GetReply]   = name + ":get";
-      m_actions[(int)minuit_action::GetError]   = name + "!get";
+      m_actions[(int)minuit_action::GetRequest] = m_name + "?get";
+      m_actions[(int)minuit_action::GetReply]   = m_name + ":get";
+      m_actions[(int)minuit_action::GetError]   = m_name + "!get";
 
-      m_actions[(int)minuit_action::ListenRequest] = name + "?listen";
-      m_actions[(int)minuit_action::ListenReply]   = name + ":listen";
-      m_actions[(int)minuit_action::ListenError]   = name + "!listen";
+      m_actions[(int)minuit_action::ListenRequest] = m_name + "?listen";
+      m_actions[(int)minuit_action::ListenReply]   = m_name + ":listen";
+      m_actions[(int)minuit_action::ListenError]   = m_name + "!listen";
     }
 
     string_view get_action(minuit_action c)
