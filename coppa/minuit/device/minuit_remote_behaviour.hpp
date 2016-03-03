@@ -1,5 +1,6 @@
 #pragma once
 #include <coppa/minuit/device/minuit_common.hpp>
+#include <coppa/minuit/device/osc_common.hpp>
 #include <coppa/string_view.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
 #include <future>
@@ -29,10 +30,13 @@ struct minuit_remote_behaviour<
         oscpack::ReceivedMessageArgumentIterator end_it)
     {
       Values v;
-      for(auto it = beg_it; it != end_it; ++it)
-      {
-        //v.variants.push_back(get_value(*it));
-      }
+      values_reader<
+          lax_error_handler,
+          conversion_mode::Replace>{}(
+             beg_it,
+             end_it,
+             v);
+
       return v;
     }
 
@@ -41,6 +45,7 @@ struct minuit_remote_behaviour<
         oscpack::ReceivedMessageArgumentIterator end_it)
     {
       Range v;
+      assert(false); // TODO
       return v;
     }
 

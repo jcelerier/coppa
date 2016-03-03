@@ -37,7 +37,6 @@ target_include_directories(coppa INTERFACE
 target_compile_features(coppa INTERFACE cxx_decltype_auto cxx_constexpr cxx_noexcept cxx_variadic_templates cxx_lambda_init_captures)
 target_link_libraries(coppa INTERFACE "${Boost_LIBRARIES}" "${CMAKE_THREAD_LIBS_INIT}" oscpack)
 
-
 # Examples and tests
 if(EXAMPLES)
 add_executable(server_test "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples/server_test.cpp")

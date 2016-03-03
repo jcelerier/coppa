@@ -52,14 +52,11 @@ class osc_local_device
         unsigned int out_port,
         Handler h):
       m_map{map},
-      m_data_server{in_port, h},
+      server{in_port, h},
       sender{out_ip, int(out_port)}
     {
-      m_data_server.run();
+      server.run();
     }
-
-    std::string name() const
-    { return "newDevice"; }
 
     auto& map() const
     { return m_map; }
@@ -75,9 +72,9 @@ class osc_local_device
     Nano::Signal<void(const Parameter&)> on_value_changed;
 
     DataProtocolSender sender;
+    DataProtocolServer server;
   private:
     Map& m_map;
-    DataProtocolServer m_data_server;
 };
 
 }

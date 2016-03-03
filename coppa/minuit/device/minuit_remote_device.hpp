@@ -36,6 +36,11 @@ class minuit_remote_impl : public osc_local_device<
 
     }
 
+    void set_name(const std::string& n)
+    { nameTable.set_device_name(n); }
+    std::string get_name() const
+    { return nameTable.get_device_name().to_string(); }
+
     auto refresh(string_view act, const std::string& root)
     {
         sender.send(act, string_view(root));

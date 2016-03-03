@@ -170,7 +170,7 @@ class basic_map
 
     template<typename Key>
     auto get(Key&& address) const
-    { return *m_map.template get<0>().find(address); }
+    { return *m_map.template get<0>().find(std::forward<Key>(address)); }
 
     operator const Map&() const
     { return m_map; }

@@ -27,7 +27,7 @@ int main()
   }
 
   // Now try to get a value
-  auto get_promise = remote.get("/tutu");
+  auto get_promise = remote.pull("/tutu");
   get_promise.wait();
   auto res = get_promise.get();
 

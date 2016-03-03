@@ -43,14 +43,14 @@ struct strict_osc_handler
       dev.template update<string_view>(
             address,
             [&] (auto& v) {
-        v.variants = current_parameter.variants;
+        v.variants = std::move(current_parameter.variants);
       });
     }
 };
 
 
 /**
- * @brief The strict_osc_handler struct
+ * @brief The lax_osc_handler struct
  *
  * This will be fast, but will replace all
  * the current values and types by the ones received.

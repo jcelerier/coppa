@@ -18,7 +18,7 @@ void refresh(minuit_remote_impl& remote)
 
   // first request namespace
   const char * root = "/";
-  remote.sender.send(remote.name() + "?namespace", root);
+  remote.sender.send(remote.get_name() + "?namespace", root);
 }
 
 int main()
@@ -38,7 +38,7 @@ int main()
   std::this_thread::sleep_for(std::chrono::seconds(1));
   const char * addr = "/tutu";
   auto sv = string_view(addr);
-  auto pattern = remote.name() + "?get";
+  auto pattern = remote.get_name() + "?get";
   auto sp = string_view(pattern);
   auto t1 = std::chrono::high_resolution_clock::now();
   for(int i = 0; i < 10000000; i++)
