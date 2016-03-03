@@ -3,6 +3,8 @@
 #include <coppa/minuit/parameter.hpp>
 #include <coppa/map.hpp>
 #include <coppa/protocol/osc/oscsender.hpp>
+#include <coppa/protocol/osc/oscreceiver.hpp>
+#include <coppa/minuit/device/message_handler.hpp>
 
 namespace coppa
 {
@@ -17,6 +19,7 @@ class osc_local_impl : public osc_local_device<
 {
   public:
     osc_local_impl(
+        const std::string& name,
         map_type& map,
         unsigned int in_port,
         std::string out_ip,
@@ -24,10 +27,39 @@ class osc_local_impl : public osc_local_device<
       osc_local_device{map, in_port, out_ip, out_port,
                        [&] (const auto& m, const auto& ip) {
       data_handler_t::on_messageReceived(*this, this->map(), m, ip);
-    }}
+    }},
+      m_name{name}
     {
 
     }
+
+    auto find(const std::string& address)
+    {
+        return map().find(address);
+    }
+
+    void set_name(const std::string& n)
+    { m_name = n; }
+    std::string get_name() const
+    { return m_name; }
+
+    std::string get_remote_ip() const
+    { return sender.ip(); }
+    void set_remote_ip(const std::string& ip)
+    { sender = coppa::osc::sender(ip, sender.port()); }
+
+    int get_remote_input_port() const
+    { return sender.port(); }
+    void set_remote_input_port(int p)
+    { sender = coppa::osc::sender(sender.ip(), p); }
+
+    int get_local_input_port() const
+    { return server.port(); }
+    void set_local_input_port(int p)
+    { server.setPort(p); }
+
+  private:
+    std::string m_name;
 };
 
 }

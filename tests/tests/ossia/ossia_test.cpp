@@ -129,7 +129,7 @@ TEST_CASE( "device", "[ossia][osc_local_device]" ) {
   coppa::basic_map<ParameterMapType<coppa::ossia::Parameter>> base_map;
   osc_local_impl::map_type map(base_map);
 
-  osc_local_impl test(map, 1234, "127.0.0.1", 000);
+  osc_local_impl test("foobar", map, 1234, "127.0.0.1", 000);
   auto cb = [] (const Parameter& param) {
     std::cerr << param.destination << std::endl;
   };
