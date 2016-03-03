@@ -1,5 +1,5 @@
-#include <coppa/minuit/device/local.hpp>
-#include <coppa/minuit/device/minuit_remote_behaviour.hpp>
+#include <coppa/minuit/device/minuit_remote_device.hpp>
+
 #include <thread>
 using namespace coppa;
 using namespace coppa::ossia;

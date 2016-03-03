@@ -11,7 +11,7 @@
 #include <coppa/string_view.hpp>
 #include <nano-signal-slot/nano_signal_slot.hpp>
 #include <array>
-
+#include <bitset>
 namespace coppa
 {
 namespace ossia
@@ -45,10 +45,10 @@ struct listened_attribute
 
     bool empty() const
     {
-      return std::find(std::begin(attributes), std::end(attributes), true) == std::end(attributes);
+      return attributes.none();
     }
 
-    mutable std::array<bool, 8> attributes;
+    mutable std::bitset<8> attributes;
 
     friend
     bool operator<(const std::string& other, const listened_attribute& attr)

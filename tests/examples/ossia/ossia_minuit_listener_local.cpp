@@ -1,4 +1,4 @@
-#include <coppa/minuit/device/minuit_listening_local.hpp>
+#include <coppa/minuit/device/minuit_listening_local_device.hpp>
 
 
 using namespace coppa;

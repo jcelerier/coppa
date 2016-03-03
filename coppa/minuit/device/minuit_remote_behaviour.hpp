@@ -146,7 +146,7 @@ struct minuit_remote_behaviour<
     minuit_operation::Namespace>
 {
     template<typename Str>
-    auto get_container(
+    static auto get_container(
         Str s,
         oscpack::ReceivedMessageArgumentIterator beg_it,
         oscpack::ReceivedMessageArgumentIterator end_it)
@@ -175,7 +175,7 @@ struct minuit_remote_behaviour<
       return elements;
     }
 
-    auto get_nodes(
+    static auto get_nodes(
         oscpack::ReceivedMessageArgumentIterator beg_it,
         oscpack::ReceivedMessageArgumentIterator end_it
         )
@@ -183,7 +183,7 @@ struct minuit_remote_behaviour<
       return get_container("nodes={", beg_it, end_it);
     }
 
-    auto get_attributes(
+    static auto get_attributes(
         oscpack::ReceivedMessageArgumentIterator beg_it,
         oscpack::ReceivedMessageArgumentIterator end_it
         )
@@ -192,7 +192,7 @@ struct minuit_remote_behaviour<
     }
 
     template<typename Device, typename Map>
-    auto handle_container(
+    static auto handle_container(
         Device& dev,
         Map& map,
         string_view address,
@@ -217,12 +217,12 @@ struct minuit_remote_behaviour<
         map.insert(p);
 
         // request children
-        dev.sender.send(sub_request, string_view(p.destination));
+        dev.refresh(sub_request, p.destination);
       }
     }
 
     template<typename Device, typename Map>
-    auto handle_data(
+    static auto handle_data(
         Device& dev,
         Map& map,
         string_view address,
@@ -247,29 +247,43 @@ struct minuit_remote_behaviour<
       }
     }
 
+
     template<typename Device, typename Map>
-    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    static auto handle_minuit(
+        Device& dev,
+        Map& map,
+        string_view address,
+        minuit_type type,
+        oscpack::ReceivedMessageArgumentIterator beg_it,
+        oscpack::ReceivedMessageArgumentIterator end_it)
     {
-      auto it = mess.ArgumentsBegin();
-      string_view address = it->AsString();
-      auto type = get_type((++it)->AsString()[0]);
       switch(type)
       {
         case minuit_type::Application:
         case minuit_type::Container:
         {
-          handle_container(dev, map, address, it, mess.ArgumentsEnd());
+          handle_container(dev, map, address, beg_it, end_it);
           break;
         }
         case minuit_type::Data:
         {
-          handle_data(dev, map, address, it, mess.ArgumentsEnd());
+          handle_data(dev, map, address, beg_it, end_it);
           break;
         }
         case minuit_type::None:
           // just add the node ?
           break;
       }
+    }
+
+    template<typename Device, typename Map>
+    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    {
+      auto it = mess.ArgumentsBegin();
+      string_view address = it->AsString();
+      auto type = get_type((++it)->AsString()[0]);
+
+      handle_minuit(dev, map, address, type, it, mess.ArgumentsEnd());
     }
 };
 

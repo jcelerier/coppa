@@ -1,23 +1,11 @@
 #pragma once
-
+#include <oscpack/osc/OscDebug.h>
 #include <oscpack/ip/UdpSocket.h>
 #include <oscpack/osc/OscPacketListener.h>
 #include <memory>
 #include <thread>
 #include <functional>
 #include <iostream>
-
-namespace oscpack
-{
-auto begin(const oscpack::ReceivedMessage& mes)
-{
-  return mes.ArgumentsBegin();
-}
-auto end(const oscpack::ReceivedMessage& mes)
-{
-  return mes.ArgumentsEnd();
-}
-}
 
 namespace coppa
 {
@@ -48,8 +36,9 @@ class listener: public oscpack::OscPacketListener
       }
       catch( std::exception& e )
       {
-        std::cerr << "OSC Parse Error on " << m.AddressPattern() << ": "
-                  << e.what() << std::endl;
+        std::cerr << "OSC Parse Error: '";
+        oscpack::debug(std::cerr, m);
+        std::cerr << "'" << e.what() << std::endl;
       }
     }
 

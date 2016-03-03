@@ -1,4 +1,4 @@
-#include <coppa/minuit/device/local.hpp>
+#include <coppa/minuit/device/minuit_local_device.hpp>
 
 using namespace coppa;
 using namespace coppa::ossia;
