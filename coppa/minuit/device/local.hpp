@@ -60,7 +60,8 @@ class osc_local_device
     template<typename String, typename Arg>
     void update(param_t<String> path, Arg&& val)
     {
-      if(m_map.update(path, std::forward<Arg>(val)))
+      auto it = m_map.update(path, std::forward<Arg>(val));
+      if(it != m_map.end())
         on_value_changed.emit(m_map.get(path));
     }
 
@@ -145,6 +146,8 @@ class minuit_remote_impl : public osc_local_device<
 
     minuit_name_table nameTable;
 };
+
+
 // Remote OSC device :
 // Can just send data to the outside
 // Consists in a map set by the user or loaded, and a sender

@@ -22,7 +22,7 @@ template<
     template<
       minuit_command,
       minuit_operation>
-    typename Handler>
+    class Handler>
 class minuit_message_handler :
     public coppa::osc::receiver
 {

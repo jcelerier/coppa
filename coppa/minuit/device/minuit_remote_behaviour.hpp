@@ -2,6 +2,7 @@
 #include <coppa/minuit/device/minuit_common.hpp>
 #include <coppa/string_view.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
+#include <future>
 
 namespace coppa
 {
@@ -10,7 +11,6 @@ namespace ossia
 template<minuit_command Req, minuit_operation Op>
 struct minuit_remote_behaviour
 {
-
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
@@ -55,9 +55,11 @@ struct minuit_remote_behaviour<
       if(idx == std::string::npos)
       {
         // Value
-          map.update_attributes(
+          auto res_it = map.update_attributes(
                 full_address,
                 this->get_values(mess_it, mess.ArgumentsEnd()));
+
+          return res_it;
       }
       else
       {
@@ -75,37 +77,39 @@ struct minuit_remote_behaviour<
         switch(attr)
         {
           case minuit_attribute::Value:
-            map.update_attributes(
+            return map.update_attributes(
                   address,
                   this->get_values(mess_it, mess.ArgumentsEnd()));
             break;
           case minuit_attribute::Type:
             // default-initialize with the type
-            map.update_attributes(
+            return map.update_attributes(
                   address,
                   from_minuit_type_text(mess_it->AsString()));
             break;
           case minuit_attribute::RangeBounds:
-            map.update_attributes(
+            return map.update_attributes(
                   address,
                   this->get_range(mess_it, mess.ArgumentsEnd()));
             break;
           case minuit_attribute::RangeClipMode:
-            map.update_attributes(
+            return map.update_attributes(
                   address,
                   from_minuit_bounding_text(mess_it->AsString()));
             break;
           case minuit_attribute::RepetitionFilter:
-            map.update_attributes(
+            return map.update_attributes(
                   address,
                   RepetitionFilter{mess_it->AsBool()});
             break;
           case minuit_attribute::Service:
-            map.update_attributes(
+            return map.update_attributes(
                   address,
                   from_minuit_service_text(mess_it->AsString()));
             break;
         }
+
+        return map.end();
       }
 
     }

@@ -218,9 +218,10 @@ class minuit_listening_local_device
     template<typename String, typename Arg>
     void update(param_t<String> path, Arg&& val)
     {
-      if(m_map.update(path, std::forward<Arg>(val)))
+      auto map_it = m_map.update(path, std::forward<Arg>(val));
+      if(map_it != m_map.end())
       {
-        auto res = m_map.get(path);
+        auto res = *map_it;
         on_value_changed.emit(res);
 
         auto it = client.listened.find(path);

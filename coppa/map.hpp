@@ -195,9 +195,15 @@ class basic_map
     {
       auto& param_index = m_map.template get<0>();
       auto it = param_index.find(std::forward<Key>(address));
-      if(it != param_index.end())
-        return param_index.modify(it, std::forward<Updater>(updater));
-      return false;
+      auto end = param_index.end();
+      if(it != end)
+      {
+        bool res = param_index.modify(it, std::forward<Updater>(updater));
+        if(res)
+            return it;
+        return end;
+      }
+      return end;
     }
 
 
@@ -206,9 +212,15 @@ class basic_map
     auto update_it(Iterator it, Updater&& updater)
     {
       auto& param_index = m_map.template get<0>();
-      if(it != param_index.end())
-        return param_index.modify(it, std::forward<Updater>(updater));
-      return false;
+      auto end = param_index.end();
+      if(it != end)
+      {
+        bool res = param_index.modify(it, std::forward<Updater>(updater));
+        if(res)
+            return it;
+        return end;
+      }
+      return end;
     }
 
     template<typename Key,
@@ -232,9 +244,13 @@ class basic_map
     {
       auto& param_index = m_map.template get<0>();
       auto it = param_index.find(replacement.destination);
-      if(it != param_index.end())
-        return param_index.replace(it, replacement);
-      return false;
+      auto end = param_index.end();
+      if(it != end)
+      {
+          param_index.replace(it, replacement);
+          return it;
+      }
+      return end;
     }
 
     template<typename Key>
