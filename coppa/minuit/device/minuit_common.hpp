@@ -32,7 +32,7 @@ enum class minuit_attribute
 { Value, Type, Service, Priority, RangeBounds, RangeClipMode, Description, RepetitionFilter };
 
 
-auto to_minuit_type_text(const coppa::ossia::Parameter& parameter)
+inline auto to_minuit_type_text(const coppa::ossia::Parameter& parameter)
 {
   // integer, decimal, string, generic, boolean, none, array.
   switch(parameter.variants.size())
@@ -62,7 +62,7 @@ auto to_minuit_type_text(const coppa::ossia::Parameter& parameter)
   }
 }
 
-auto from_minuit_type_text(string_view str)
+inline auto from_minuit_type_text(string_view str)
 {
   Values v;
   // integer, decimal, string, generic, boolean, none, array.
@@ -91,7 +91,7 @@ auto from_minuit_type_text(string_view str)
 }
 
 
-auto to_minuit_service_text(coppa::Access::Mode acc)
+inline auto to_minuit_service_text(coppa::Access::Mode acc)
 {
   switch(acc)
   {
@@ -108,7 +108,7 @@ auto to_minuit_service_text(coppa::Access::Mode acc)
   }
 }
 
-Access from_minuit_service_text(string_view str)
+inline Access from_minuit_service_text(string_view str)
 {
   switch(str[0])
   {
@@ -125,7 +125,7 @@ Access from_minuit_service_text(string_view str)
   }
 }
 
-auto to_minuit_bounding_text(coppa::Bounding::Mode b)
+inline auto to_minuit_bounding_text(coppa::Bounding::Mode b)
 {
   switch(b)
   {
@@ -143,7 +143,7 @@ auto to_minuit_bounding_text(coppa::Bounding::Mode b)
 }
 
 
-Bounding from_minuit_bounding_text(string_view str)
+inline Bounding from_minuit_bounding_text(string_view str)
 {
   switch(str[2]) // only unique character
   {
@@ -161,7 +161,7 @@ Bounding from_minuit_bounding_text(string_view str)
 }
 
 
-auto to_minuit_attribute_text(minuit_attribute str)
+inline auto to_minuit_attribute_text(minuit_attribute str)
 {
   switch(str) // only unique character
   {
@@ -186,7 +186,7 @@ auto to_minuit_attribute_text(minuit_attribute str)
   }
 }
 
-minuit_attribute get_attribute(string_view str)
+inline minuit_attribute get_attribute(string_view str)
 {
   // requires str.size() > 0
   switch(str[0])
@@ -220,7 +220,7 @@ minuit_attribute get_attribute(string_view str)
   }
 }
 
-minuit_command get_command(char str)
+inline minuit_command get_command(char str)
 {
   switch(str)
   {
@@ -233,7 +233,7 @@ minuit_command get_command(char str)
   }
 }
 
-minuit_type get_type(char str)
+inline minuit_type get_type(char str)
 {
   switch(str)
   {
@@ -247,7 +247,7 @@ minuit_type get_type(char str)
   }
 }
 
-minuit_operation get_operation(char str)
+inline minuit_operation get_operation(char str)
 {
   switch(str)
   {
@@ -260,7 +260,7 @@ minuit_operation get_operation(char str)
   }
 }
 
-minuit_operation get_operation(string_view str)
+inline minuit_operation get_operation(string_view str)
 {
   return get_operation(str[0]);
 }
