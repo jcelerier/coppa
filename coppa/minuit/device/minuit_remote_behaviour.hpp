@@ -4,6 +4,7 @@
 #include <coppa/string_view.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
 #include <future>
+#include <iostream>
 
 namespace coppa
 {
@@ -174,7 +175,8 @@ struct minuit_remote_behaviour<
 
       for(auto it = nodes_beg_it; it != nodes_end_it; ++it)
       {
-        elements.push_back(it->AsStringUnchecked());
+        std::cerr << "received children : '" << it->AsString() << "'\n";
+        elements.push_back(it->AsString());
       }
 
       return elements;

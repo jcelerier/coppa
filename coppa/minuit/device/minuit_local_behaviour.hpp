@@ -31,6 +31,9 @@ struct minuit_local_behaviour<
       string_view full_address{mess.ArgumentsBegin()->AsString()};
       auto idx = full_address.find_first_of(":");
 
+      oscpack::debug(std::cerr, mess);
+      std::cerr << "\n";
+
       if(idx == std::string::npos)
       {
         // Value
@@ -182,8 +185,14 @@ struct minuit_local_behaviour<
         const oscpack::ReceivedMessage& mess)
     {
       string_view address{mess.ArgumentsBegin()->AsString()};
+      oscpack::debug(std::cerr, mess);
+      std::cerr << "\n";
       if(isRoot(address))
       {
+        for(auto child : get_children_names(map, address))
+        {
+          std::cerr << "sending children : '" << child << "'\n";
+        }
         handle_root(dev, get_children_names(map, address));
       }
       else

@@ -3,8 +3,9 @@
 #include <coppa/minuit/device/minuit_common.hpp>
 #include <coppa/minuit/device/minuit_remote_behaviour.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
+#include <oscpack/osc/OscDebug.h>
 #include <future>
-
+#include <iostream>
 namespace coppa
 {
 namespace ossia
@@ -105,6 +106,9 @@ struct minuit_callback_behaviour_wrapper<Handler, minuit_command::Answer, minuit
     {
       auto it = mess.ArgumentsBegin();
       string_view address = it->AsString();
+      std::cerr << "received : '";
+      oscpack::debug(std::cerr, mess) ;
+      std::cerr << "\n";
       auto type = get_type((++it)->AsString()[0]);
 
       impl_t::handle_minuit(dev, map, address, type, it, mess.ArgumentsEnd());

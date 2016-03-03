@@ -44,6 +44,11 @@ int main()
 
   minuit_listening_local_device test(map, "newDevice", 9998, "127.0.0.1", 13579);
 
+  for(auto elt : map)
+  {
+    std::cerr << elt.destination << std::endl;
+  }
+/*
   auto t1 = std::chrono::high_resolution_clock::now();
   auto test_functor = [&] (const Parameter& p) {
     //if(p.destination == "/tutu")
@@ -60,7 +65,7 @@ int main()
     }
   };
 
-  test.on_value_changed.connect(test_functor);
+  test.on_value_changed.connect(test_functor);*/
 
   while(true)
   {

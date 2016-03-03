@@ -63,8 +63,27 @@ class sender
     int port() const { return m_port; }
 
   private:
+    void debug(const oscpack::OutboundPacketStream& out)
+    {
+      auto dat = out.Data();
+      auto n = out.Size();
+
+      for(int i = 0; i < n; i++)
+      {
+        if(dat[i] > 33 && dat[i] < 126)
+        {
+          std::cerr << dat[i];
+        }
+        else
+        {
+          std::cerr << ' ';
+        }
+      }
+    }
     void send_impl(const oscpack::OutboundPacketStream& m)
     {
+      debug(m);
+      std::cerr << "\n";
       m_socket->Send( m.Data(), m.Size() );
     }
 
