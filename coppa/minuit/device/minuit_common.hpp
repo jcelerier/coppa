@@ -32,7 +32,7 @@ enum class minuit_attribute
 { Value, Type, Service, Priority, RangeBounds, RangeClipMode, Description, RepetitionFilter };
 
 
-inline auto to_minuit_type_text(const coppa::ossia::Parameter& parameter)
+inline string_view to_minuit_type_text(const coppa::ossia::Parameter& parameter)
 {
   // integer, decimal, string, generic, boolean, none, array.
   switch(parameter.variants.size())
@@ -91,7 +91,7 @@ inline auto from_minuit_type_text(string_view str)
 }
 
 
-inline auto to_minuit_service_text(coppa::Access::Mode acc)
+inline string_view to_minuit_service_text(coppa::Access::Mode acc)
 {
   switch(acc)
   {
@@ -125,7 +125,7 @@ inline Access from_minuit_service_text(string_view str)
   }
 }
 
-inline auto to_minuit_bounding_text(coppa::Bounding::Mode b)
+inline string_view to_minuit_bounding_text(coppa::Bounding::Mode b)
 {
   switch(b)
   {
@@ -161,7 +161,7 @@ inline Bounding from_minuit_bounding_text(string_view str)
 }
 
 
-inline auto to_minuit_attribute_text(minuit_attribute str)
+inline string_view to_minuit_attribute_text(minuit_attribute str)
 {
   switch(str) // only unique character
   {

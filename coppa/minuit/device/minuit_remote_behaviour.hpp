@@ -33,7 +33,7 @@ struct minuit_remote_behaviour<
       Values v;
       values_reader<
           lax_error_handler,
-          conversion_mode::Replace>{}(
+          conversion_mode::Convert>{}(
              beg_it,
              end_it,
              v);
@@ -45,9 +45,22 @@ struct minuit_remote_behaviour<
         oscpack::ReceivedMessageArgumentIterator beg_it,
         oscpack::ReceivedMessageArgumentIterator end_it)
     {
-      Range v;
-      assert(false); // TODO
-      return v;
+      Values v;
+      values_reader<
+          lax_error_handler,
+          conversion_mode::Convert>{}(
+             beg_it,
+             end_it,
+             v);
+
+      Range r;
+      if(v.variants.size() == 2)
+      {
+        r.min = v.variants[0];
+        r.max = v.variants[1];
+      }
+
+      return r;
     }
 
 

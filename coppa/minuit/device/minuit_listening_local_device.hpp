@@ -229,13 +229,13 @@ class minuit_listening_local_device
         {
           // A:listen /WhereToListen:attribute value (each time the attribute change if the listening is turned on)
           auto addr = nameTable.get_action(minuit_action::ListenReply);
-          auto cmd = path.to_string();
-          cmd += ":";
-          cmd += to_minuit_attribute_text(minuit_attribute::Value);
+          thread_local std::stringstream stream;
 
+          stream << path << ":" << to_minuit_attribute_text(minuit_attribute::Value);
+          auto final_path = stream.str();
           client.sender.send(
                 string_view(addr),
-                string_view(cmd),
+                string_view(final_path),
                 static_cast<const Values&>(res));
         }
 

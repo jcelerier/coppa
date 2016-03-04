@@ -83,6 +83,34 @@ struct lax_osc_handler
     }
 };
 
+struct convert_osc_handler
+{
+    template<typename Device>
+    void operator()(
+        Device& dev,
+        Values current_parameter,
+        string_view address,
+        const oscpack::ReceivedMessage& m)
+    {
+      using namespace coppa;
+      using coppa::ossia::Parameter;
+      using eggs::variants::get;
+
+      values_reader<
+          lax_error_handler,
+          conversion_mode::Convert>{}(
+             m.ArgumentsBegin(),
+             m.ArgumentsEnd(),
+             current_parameter);
+
+      dev.template update<string_view>(
+            address,
+            [&] (auto& v) {
+        v.variants = current_parameter.variants;
+      });
+    }
+};
+
 class osc_message_handler : public coppa::osc::receiver
 {
   public:
@@ -104,7 +132,7 @@ class osc_message_handler : public coppa::osc::receiver
         current_parameter = *node_it;
       }
 
-      strict_osc_handler{}(dev, std::move(current_parameter), address, m);
+      convert_osc_handler{}(dev, std::move(current_parameter), address, m);
     }
 };
 }

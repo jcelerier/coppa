@@ -96,6 +96,7 @@ class MessageGenerator
     template <typename Arg1, typename... Args>
     void subfunc(Arg1&& arg1, Args&&... args)
     {
+      static_assert(!std::is_pointer<std::remove_cv_t<std::remove_reference_t<Arg1>>>::value, "Do not send raw string literals");
       p << arg1;
       subfunc(args...);
     }

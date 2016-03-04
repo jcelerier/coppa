@@ -17,8 +17,8 @@ void refresh(minuit_remote_impl& remote)
   remote.map().clear();
 
   // first request namespace
-  const char * root = "/";
-  remote.sender.send(remote.get_name() + "?namespace", root);
+  std::string root = "/";
+  remote.sender.send(remote.get_name() + "?namespace", string_view(root));
 }
 
 int main()

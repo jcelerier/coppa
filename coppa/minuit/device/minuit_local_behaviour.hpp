@@ -41,7 +41,7 @@ struct minuit_local_behaviour<
         if(it != map.end())
         {
           dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
-                          full_address.data(),
+                          full_address,
                           static_cast<const Values&>(*it)
                           );
         }
@@ -63,37 +63,37 @@ struct minuit_local_behaviour<
           {
             case minuit_attribute::Value:
               dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
-                              full_address.data(),
+                              full_address,
                               static_cast<const Values&>(*it)
                               );
               break;
             case minuit_attribute::Type:
               dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
-                              full_address.data(),
+                              full_address,
                               to_minuit_type_text(*it)
                               );
               break;
             case minuit_attribute::RangeBounds:
               dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
-                              full_address.data(),
+                              full_address,
                               static_cast<const Range&>(*it)
                               );
               break;
             case minuit_attribute::RangeClipMode:
               dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
-                              full_address.data(),
+                              full_address,
                               to_minuit_bounding_text(it->bounding)
                               );
               break;
             case minuit_attribute::RepetitionFilter:
               dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
-                              full_address.data(),
+                              full_address,
                               it->repetitionFilter
                               );
               break;
             case minuit_attribute::Service:
               dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
-                              full_address.data(),
+                              full_address,
                               to_minuit_service_text(it->access)
                               );
               break;
