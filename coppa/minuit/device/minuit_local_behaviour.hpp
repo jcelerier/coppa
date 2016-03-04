@@ -3,6 +3,7 @@
 #include <coppa/string_view.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
 #include <coppa/minuit/device/minuit_name_table.hpp>
+#include <coppa/minuit/parameter_ostream.hpp>
 namespace coppa
 {
 namespace ossia

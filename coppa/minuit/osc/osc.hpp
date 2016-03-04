@@ -1,6 +1,7 @@
 #pragma once
 #include <oscpack/osc/OscOutboundPacketStream.h>
 #include <coppa/minuit/parameter.hpp>
+#include <coppa/string_view.hpp>
 
 namespace coppa
 {
@@ -64,7 +65,7 @@ inline oscpack::OutboundPacketStream& operator<<(
       p << int32_t(get<bool>(val));
       break;
     case Type::string_t:
-      p << get<std::string>(val).c_str();
+      p << string_view(get<std::string>(val));
       break;
     case Type::char_t:
       p << int32_t(get<char>(val));
