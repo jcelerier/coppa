@@ -190,13 +190,14 @@ oscpack::ReceivedMessageArgumentIterator convert_tuple(
 
 // Three possible modes :
 // strict-convert :: converts the incoming value to the local type
+// convert or replace : converts the incoming value to the local type, and replace it if there is no local type
 // -> possible sub-types : if no easy conversion, keep current value, or replace with default-init ?
 // strict-ignore : ignore the incoming value if it is not convertible
 // strict-pre checked : we checked beforehand that the message layout was the same than the
 //                      Values layout and can safely convert without checks.
 // replace : replace the local type to the incoming value
 enum class conversion_mode
-{ Convert, Ignore, Prechecked, Replace  };
+{ Convert, ConvertAndReplace, Ignore, Prechecked, Replace  };
 
 template<typename ErrorHandler, conversion_mode>
 struct value_maker;
@@ -509,6 +510,38 @@ struct values_reader<ErrorHandler, conversion_mode::Convert>
     }
 };
 
+template<typename ErrorHandler>
+struct values_reader<ErrorHandler, conversion_mode::ConvertAndReplace>
+{
+    void operator()(
+        oscpack::ReceivedMessageArgumentIterator it,
+        oscpack::ReceivedMessageArgumentIterator end_it,
+        Values& source
+        )
+    {
+      value_maker<
+          ErrorHandler,
+          conversion_mode::Convert> converter;
+      value_maker<
+          ErrorHandler,
+          conversion_mode::Replace> replacer;
+
+      int max_values = source.variants.size();
+      for(int i = 0; it != end_it; i++)
+      {
+        if(i < max_values)
+        {
+          it = converter(it, source.variants[i]);
+        }
+        else
+        {
+          Variant v;
+          it = replacer(it, v);
+          source.variants.push_back(std::move(v));
+        }
+      }
+    }
+};
 
 template<typename ErrorHandler>
 struct values_reader<ErrorHandler, conversion_mode::Ignore>

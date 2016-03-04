@@ -27,16 +27,16 @@ struct minuit_remote_behaviour<
     minuit_operation::Get>
 {
     Values get_values(
+        Values v,
         oscpack::ReceivedMessageArgumentIterator beg_it,
         oscpack::ReceivedMessageArgumentIterator end_it)
     {
-      Values v;
       values_reader<
           lax_error_handler,
-          conversion_mode::Convert>{}(
-             beg_it,
-             end_it,
-             v);
+          conversion_mode::ConvertAndReplace>{}(
+      beg_it,
+          end_it,
+          v);
 
       return v;
     }
@@ -48,10 +48,10 @@ struct minuit_remote_behaviour<
       Values v;
       values_reader<
           lax_error_handler,
-          conversion_mode::Convert>{}(
-             beg_it,
-             end_it,
-             v);
+          conversion_mode::ConvertAndReplace>{}(
+      beg_it,
+          end_it,
+          v);
 
       Range r;
       if(v.variants.size() == 2)
@@ -74,11 +74,11 @@ struct minuit_remote_behaviour<
       if(idx == std::string::npos)
       {
         // Value
-          auto res_it = map.update_attributes(
-                full_address,
-                this->get_values(mess_it, mess.ArgumentsEnd()));
+        auto res_it = map.update_attributes(
+                        full_address,
+                        this->get_values(map.get(full_address), mess_it, mess.ArgumentsEnd()));
 
-          return res_it;
+        return res_it;
       }
       else
       {
@@ -96,10 +96,12 @@ struct minuit_remote_behaviour<
         switch(attr)
         {
           case minuit_attribute::Value:
+          {
             return map.update_attributes(
                   address,
-                  this->get_values(mess_it, mess.ArgumentsEnd()));
+                  this->get_values(map.get(full_address), mess_it, mess.ArgumentsEnd()));
             break;
+          }
           case minuit_attribute::Type:
             // default-initialize with the type
             return map.update_attributes(

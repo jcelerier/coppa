@@ -38,6 +38,21 @@ class osc_local_impl : public osc_local_device<
         return map().find(address);
     }
 
+    template<typename Values_T>
+    auto set(const std::string& address, Values_T&& values)
+    {
+        this->template update<std::string>(address, [&] (auto& p) {
+            static_cast<coppa::ossia::Values&>(p) = std::forward<Values_T>(values);
+        });
+    }
+
+    template<typename Values_T>
+    auto push(const std::string& address, Values_T&& values)
+    {
+        this->sender.send(address, values);
+        this->set(address, std::forward<Values_T>(values));
+    }
+
     void set_name(const std::string& n)
     { m_name = n; }
     std::string get_name() const
