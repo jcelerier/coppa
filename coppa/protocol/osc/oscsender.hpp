@@ -68,7 +68,7 @@ class sender
       auto dat = out.Data();
       auto n = out.Size();
 
-      for(int i = 0; i < n; i++)
+      for(auto i = 0U; i < n; i++)
       {
         if(dat[i] > 33 && dat[i] < 126)
         {

@@ -149,7 +149,7 @@ inline auto jsonToVariantArray_checked(
   auto arr = valToArray(json_val);
 
   json_assert(arr.size() == type_vec.size());
-  for(int i = 0; i < arr.size(); i++)
+  for(auto i = 0U; i < arr.size(); i++)
   {
     v.push_back(jsonToVariant_checked(arr[i], type_vec[i]));
   }
@@ -311,7 +311,7 @@ void readObject(Map& map, const json_map& obj)
       else
       {
         // Make a default Values/range/clipmode array
-        for(int i = 0; i < type_vec.size(); i++)
+        for(auto i = 0U; i < type_vec.size(); i++)
           addDefaultValue(p, type_vec[i]);
       }
 
@@ -321,7 +321,7 @@ void readObject(Map& map, const json_map& obj)
         p.ranges = jsonToRangeArray_checked(range_it->second, type_vec);
 
         json_assert(p.ranges.size() == type_vec.size());
-        for(int i = 0; i < p.ranges.size(); i++)
+        for(auto i = 0U; i < p.ranges.size(); i++)
         {
           const auto& elt = p.ranges[i];
           json_assert(elt.min.which() == elt.min.npos || elt.min.which() == type_vec[i]);

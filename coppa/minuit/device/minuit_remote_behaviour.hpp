@@ -128,6 +128,11 @@ struct minuit_remote_behaviour<
                   address,
                   from_minuit_service_text(mess_it->AsString()));
             break;
+
+          case minuit_attribute::Priority:
+          case minuit_attribute::Description:
+          default:
+            break;
         }
 
         return map.end();

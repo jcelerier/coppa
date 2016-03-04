@@ -105,7 +105,7 @@ oscpack::ReceivedMessageArgumentIterator read_array(
   using eggs::variants::get;
   // First is the '['
   char c = (++it)->TypeTag();
-  int i = 0;
+  auto i = 0U;
   while(c != oscpack::ARRAY_END_TYPE_TAG)
   {
     if(tuple.variants.size() >= i)
@@ -215,37 +215,36 @@ struct value_maker<ErrorHandler, conversion_mode::Convert>
           value_maker<ErrorHandler, conversion_mode::Convert>& parent;
           oscpack::ReceivedMessageArgumentIterator& it;
 
-          using return_type = void;
-          return_type operator()(None& val) const {
+          void operator()(None& val) const {
             // TODO error handling ?
             ++it;
           }
-          return_type operator()(Impulse& val) const {
+          void operator()(Impulse& val) const {
             // TODO error handling ?
             ++it;
           }
 
-          return_type operator()(int32_t& val) const {
+          void operator()(int32_t& val) const {
             val = convert_numeric<ErrorHandler, int32_t>(*it);
             ++it;
           }
-          return_type operator()(float& val) const {
+          void operator()(float& val) const {
             val = convert_numeric<ErrorHandler, float>(*it);
             ++it;
           }
-          return_type operator()(bool& val) const {
+          void operator()(bool& val) const {
             val = convert_numeric<ErrorHandler, bool>(*it);
             ++it;
           }
-          return_type operator()(char& val) const {
+          void operator()(char& val) const {
             val = convert_numeric<ErrorHandler, char>(*it);
             ++it;
           }
-          return_type operator()(std::string& val) const {
+          void operator()(std::string& val) const {
             val = convert_string<ErrorHandler>(*it);
             ++it;
           }
-          return_type operator()(Tuple& t) const {
+          void operator()(Tuple& t) const {
             if(it->IsArrayBegin())
             {
               it = convert_tuple<ErrorHandler>(parent, it, t);
@@ -255,7 +254,7 @@ struct value_maker<ErrorHandler, conversion_mode::Convert>
               it = skip_array(ErrorHandler{}(it));
             }
           }
-          return_type operator()(Generic& val) const {
+          void operator()(Generic& val) const {
             int n = 0;
             const char* data{};
             it->AsBlob(reinterpret_cast<const void*&>(data), n);

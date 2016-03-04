@@ -97,6 +97,10 @@ struct minuit_local_behaviour<
                               to_minuit_service_text(it->access)
                               );
               break;
+            case minuit_attribute::Priority:
+            case minuit_attribute::Description:
+            default:
+              break;
           }
         }
       }

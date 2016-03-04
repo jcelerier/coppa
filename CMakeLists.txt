@@ -27,6 +27,9 @@ add_custom_target(coppa_headers SOURCES ${COPPA_HEADERS})
 add_library(coppa INTERFACE)
 target_include_directories(coppa INTERFACE
       "${CMAKE_CURRENT_SOURCE_DIR}/."
+)
+
+target_include_directories(coppa SYSTEM INTERFACE
       "${CMAKE_CURRENT_SOURCE_DIR}/variant/include"
       "${CMAKE_CURRENT_SOURCE_DIR}/websocketpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/jeayeson/include/"

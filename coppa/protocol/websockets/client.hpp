@@ -15,8 +15,7 @@ class client
 
     template<typename MessageHandler>
     client(MessageHandler&& messageHandler) :
-      m_open{false},
-      m_done{false}
+      m_open{false}
     {
       m_client.clear_access_channels(websocketpp::log::alevel::all);
       m_client.clear_error_channels(websocketpp::log::elevel::all);
@@ -99,7 +98,6 @@ class client
     connection_handler m_hdl;
     websocketpp::lib::mutex m_lock;
     bool m_open;
-    bool m_done;
 };
 }
 }

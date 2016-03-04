@@ -145,7 +145,7 @@ class remote_query_device :
           return;
         }
 
-        auto&& lock = map().acquire_write_lock();
+        auto lock = map().acquire_write_lock();
         switch(mt)
         {
           case MessageType::PathAdded:

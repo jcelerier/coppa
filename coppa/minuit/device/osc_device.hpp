@@ -51,9 +51,9 @@ class osc_local_device
         std::string out_ip,
         unsigned int out_port,
         Handler h):
-      m_map{map},
+      sender{out_ip, int(out_port)},
       server{in_port, h},
-      sender{out_ip, int(out_port)}
+      m_map{map}
     {
       server.run();
     }
