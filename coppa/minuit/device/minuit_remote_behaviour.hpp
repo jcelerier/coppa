@@ -5,7 +5,7 @@
 #include <oscpack/osc/OscReceivedElements.h>
 #include <future>
 #include <iostream>
-
+#include <coppa/minuit/parameter_ostream.hpp>
 namespace coppa
 {
 namespace ossia
@@ -76,7 +76,7 @@ struct minuit_remote_behaviour<
         // Value
         auto res_it = map.update_attributes(
                         full_address,
-                        this->get_values(map.get(full_address), mess_it, mess.ArgumentsEnd()));
+                        this->get_values(map.get(full_address), ++mess_it, mess.ArgumentsEnd()));
 
         return res_it;
       }
@@ -195,7 +195,6 @@ struct minuit_remote_behaviour<
 
       for(auto it = nodes_beg_it; it != nodes_end_it; ++it)
       {
-        std::cerr << "received children : '" << it->AsString() << "'\n";
         elements.push_back(it->AsString());
       }
 

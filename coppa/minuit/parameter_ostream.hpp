@@ -6,7 +6,7 @@ namespace coppa
 {
 namespace ossia
 {
-std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Variant& v)
+inline std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Variant& v)
 {
   using namespace eggs::variants;
   struct vis {
@@ -46,13 +46,19 @@ std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Variant& v)
   return stream;
 }
 
-std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Parameter& param)
+inline std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Values& param)
 {
-  stream << param.destination << "\n";
   for(auto sub : param.variants)
   {
     stream << sub;
   }
+  return stream;
+}
+inline std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Parameter& param)
+{
+  stream << param.destination << "\n"
+         << static_cast<const coppa::ossia::Values&>(param) << "\n";
+
   return stream;
 }
 }
