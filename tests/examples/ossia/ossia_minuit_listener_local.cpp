@@ -1,4 +1,4 @@
-#include <coppa/minuit/device/minuit_listening_local_device.hpp>
+#include <coppa/ossia/device/minuit_listening_local_device.hpp>
 
 
 using namespace coppa;
@@ -22,17 +22,20 @@ int main()
   auto p4 = make_parameter("/foo/bar/baz");
   auto p5 = make_parameter("/foo/blah");
 
-  p2.variants.push_back(0.5f);
+  p2.value = 0.5f;
   p2.min = -25.f;
   p2.max = 25.f;
 
-  p3.variants.push_back(std::string("fuu"));
+  p3.value = std::string("fuu");
 
-  p4.variants.push_back(true);
+  p4.value = true;
 
-  p5.variants.push_back(3);
-  p5.variants.push_back(4);
-  p5.variants.push_back(1);
+  Tuple t5;
+
+  t5.variants.push_back(3);
+  t5.variants.push_back(4);
+  t5.variants.push_back(1);
+  p5.value = std::move(t5);
   p5.access = Access::Mode::Get;
 
   base_map.insert(p1);

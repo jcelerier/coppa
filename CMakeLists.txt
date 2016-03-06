@@ -76,6 +76,9 @@ target_link_libraries(test_ossia coppa)
 add_executable(test_ossia_conversion "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/ossia/conversion_tests.cpp")
 target_link_libraries(test_ossia_conversion coppa)
 
+add_executable(test_ossia_2 "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/ossia_2/test.cpp")
+target_link_libraries(test_ossia_2 coppa)
+
 # For tests
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests/json/json_files"
      DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")

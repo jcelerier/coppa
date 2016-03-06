@@ -4,7 +4,7 @@
 #include <oscpack/osc/SmallString.h>
 namespace coppa
 {
-namespace ossia
+namespace minuit
 {
 using oscpack::small_string;
 using coppa::Access;

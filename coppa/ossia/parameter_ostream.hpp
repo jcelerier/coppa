@@ -1,12 +1,12 @@
 #pragma once
-#include <coppa/minuit/parameter.hpp>
+#include <coppa/ossia/parameter.hpp>
 #include <iostream>
 
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
-inline std::ostream& operator <<(std::ostream& stream, const coppa::minuit::Variant& v)
+inline std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Variant& v)
 {
   using namespace eggs::variants;
   struct vis {
@@ -46,18 +46,10 @@ inline std::ostream& operator <<(std::ostream& stream, const coppa::minuit::Vari
   return stream;
 }
 
-inline std::ostream& operator <<(std::ostream& stream, const coppa::minuit::Values& param)
-{
-  for(auto sub : param.variants)
-  {
-    stream << sub;
-  }
-  return stream;
-}
-inline std::ostream& operator <<(std::ostream& stream, const coppa::minuit::Parameter& param)
+inline std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Parameter& param)
 {
   stream << param.destination << "\n"
-         << static_cast<const coppa::minuit::Values&>(param) << "\n";
+         << param.value << "\n";
 
   return stream;
 }

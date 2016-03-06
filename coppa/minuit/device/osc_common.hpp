@@ -6,7 +6,7 @@
 
 namespace coppa
 {
-namespace ossia
+namespace minuit
 {
 
 struct lax_error_handler

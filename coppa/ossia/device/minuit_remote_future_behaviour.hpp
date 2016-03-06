@@ -1,14 +1,14 @@
 #pragma once
-#include <coppa/minuit/parameter.hpp>
-#include <coppa/minuit/device/minuit_common.hpp>
-#include <coppa/minuit/device/minuit_remote_behaviour.hpp>
+#include <coppa/ossia/parameter.hpp>
+#include <coppa/ossia/device/minuit_common.hpp>
+#include <coppa/ossia/device/minuit_remote_behaviour.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
 #include <oscpack/osc/OscDebug.h>
 #include <future>
 #include <iostream>
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 
 struct get_promise
@@ -16,7 +16,7 @@ struct get_promise
         get_promise(const std::string& addr):
             address{addr} { }
         std::string address;
-        std::promise<coppa::minuit::Parameter> promise;
+        std::promise<coppa::ossia::Parameter> promise;
 };
 
 template<

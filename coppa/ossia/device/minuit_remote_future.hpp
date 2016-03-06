@@ -1,9 +1,9 @@
 #pragma once
-#include <coppa/minuit/device/osc_device.hpp>
-#include <coppa/minuit/parameter.hpp>
-#include <coppa/minuit/device/minuit_remote_future_behaviour.hpp>
-#include <coppa/minuit/device/message_handler.hpp>
-#include <coppa/minuit/device/minuit_name_table.hpp>
+#include <coppa/ossia/device/osc_device.hpp>
+#include <coppa/ossia/parameter.hpp>
+#include <coppa/ossia/device/minuit_remote_future_behaviour.hpp>
+#include <coppa/ossia/device/message_handler.hpp>
+#include <coppa/ossia/device/minuit_name_table.hpp>
 #include <coppa/map.hpp>
 
 #include <coppa/protocol/osc/oscreceiver.hpp>
@@ -11,7 +11,7 @@
 
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 class minuit_remote_impl_future : public osc_local_device<
     locked_map<basic_map<ParameterMapType<Parameter>>>,
@@ -73,7 +73,7 @@ class minuit_remote_impl_future : public osc_local_device<
     auto set(const std::string& address, Values_T&& values)
     {
         this->template update<std::string>(address, [&] (auto& p) {
-            static_cast<coppa::minuit::Values&>(p) = std::forward<Values_T>(values);
+            static_cast<coppa::ossia::Value&>(p) = std::forward<Values_T>(values);
         });
     }
 

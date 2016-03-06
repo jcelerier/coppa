@@ -1,9 +1,9 @@
 #pragma once
-#include <coppa/minuit/device/osc_device.hpp>
-#include <coppa/minuit/parameter.hpp>
-#include <coppa/minuit/device/message_handler.hpp>
-#include <coppa/minuit/device/minuit_local_behaviour.hpp>
-#include <coppa/minuit/device/minuit_remote_behaviour.hpp>
+#include <coppa/ossia/device/osc_device.hpp>
+#include <coppa/ossia/parameter.hpp>
+#include <coppa/ossia/device/message_handler.hpp>
+#include <coppa/ossia/device/minuit_local_behaviour.hpp>
+#include <coppa/ossia/device/minuit_remote_behaviour.hpp>
 #include <coppa/map.hpp>
 
 #include <coppa/protocol/osc/oscreceiver.hpp>
@@ -12,12 +12,12 @@
 #include <coppa/string_view.hpp>
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 class minuit_local_impl : public osc_local_device<
-    coppa::locked_map<coppa::basic_map<ParameterMapType<coppa::minuit::Parameter>>>,
+    coppa::locked_map<coppa::basic_map<ParameterMapType<coppa::ossia::Parameter>>>,
     coppa::osc::receiver,
-    coppa::minuit::minuit_message_handler<minuit_local_behaviour>,
+    coppa::ossia::minuit_message_handler<minuit_local_behaviour>,
     coppa::osc::sender>
 {
   public:

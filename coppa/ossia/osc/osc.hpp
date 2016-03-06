@@ -1,20 +1,20 @@
 #pragma once
 #include <oscpack/osc/OscOutboundPacketStream.h>
-#include <coppa/minuit/parameter.hpp>
+#include <coppa/ossia/parameter.hpp>
 #include <coppa/string_view.hpp>
 
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 inline oscpack::OutboundPacketStream& operator<<(
     oscpack::OutboundPacketStream& p,
-    const coppa::minuit::Variant& val);
+    const coppa::ossia::Variant& val);
 
 
 inline oscpack::OutboundPacketStream& operator<<(
     oscpack::OutboundPacketStream& p,
-    const coppa::minuit::Values& values)
+    const coppa::ossia::Tuple& values)
 {
   using namespace coppa;
 
@@ -28,26 +28,10 @@ inline oscpack::OutboundPacketStream& operator<<(
 
 inline oscpack::OutboundPacketStream& operator<<(
     oscpack::OutboundPacketStream& p,
-    const coppa::minuit::Tuple& values)
-{
-  using namespace coppa;
-
-  p << oscpack::ArrayInitiator{};
-  for(const auto& val : values.variants)
-  {
-    p << val;
-  }
-  p << oscpack::ArrayTerminator{};
-
-  return p;
-}
-
-inline oscpack::OutboundPacketStream& operator<<(
-    oscpack::OutboundPacketStream& p,
-    const coppa::minuit::Variant& val)
+    const coppa::ossia::Variant& val)
 {
   using namespace eggs::variants;
-  using namespace coppa::minuit;
+  using namespace coppa::ossia;
   // TODO visitor
   // See TTOscSocket::SendMessage;
   switch(which(val))
@@ -93,11 +77,23 @@ inline oscpack::OutboundPacketStream& operator<<(
 
 inline oscpack::OutboundPacketStream& operator<<(
     oscpack::OutboundPacketStream& p,
-    const coppa::minuit::Range& range)
+    const coppa::ossia::Range& range)
 {
   using namespace coppa;
 
   p << range.min << range.max;
+
+  return p;
+}
+
+
+inline oscpack::OutboundPacketStream& operator<<(
+    oscpack::OutboundPacketStream& p,
+    const coppa::ossia::Value& val)
+{
+  using namespace coppa;
+
+  p << val.value;
 
   return p;
 }

@@ -6,7 +6,7 @@
 #include <coppa/string_view.hpp>
 namespace coppa
 {
-namespace ossia
+namespace minuit
 {
 /**
  * @brief The strict_osc_handler struct
@@ -25,7 +25,7 @@ struct strict_osc_handler
         const oscpack::ReceivedMessage& m)
     {
       using namespace coppa;
-      using coppa::ossia::Parameter;
+      using coppa::minuit::Parameter;
       using eggs::variants::get;
 
       // First check the compatibility
@@ -65,7 +65,7 @@ struct lax_osc_handler
         const oscpack::ReceivedMessage& m)
     {
       using namespace coppa;
-      using coppa::ossia::Parameter;
+      using coppa::minuit::Parameter;
       using eggs::variants::get;
 
       values_reader<
@@ -93,7 +93,7 @@ struct convert_osc_handler
         const oscpack::ReceivedMessage& m)
     {
       using namespace coppa;
-      using coppa::ossia::Parameter;
+      using coppa::minuit::Parameter;
       using eggs::variants::get;
 
       values_reader<

@@ -1,7 +1,7 @@
 #include <coppa/minuit/device/minuit_local_device.hpp>
 
 using namespace coppa;
-using namespace coppa::ossia;
+using namespace coppa::minuit;
 auto make_parameter(std::string name)
 {
   Parameter p;

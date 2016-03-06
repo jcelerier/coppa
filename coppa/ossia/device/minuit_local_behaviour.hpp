@@ -1,12 +1,12 @@
 #pragma once
-#include <coppa/minuit/device/minuit_common.hpp>
+#include <coppa/ossia/device/minuit_common.hpp>
 #include <coppa/string_view.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
-#include <coppa/minuit/device/minuit_name_table.hpp>
-#include <coppa/minuit/parameter_ostream.hpp>
+#include <coppa/ossia/device/minuit_name_table.hpp>
+#include <coppa/ossia/parameter_ostream.hpp>
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 // The "local" behaviour only answers to requests.
 template<minuit_command Req, minuit_operation Op>
@@ -40,7 +40,7 @@ struct minuit_local_behaviour<
         {
           dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
                           full_address,
-                          static_cast<const Values&>(*it)
+                          static_cast<const Value&>(*it)
                           );
         }
       }
@@ -62,7 +62,7 @@ struct minuit_local_behaviour<
             case minuit_attribute::Value:
               dev.sender.send(dev.nameTable.get_action(minuit_action::GetReply),
                               full_address,
-                              static_cast<const Values&>(*it)
+                              static_cast<const Value&>(*it)
                               );
               break;
             case minuit_attribute::Type:
@@ -169,14 +169,14 @@ struct minuit_local_behaviour<
                       address,
                       "Data",
                       "attributes={",
-                                    "type"             ,
-                                    "repetitionsFilter",
-                                    "service"          ,
-                                    "priority"         ,
-                                    "value"            ,
-                                    "rangeBounds"      ,
-                                    "rangeClipmode"    ,
-                                 "}");
+                          "type"             ,
+                          "repetitionsFilter",
+                          "service"          ,
+                          "priority"         ,
+                          "value"            ,
+                          "rangeBounds"      ,
+                          "rangeClipmode"    ,
+                      "}");
 
     }
 

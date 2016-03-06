@@ -3,7 +3,7 @@
 #include <coppa/minuit/device/osc_common.hpp>
 #include <coppa/protocol/osc/oscmessagegenerator.hpp>
 using namespace coppa;
-using namespace coppa::ossia;
+using namespace coppa::minuit;
 using namespace eggs::variants;
 
 struct Message

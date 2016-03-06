@@ -1,4 +1,4 @@
-#include <coppa/minuit/device/minuit_remote_future.hpp>
+#include <coppa/ossia/device/minuit_remote_future.hpp>
 
 #include <thread>
 using namespace coppa;
@@ -31,7 +31,7 @@ int main()
   get_promise.wait();
   auto res = get_promise.get();
 
-  std::cerr << "got a result" << res.destination << res.variants.size();
+  std::cerr << "got a result" << res.destination << (int) which(res.value);
 
 
 }

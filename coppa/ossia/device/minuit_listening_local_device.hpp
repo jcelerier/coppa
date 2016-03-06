@@ -1,8 +1,8 @@
 #pragma once
-#include <coppa/minuit/parameter.hpp>
+#include <coppa/ossia/parameter.hpp>
 #include <coppa/device/local.hpp>
-#include <coppa/minuit/device/message_handler.hpp>
-#include <coppa/minuit/device/minuit_local_behaviour.hpp>
+#include <coppa/ossia/device/message_handler.hpp>
+#include <coppa/ossia/device/minuit_local_behaviour.hpp>
 #include <coppa/map.hpp>
 
 #include <coppa/protocol/osc/oscreceiver.hpp>
@@ -14,7 +14,7 @@
 #include <bitset>
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 
 struct listened_attribute
@@ -189,7 +189,7 @@ struct listener
 class minuit_listening_local_device
 {
   public:
-    using map_type = coppa::locked_map<coppa::basic_map<ParameterMapType<coppa::minuit::Parameter>>>;
+    using map_type = coppa::locked_map<coppa::basic_map<ParameterMapType<coppa::ossia::Parameter>>>;
     using parent_t = minuit_listening_local_device;
 
     minuit_listening_local_device(
@@ -201,7 +201,7 @@ class minuit_listening_local_device
       m_map{map},
       m_server{in_port, [&] (const auto& m, const auto& ip)
       {
-        coppa::minuit::minuit_message_handler<minuit_listening_local_behaviour>::on_messageReceived(*this, m_map, m, ip);
+        coppa::ossia::minuit_message_handler<minuit_listening_local_behaviour>::on_messageReceived(*this, m_map, m, ip);
       }},
       client{out_ip, int(out_port)},
       nameTable{name}
@@ -236,7 +236,7 @@ class minuit_listening_local_device
           client.sender.send(
                 string_view(addr),
                 string_view(final_path),
-                static_cast<const Values&>(res));
+                static_cast<const Value&>(res));
         }
 
       }

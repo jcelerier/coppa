@@ -1,11 +1,11 @@
 #pragma once
 #include <nano-signal-slot/nano_signal_slot.hpp>
 #include <coppa/string_view.hpp>
-#include <coppa/minuit/parameter.hpp>
+#include <coppa/ossia/parameter.hpp>
 
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 
 // Servers to do :

@@ -5,7 +5,7 @@
 #include <coppa/minuit/device/osc_local_device.hpp>
 #include <coppa/tools/random.hpp>
 using namespace coppa;
-using namespace coppa::ossia;
+using namespace coppa::minuit;
 using namespace eggs::variants;
 using namespace std;
 
@@ -13,7 +13,7 @@ using namespace std;
 
 
 TEST_CASE( "value init", "[ossia][value]" ) {
-    coppa::ossia::Variant v;
+    coppa::minuit::Variant v;
     Tuple vals_in;
     vals_in.variants = {1, 2, 3};
     v = vals_in;
@@ -23,7 +23,7 @@ TEST_CASE( "value init", "[ossia][value]" ) {
 }
 
 TEST_CASE( "parameter init", "[ossia][parameter]" ) {
-    coppa::ossia::Parameter p;
+    coppa::minuit::Parameter p;
 }
 
 struct mock_locked_map
@@ -66,7 +66,7 @@ TEST_CASE( "message handler", "[ossia][message_handler]" ) {
     d.map.p.variants.push_back(int32_t{0});
     oscpack::IpEndpointName ip;
     // Test the parsing
-    coppa::ossia::osc_message_handler::on_messageReceived(d, d.map, m, ip);
+    coppa::minuit::osc_message_handler::on_messageReceived(d, d.map, m, ip);
 
     // Check parsing result
     auto val = d.map.p.variants[0];
@@ -103,7 +103,7 @@ TEST_CASE( "message handler", "[ossia][message_handler]" ) {
 
     // Test the parsing
     oscpack::IpEndpointName ip;
-    coppa::ossia::osc_message_handler::on_messageReceived(d, d.map, m, ip);
+    coppa::minuit::osc_message_handler::on_messageReceived(d, d.map, m, ip);
 
     // Check parsing result
     {
@@ -126,7 +126,7 @@ TEST_CASE( "message handler", "[ossia][message_handler]" ) {
 }
 
 TEST_CASE( "device", "[ossia][osc_local_device]" ) {
-  coppa::basic_map<ParameterMapType<coppa::ossia::Parameter>> base_map;
+  coppa::basic_map<ParameterMapType<coppa::minuit::Parameter>> base_map;
   osc_local_impl::map_type map(base_map);
 
   osc_local_impl test("foobar", map, 1234, "127.0.0.1", 000);

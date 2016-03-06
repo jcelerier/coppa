@@ -1,14 +1,14 @@
 #pragma once
-#include <coppa/minuit/device/minuit_common.hpp>
-#include <coppa/minuit/device/osc_common.hpp>
+#include <coppa/ossia/device/minuit_common.hpp>
+#include <coppa/ossia/device/osc_common.hpp>
 #include <coppa/string_view.hpp>
 #include <oscpack/osc/OscReceivedElements.h>
 #include <future>
 #include <iostream>
-#include <coppa/minuit/parameter_ostream.hpp>
+#include <coppa/ossia/parameter_ostream.hpp>
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 template<minuit_command Req, minuit_operation Op>
 struct minuit_remote_behaviour
@@ -26,39 +26,31 @@ struct minuit_remote_behaviour<
     minuit_command::Answer,
     minuit_operation::Get>
 {
-    Values get_values(
-        Values v,
+    Value get_value(
+        Value v,
         oscpack::ReceivedMessageArgumentIterator beg_it,
         oscpack::ReceivedMessageArgumentIterator end_it)
     {
-      values_reader<
-          lax_error_handler,
-          conversion_mode::ConvertAndReplace>{}(
-      beg_it,
-          end_it,
-          v);
-
-      return v;
+      return read_value(beg_it, end_it, v);
     }
 
     Range get_range(
+        Value v,
         oscpack::ReceivedMessageArgumentIterator beg_it,
         oscpack::ReceivedMessageArgumentIterator end_it)
     {
-      Values v;
-      values_reader<
-          lax_error_handler,
-          conversion_mode::ConvertAndReplace>{}(
-      beg_it,
-          end_it,
-          v);
-
       Range r;
-      if(v.variants.size() == 2)
-      {
-        r.min = v.variants[0];
-        r.max = v.variants[1];
-      }
+      if(beg_it == end_it)
+        return r;
+
+      auto next_it = ++beg_it;
+      if(next_it == end_it)
+        return r;
+
+      convert_single_value(beg_it, v.value);
+      r.min = v.value;
+      convert_single_value(next_it, v.value);
+      r.max = v.value;
 
       return r;
     }
@@ -76,7 +68,7 @@ struct minuit_remote_behaviour<
         // Value
         auto res_it = map.update_attributes(
                         full_address,
-                        this->get_values(map.get(full_address), ++mess_it, mess.ArgumentsEnd()));
+                        this->get_value(map.get(full_address), ++mess_it, mess.ArgumentsEnd()));
 
         return res_it;
       }
@@ -99,7 +91,7 @@ struct minuit_remote_behaviour<
           {
             return map.update_attributes(
                   address,
-                  this->get_values(map.get(address), mess_it, mess.ArgumentsEnd()));
+                  this->get_value(map.get(address), mess_it, mess.ArgumentsEnd()));
             break;
           }
           case minuit_attribute::Type:
@@ -111,7 +103,7 @@ struct minuit_remote_behaviour<
           case minuit_attribute::RangeBounds:
             return map.update_attributes(
                   address,
-                  this->get_range(mess_it, mess.ArgumentsEnd()));
+                  this->get_range(map.get(address), mess_it, mess.ArgumentsEnd()));
             break;
           case minuit_attribute::RangeClipMode:
             return map.update_attributes(

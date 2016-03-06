@@ -1,8 +1,8 @@
 #pragma once
-#include <coppa/minuit/parameter.hpp>
+#include <coppa/ossia/parameter.hpp>
 #include <coppa/map.hpp>
-#include <coppa/minuit/device/minuit_common.hpp>
-#include <coppa/minuit/device/osc_message_handler.hpp>
+#include <coppa/ossia/device/minuit_common.hpp>
+#include <coppa/ossia/device/osc_message_handler.hpp>
 #include <coppa/protocol/osc/oscreceiver.hpp>
 #include <oscpack/osc/OscTypes.h>
 #include <oscpack/osc/OscOutboundPacketStream.h>
@@ -10,7 +10,7 @@
 
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 
 // Namespace request :
@@ -118,7 +118,7 @@ class minuit_message_handler :
       // We have to check if it's a plain osc address, or a Minuit request address.
       if(address.size() > 0 && address[0] == '/')
       {
-        lax_osc_handler{}(dev, Values{None{}}, address, m);
+        convert_osc_handler{}(dev, map.get(address), address, m);
       }
       else
       {

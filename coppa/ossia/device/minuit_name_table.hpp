@@ -1,10 +1,10 @@
 #pragma once
 #include <coppa/string_view.hpp>
-#include <coppa/minuit/device/minuit_common.hpp>
+#include <coppa/ossia/device/minuit_common.hpp>
 
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 
 class minuit_name_table

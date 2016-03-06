@@ -1,10 +1,10 @@
 #pragma once
-#include <coppa/minuit/parameter.hpp>
+#include <coppa/ossia/parameter.hpp>
 #include <coppa/string_view.hpp>
 
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 
 enum class minuit_command : char
@@ -32,67 +32,80 @@ enum class minuit_attribute
 { Value, Type, Service, Priority, RangeBounds, RangeClipMode, Description, RepetitionFilter };
 
 
-inline string_view to_minuit_type_text(const coppa::minuit::Parameter& parameter)
+inline string_view to_minuit_type_text(const coppa::ossia::Parameter& parameter)
 {
   // integer, decimal, string, generic, boolean, none, array.
-  switch(parameter.variants.size())
-  {
-    case 0:
-      return "none";
-    case 1:
-    {
-      switch(which(parameter.variants[0]))
-      {
-        case Type::int_t:
-          return "integer";
-        case Type::float_t:
-          return "decimal";
-        case Type::bool_t:
-          return "boolean";
-        case Type::string_t:
-          return "string";
-        case Type::generic_t:
-          return "generic";
-        default:
-          return "generic"; // TODO
+
+  using namespace eggs::variants;
+  struct vis {
+      string_view operator()(None val) const {
+        return "none";
       }
-    }
-    default:
-      return "array";
-  }
+      string_view operator()(Impulse val) const {
+        return "none"; // TODO this does not exist ?
+      }
+
+      string_view operator()(int32_t val) const {
+        return "integer";
+      }
+      string_view operator()(float val) const {
+        return "decimal";
+      }
+      string_view operator()(bool val) const {
+        return "boolean";
+      }
+      string_view operator()(char val) const {
+        return "string"; // TODO maybe char ?
+      }
+      string_view operator()(const std::string& val) const {
+        return "string";
+      }
+      string_view operator()(const Tuple& t) const {
+        return "array";
+      }
+      string_view operator()(const Generic& val) const {
+        return "generic";
+      }
+
+  } visitor;
+
+  return eggs::variants::apply(visitor, parameter.value);
 }
 
-inline auto from_minuit_type_text(string_view str)
+inline Value from_minuit_type_text(string_view str)
 {
-  Values v;
+  Variant v;
   // integer, decimal, string, generic, boolean, none, array.
 
   switch(str[0])
   {
     case 'i': // integer
-      v.variants.push_back(int32_t{});
+      v = int32_t{};
       break;
     case 'd': // decimal
-      v.variants.push_back(float{});
+      v = float{};
       break;
     case 's': // string
-      v.variants.push_back(std::string{});
+      v = std::string{};
       break;
     case 'b': // boolean
-      v.variants.push_back(bool{});
+      v = bool{};
       break;
     case 'g': // generic
-      v.variants.push_back(Generic{});
+      v = Generic{};
       break;
     case 'n': // none
+      v = Impulse{};
       break;
     case 'a': // array
+      v = Tuple{};
       break;
     default:
-      throw;
+      v = Impulse{};
+      break;
   }
 
-  return v; // none
+  return Value{v};
 }
 
 

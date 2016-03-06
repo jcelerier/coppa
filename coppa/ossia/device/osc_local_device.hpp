@@ -1,20 +1,20 @@
 #pragma once
-#include <coppa/minuit/device/osc_device.hpp>
-#include <coppa/minuit/parameter.hpp>
+#include <coppa/ossia/device/osc_device.hpp>
+#include <coppa/ossia/parameter.hpp>
 #include <coppa/map.hpp>
 #include <coppa/protocol/osc/oscsender.hpp>
 #include <coppa/protocol/osc/oscreceiver.hpp>
-#include <coppa/minuit/device/message_handler.hpp>
+#include <coppa/ossia/device/message_handler.hpp>
 
 namespace coppa
 {
-namespace minuit
+namespace ossia
 {
 
 class osc_local_impl : public osc_local_device<
-    coppa::locked_map<coppa::basic_map<ParameterMapType<coppa::minuit::Parameter>>>,
+    coppa::locked_map<coppa::basic_map<ParameterMapType<coppa::ossia::Parameter>>>,
     coppa::osc::receiver,
-    coppa::minuit::osc_message_handler,
+    coppa::ossia::osc_message_handler,
     coppa::osc::sender>
 {
   public:
@@ -42,7 +42,7 @@ class osc_local_impl : public osc_local_device<
     auto set(const std::string& address, Values_T&& values)
     {
         this->template update<std::string>(address, [&] (auto& p) {
-            static_cast<coppa::minuit::Values&>(p) = std::forward<Values_T>(values);
+            static_cast<coppa::ossia::Value&>(p) = std::forward<Values_T>(values);
         });
     }
 
