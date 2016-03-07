@@ -42,7 +42,7 @@ void convert_numeric(oscpack::ReceivedMessageArgument arg, T& val)
   }
 }
 
-void convert_string(oscpack::ReceivedMessageArgument arg, std::string& val)
+inline void convert_string(oscpack::ReceivedMessageArgument arg, std::string& val)
 {
   using namespace oscpack;
   switch(arg.TypeTag())
@@ -59,7 +59,7 @@ void convert_string(oscpack::ReceivedMessageArgument arg, std::string& val)
   }
 }
 
-void convert_tuple(
+inline void convert_tuple(
     oscpack::ReceivedMessageArgumentIterator it,
     oscpack::ReceivedMessageArgumentIterator end_it,
     Tuple& tuple)
@@ -111,7 +111,7 @@ void convert_tuple(
   }
 }
 
-void convert_single_value(
+inline void convert_single_value(
     oscpack::ReceivedMessageArgumentIterator arg,
     Variant& elt)
 {
@@ -154,7 +154,7 @@ void convert_single_value(
   eggs::variants::apply(visitor, elt);
 }
 
-coppa::ossia::Value read_value(
+inline coppa::ossia::Value read_value(
     oscpack::ReceivedMessageArgumentIterator it,
     oscpack::ReceivedMessageArgumentIterator end_it,
     coppa::ossia::Value& source)

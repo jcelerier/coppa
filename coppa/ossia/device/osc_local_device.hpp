@@ -33,45 +33,11 @@ class osc_local_impl : public osc_local_device<
 
     }
 
-    auto find(const std::string& address)
-    {
-        return map().find(address);
-    }
-
-    template<typename Values_T>
-    auto set(const std::string& address, Values_T&& values)
-    {
-        this->template update<std::string>(address, [&] (auto& p) {
-            static_cast<coppa::ossia::Value&>(p) = std::forward<Values_T>(values);
-        });
-    }
-
-    template<typename Values_T>
-    auto push(const std::string& address, Values_T&& values)
-    {
-        this->sender.send(address, values);
-        this->set(address, std::forward<Values_T>(values));
-    }
-
     void set_name(const std::string& n)
     { m_name = n; }
     std::string get_name() const
     { return m_name; }
 
-    std::string get_remote_ip() const
-    { return sender.ip(); }
-    void set_remote_ip(const std::string& ip)
-    { sender = coppa::osc::sender(ip, sender.port()); }
-
-    int get_remote_input_port() const
-    { return sender.port(); }
-    void set_remote_input_port(int p)
-    { sender = coppa::osc::sender(sender.ip(), p); }
-
-    int get_local_input_port() const
-    { return server.port(); }
-    void set_local_input_port(int p)
-    { server.setPort(p); }
 
   private:
     std::string m_name;

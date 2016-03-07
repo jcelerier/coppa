@@ -64,12 +64,69 @@ class osc_local_device
     template<typename String, typename Arg>
     void update(param_t<String> path, Arg&& val)
     {
-      auto it = m_map.update(path, std::forward<Arg>(val));
-      if(it != m_map.end())
-        on_value_changed.emit(m_map.get(path));
+      m_map.update(path, std::forward<Arg>(val));
     }
 
-    Nano::Signal<void(const Parameter&)> on_value_changed;
+    std::string get_remote_ip() const
+    { return sender.ip(); }
+    void set_remote_ip(const std::string& ip)
+    { sender = DataProtocolSender(ip, sender.port()); }
+
+    int get_remote_input_port() const
+    { return sender.port(); }
+    void set_remote_input_port(int p)
+    { sender = DataProtocolSender(sender.ip(), p); }
+
+    int get_local_input_port() const
+    { return server.port(); }
+    void set_local_input_port(int p)
+    { server.setPort(p); }
+
+    auto find(const std::string& address)
+    {
+        return map().find(address);
+    }
+
+    template<typename Values_T>
+    auto push(const std::string& address, Values_T&& values)
+    {
+        this->sender.send(address, values);
+        this->set(address, std::forward<Values_T>(values));
+    }
+
+    template<typename Values_T>
+    auto set(const std::string& address, Values_T&& values)
+    {
+        this->template update<std::string>(address, [&] (auto& p) {
+            static_cast<coppa::ossia::Value&>(p) = std::forward<Values_T>(values);
+        });
+    }
+
+    auto set_access(const std::string& address, coppa::ossia::Access::Mode am)
+    {
+        this->template update<std::string>(address, [&] (auto& p) {
+            p.access = am;
+        });
+    }
+
+    auto set_bounding(const std::string& address, coppa::ossia::Bounding::Mode bm)
+    {
+        this->template update<std::string>(address, [&] (auto& p) {
+            p.bounding = bm;
+        });
+    }
+
+    auto set_repetition(const std::string& address, bool rf)
+    {
+        this->template update<std::string>(address, [&] (auto& p) {
+            p.repetitionFilter = rf;
+        });
+    }
+
+    auto set_range(const std::string& address, coppa::ossia::Range&& r)
+    {
+        m_map.update_attributes(address, std::move(r));
+    }
 
     DataProtocolSender sender;
     DataProtocolServer server;
