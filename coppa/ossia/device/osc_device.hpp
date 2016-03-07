@@ -61,6 +61,7 @@ class osc_local_device
     auto& map() const
     { return m_map; }
 
+    // Local -> remote
     template<typename String, typename Arg>
     void update(param_t<String> path, Arg&& val)
     {
@@ -128,8 +129,12 @@ class osc_local_device
         m_map.update_attributes(address, std::move(r));
     }
 
+    // Remote -> local
+    Nano::Signal<void(std::string, Value)> on_value_changed;
+
     DataProtocolSender sender;
     DataProtocolServer server;
+
   private:
     Map& m_map;
 };

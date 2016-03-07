@@ -90,7 +90,7 @@ class minuit_remote_impl_future : public osc_local_device<
 
     std::list<get_promise> m_getPromises;
     std::promise<void> m_nsPromise;
-    std::set<std::string, std::less<>> m_namespaceRequests;
+    std::set<std::string, std::less<>> m_namespaceRequests; // TODO http://libcds.sourceforge.net/
 };
 
 }

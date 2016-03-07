@@ -55,6 +55,28 @@ struct minuit_remote_behaviour<
       return r;
     }
 
+    template<typename Device, typename Map>
+    auto handle_value(
+        Device& dev, Map& map,
+        string_view full_address,
+        oscpack::ReceivedMessageArgumentIterator mess_it,
+        const oscpack::ReceivedMessage& mess)
+    {
+      auto it = map.find(full_address);
+      if(it == map.end())
+        return it;
+
+      auto res_it = map.update_attributes_it(
+                      it,
+                      this->get_value(*it, ++mess_it, mess.ArgumentsEnd()));
+
+      if(res_it != map.end())
+      {
+        auto& param = *res_it;
+        dev.on_value_changed.emit(param.destination, param);
+      }
+      return res_it;
+    }
 
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
@@ -66,11 +88,7 @@ struct minuit_remote_behaviour<
       if(idx == std::string::npos)
       {
         // Value
-        auto res_it = map.update_attributes(
-                        full_address,
-                        this->get_value(map.get(full_address), ++mess_it, mess.ArgumentsEnd()));
-
-        return res_it;
+        return handle_value(dev, map, full_address, mess_it, mess);
       }
       else
       {
@@ -88,12 +106,7 @@ struct minuit_remote_behaviour<
         switch(attr)
         {
           case minuit_attribute::Value:
-          {
-            return map.update_attributes(
-                  address,
-                  this->get_value(map.get(address), mess_it, mess.ArgumentsEnd()));
-            break;
-          }
+            return handle_value(dev, map, address, mess_it, mess);
           case minuit_attribute::Type:
             // default-initialize with the type
             return map.update_attributes(
@@ -129,7 +142,6 @@ struct minuit_remote_behaviour<
 
         return map.end();
       }
-
     }
 };
 
