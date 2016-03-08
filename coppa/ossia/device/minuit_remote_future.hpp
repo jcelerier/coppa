@@ -64,7 +64,7 @@ class minuit_remote_impl_future : public osc_local_device<
         {
             map().clear();
             auto act = nameTable.get_action(minuit_action::NamespaceRequest);
-            this->sender.send(act, "/");
+            this->sender.send(act, string_view("/"));
 
             m_nsPromise = std::promise<void>{};
             return m_nsPromise.get_future();

@@ -51,14 +51,14 @@ int main()
   {
     std::cerr << elt.destination << std::endl;
   }
-/*
+
   auto t1 = std::chrono::high_resolution_clock::now();
   auto test_functor = [&] (const Parameter& p) {
     //if(p.destination == "/tutu")
     {
-      if(which(p.variants[0]) == Type::int_t)
+      if(which(p.value) == Type::int_t)
       {
-        auto res = eggs::variants::get<int>(p.variants[0]);
+        auto res = eggs::variants::get<int>(p.value);
         if(res >= 9999990)
         {
           auto t2 = std::chrono::high_resolution_clock::now();
@@ -68,7 +68,7 @@ int main()
     }
   };
 
-  test.on_value_changed.connect(test_functor);*/
+  test.on_value_changed.connect(test_functor);
 
   while(true)
   {

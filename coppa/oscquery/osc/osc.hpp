@@ -21,7 +21,7 @@ inline oscpack::OutboundPacketStream& operator<<(
       p << get<bool>(val);
       break;
     case Type::string_t:
-      p << get<std::string>(val).c_str();
+      p << coppa::string_view(get<std::string>(val));
       break;
     case Type::generic_t:
     {

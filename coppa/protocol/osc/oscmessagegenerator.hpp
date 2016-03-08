@@ -43,7 +43,7 @@ class MessageGenerator
       p.Clear();
       p << oscpack::BeginMessageN( name );
       subfunc(args...);
-      p << oscpack::EndMessage;
+      p << oscpack::EndMessage();
       return p;
     }
 
@@ -55,7 +55,7 @@ class MessageGenerator
       p.Clear();
       p << oscpack::BeginMessageN( name );
       subfunc(args...);
-      p << oscpack::EndMessage;
+      p << oscpack::EndMessage();
       return p;
     }
 
@@ -67,7 +67,7 @@ class MessageGenerator
       p.Clear();
       p << oscpack::BeginMessageN( name );
       subfunc(args...);
-      p << oscpack::EndMessage;
+      p << oscpack::EndMessage();
       return p;
     }
 
@@ -79,7 +79,7 @@ class MessageGenerator
       p.Clear();
       p << oscpack::BeginMessageN( name )
         << values
-        << oscpack::EndMessage;
+        << oscpack::EndMessage();
       return p;
     }
 
