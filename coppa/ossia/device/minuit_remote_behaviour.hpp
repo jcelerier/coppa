@@ -73,7 +73,7 @@ struct minuit_remote_behaviour<
       if(res_it != map.end())
       {
         auto& param = *res_it;
-        dev.on_value_changed.emit(param.destination, param);
+        dev.on_value_changed(param.destination, param);
       }
       return res_it;
     }

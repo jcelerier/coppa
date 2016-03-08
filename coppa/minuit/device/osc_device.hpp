@@ -66,7 +66,7 @@ class osc_local_device
     {
       auto it = m_map.update(path, std::forward<Arg>(val));
       if(it != m_map.end())
-        on_value_changed.emit(m_map.get(path));
+        on_value_changed(m_map.get(path));
     }
 
     Nano::Signal<void(const Parameter&)> on_value_changed;

@@ -222,7 +222,7 @@ class minuit_listening_local_device
       if(map_it != m_map.end())
       {
         auto res = *map_it;
-        on_value_changed.emit(res);
+        on_value_changed(res);
 
         auto it = client.listened.find(path);
         if(it != client.listened.end())
