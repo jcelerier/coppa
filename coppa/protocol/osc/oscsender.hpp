@@ -35,7 +35,7 @@ class sender
     template<typename... Args>
     void send(const std::string& address, Args&&... args)
     {
-      send_impl(m_gen(
+      send_impl(oscpack::MessageGenerator<>{}(
                   address,
                   std::forward<Args>(args)...));
     }
@@ -44,7 +44,7 @@ class sender
     template<typename... Args>
     void send(string_view address, Args&&... args)
     {
-      send_impl(m_gen(
+      send_impl(oscpack::MessageGenerator<>{}(
                   address,
                   std::forward<Args>(args)...));
     }
@@ -53,7 +53,7 @@ class sender
     template<int N, typename... Args>
     void send(oscpack::small_string_base<N> address, Args&&... args)
     {
-      send_impl(m_gen(
+      send_impl(oscpack::MessageGenerator<>{}(
                   address,
                   std::forward<Args>(args)...));
     }
@@ -88,8 +88,6 @@ class sender
     std::unique_ptr<oscpack::UdpTransmitSocket> m_socket;
     std::string m_ip;
     int m_port;
-
-    oscpack::MessageGenerator<> m_gen;
 };
 
 }

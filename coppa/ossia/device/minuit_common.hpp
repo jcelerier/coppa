@@ -38,32 +38,32 @@ inline string_view to_minuit_type_text(const coppa::ossia::Parameter& parameter)
 
   using namespace eggs::variants;
   struct vis {
-      string_view operator()(None val) const {
+      string_view operator()(None ) const {
         return "none";
       }
-      string_view operator()(Impulse val) const {
+      string_view operator()(Impulse ) const {
         return "none"; // TODO this does not exist ?
       }
 
-      string_view operator()(int32_t val) const {
+      string_view operator()(int32_t ) const {
         return "integer";
       }
-      string_view operator()(float val) const {
+      string_view operator()(float ) const {
         return "decimal";
       }
-      string_view operator()(bool val) const {
+      string_view operator()(bool ) const {
         return "boolean";
       }
-      string_view operator()(char val) const {
+      string_view operator()(char ) const {
         return "string"; // TODO maybe char ?
       }
-      string_view operator()(const std::string& val) const {
+      string_view operator()(const std::string& ) const {
         return "string";
       }
-      string_view operator()(const Tuple& t) const {
+      string_view operator()(const Tuple& ) const {
         return "array";
       }
-      string_view operator()(const Generic& val) const {
+      string_view operator()(const Generic& ) const {
         return "generic";
       }
 

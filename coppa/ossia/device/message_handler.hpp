@@ -111,7 +111,7 @@ class minuit_message_handler :
         Device& dev,
         Map& map,
         const oscpack::ReceivedMessage& m,
-        const oscpack::IpEndpointName& ip)
+        const oscpack::IpEndpointName&)
     {
       string_view address{m.AddressPattern()};
 

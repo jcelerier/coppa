@@ -11,10 +11,10 @@ inline std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Varia
   using namespace eggs::variants;
   struct vis {
       std::ostream& s;
-      void operator()(None val) const {
+      void operator()(None ) const {
         s << "None ";
       }
-      void operator()(Impulse val) const {
+      void operator()(Impulse ) const {
         s << "Impulse ";
       }
 
@@ -33,10 +33,10 @@ inline std::ostream& operator <<(std::ostream& stream, const coppa::ossia::Varia
       void operator()(const std::string& val) const {
         s << "Str: " << val << " ";
       }
-      void operator()(const Tuple& t) const {
+      void operator()(const Tuple&) const {
         s << "Tuple ";
       }
-      void operator()(const Generic& val) const {
+      void operator()(const Generic& ) const {
         s << "Generic ";
       }
 

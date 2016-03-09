@@ -120,9 +120,9 @@ inline void convert_single_value(
   struct vis {
       oscpack::ReceivedMessageArgumentIterator it;
 
-      void operator()(None& val) const {
+      void operator()(None&) const {
       }
-      void operator()(Impulse& val) const {
+      void operator()(Impulse&) const {
       }
       void operator()(int32_t& val) const {
         convert_numeric<int32_t>(*it, val);
@@ -139,7 +139,7 @@ inline void convert_single_value(
       void operator()(std::string& val) const {
         convert_string(*it, val);
       }
-      void operator()(Tuple& t) const {
+      void operator()(Tuple&) const {
         throw;
       }
       void operator()(Generic& val) const {

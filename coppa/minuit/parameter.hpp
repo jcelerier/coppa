@@ -118,9 +118,9 @@ inline small_string getOSCType(const Values& values)
 }
 
 
-inline bool operator==(const None& lhs, const None& rhs)
+inline bool operator==(const None& , const None& )
 { return true; }
-inline bool operator==(const Impulse& lhs, const Impulse& rhs)
+inline bool operator==(const Impulse& , const Impulse& )
 { return true; }
 inline bool operator==(const Tuple& lhs, const Tuple& rhs)
 { return lhs.variants == rhs.variants; }

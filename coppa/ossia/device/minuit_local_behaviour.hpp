@@ -14,7 +14,7 @@ struct minuit_local_behaviour
 {
 
     template<typename Device, typename Map>
-    auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
+    auto operator()(Device&, Map&, const oscpack::ReceivedMessage&)
     {
       // By default do nothing
     }

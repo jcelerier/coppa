@@ -110,20 +110,21 @@ class basic_map
     {
       return [] (auto&& ) { };
     }
+
     template<typename Arg>
     auto make_update_fun(Arg&& arg)
     {
-      return [&] (auto&& p) {
-        static_cast<Arg&&>(p) = std::forward<Arg>(arg);
+      return [&] (auto& p) {
+        static_cast<Arg&>(p) = std::forward<Arg>(arg);
       };
     }
 
     template<typename Arg, typename... Args>
     auto make_update_fun(Arg&& arg, Args&&... args)
     {
-      return [&] (auto&& p) {
+      return [&] (auto& p) {
         make_update_fun(std::forward<Args>(args)...)(p);
-        static_cast<Arg&&>(p) = std::forward<Arg>(arg);
+        static_cast<Arg&>(p) = std::forward<Arg>(arg);
       };
     }
 
