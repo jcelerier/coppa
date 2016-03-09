@@ -55,7 +55,7 @@ std::vector<string_view> get_children_names(
   // TODO http://howardhinnant.github.io/stack_alloc.html
   // reply with the child addresses and their attributes.
 
-  int n = addr.size();
+  auto n = addr.size();
   std::set<string_view> vec;
   for(const auto& param : map)
   {
