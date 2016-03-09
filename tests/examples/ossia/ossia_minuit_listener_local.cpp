@@ -1,8 +1,8 @@
 #include <coppa/ossia/device/minuit_listening_local_device.hpp>
 
-
 using namespace coppa;
 using namespace coppa::ossia;
+
 auto make_parameter(std::string name)
 {
   Parameter p;
@@ -51,7 +51,7 @@ int main()
   {
     std::cerr << elt.destination << std::endl;
   }
-
+/*
   auto t1 = std::chrono::high_resolution_clock::now();
   auto test_functor = [&] (const Parameter& p) {
     //if(p.destination == "/tutu")
@@ -69,7 +69,7 @@ int main()
   };
 
   test.on_value_changed.connect(test_functor);
-
+*/
   while(true)
   {
     std::this_thread::sleep_for(std::chrono::seconds(1));

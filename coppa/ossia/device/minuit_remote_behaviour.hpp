@@ -154,7 +154,9 @@ struct minuit_remote_behaviour<
     template<typename Device, typename Map>
     auto operator()(Device& dev, Map& map, const oscpack::ReceivedMessage& mess)
     {
-
+      return minuit_remote_behaviour<
+          minuit_command::Answer,
+          minuit_operation::Get>{}(dev, map, mess);
     }
 };
 
