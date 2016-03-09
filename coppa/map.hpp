@@ -286,6 +286,15 @@ class basic_map
     {
       m_map.clear();
     }
+
+    bool acquire_read_lock() const
+    { return false; }
+    bool acquire_write_lock() const
+    { return false; }
+
+
+    auto& get_data_map()
+    { return *this; }
 };
 
 
