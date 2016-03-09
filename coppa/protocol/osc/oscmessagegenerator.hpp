@@ -101,7 +101,7 @@ class MessageGenerator
       subfunc(args...);
     }
 
-    std::array<char, BufferSize> buffer;
+    alignas(128) std::array<char, BufferSize> buffer;
     oscpack::OutboundPacketStream p{buffer.data(), buffer.size()};
 };
 }
