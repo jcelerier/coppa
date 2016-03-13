@@ -1,5 +1,5 @@
 #pragma once
-#include <nano-signal-slot/nano_signal_slot.hpp>
+#include <coppa/ossia/device/device_with_callbacks.hpp>
 #include <coppa/string_view.hpp>
 #include <coppa/ossia/parameter.hpp>
 #include <unordered_map>
@@ -20,8 +20,6 @@ namespace ossia
 // Shmem callbacks ?
 // IPC ?
 
-
-
 // Remote OSC device :
 // Can just send data to the outside
 // Consists in a map set by the user or loaded, and a sender
@@ -38,7 +36,8 @@ template<typename Map,
          typename DataProtocolHandler,
          typename DataProtocolSender
          >
-class osc_local_device
+class osc_local_device :
+        public coppa::ossia::device_with_callbacks
 {
   public:
     using map_type = Map;
@@ -57,7 +56,6 @@ class osc_local_device
       m_map{map}
     {
       server.run();
-      on_value_changed.connect<osc_local_device, &osc_local_device::callback_helper>(this);
     }
 
     auto& map() const
@@ -131,41 +129,11 @@ class osc_local_device
         m_map.update_attributes(address, std::move(r));
     }
 
-    // Remote -> local
-    Nano::Signal<void(std::string, Value)> on_value_changed;
-
-    auto& get_value_callback(const std::string& dest)
-    {
-      return m_callbacks[dest];
-    }
-
-    template<typename Arg, typename... TArgs>
-    void add_value_callback(const std::string& dest, const Arg& arg)
-    {
-      m_callbacks[dest].template connect<TArgs...>(arg);
-    }
-
-    template<typename Arg, typename... TArgs>
-    void remove_value_callback(const std::string& dest, const Arg& arg)
-    {
-      m_callbacks[dest].template disconnect<TArgs...>(arg);
-    }
-
     DataProtocolSender sender;
     DataProtocolServer server;
 
   private:
     Map& m_map;
-    void callback_helper(std::string dest, Value val)
-    {
-      auto it = m_callbacks.find(dest);
-      if(it != m_callbacks.end())
-      {
-        it->second(val);
-      }
-    }
-
-    std::unordered_map<std::string, Nano::Signal<void(coppa::ossia::Value)>> m_callbacks;
 
 };
 

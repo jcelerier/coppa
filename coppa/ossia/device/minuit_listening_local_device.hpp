@@ -3,6 +3,7 @@
 #include <coppa/device/local.hpp>
 #include <coppa/ossia/device/message_handler.hpp>
 #include <coppa/ossia/device/minuit_local_behaviour.hpp>
+#include <coppa/ossia/device/device_with_callbacks.hpp>
 #include <coppa/map.hpp>
 
 #include <coppa/protocol/osc/oscreceiver.hpp>
@@ -186,7 +187,8 @@ struct listener
 };
 
 // This one supports a single listener
-class minuit_listening_local_device
+class minuit_listening_local_device :
+        public coppa::ossia::device_with_callbacks
 {
     public:
         using map_type = coppa::locked_map<coppa::basic_map<ParameterMapType<coppa::ossia::Parameter>>>;
@@ -228,21 +230,15 @@ class minuit_listening_local_device
                 if(it != client.listened.end())
                 {
                     // A:listen /WhereToListen:attribute value (each time the attribute change if the listening is turned on)
-                    auto addr = nameTable.get_action(minuit_action::ListenReply);
-                    thread_local std::stringstream stream;
-
-                    stream << path << ":" << to_minuit_attribute_text(minuit_attribute::Value);
-                    auto final_path = stream.str();
+                    std::string final_path = path.to_string() + ":" + to_minuit_attribute_text(minuit_attribute::Value).to_string();
                     client.sender.send(
-                                string_view(addr),
+                                nameTable.get_action(minuit_action::ListenReply),
                                 string_view(final_path),
                                 static_cast<const Value&>(res));
                 }
 
             }
         }
-
-        Nano::Signal<void(const Parameter&)> on_value_changed;
 
     private:
         map_type& m_map;
