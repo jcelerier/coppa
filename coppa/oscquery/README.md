@@ -1,18 +1,22 @@
-=== Any client -> Server ===
+# Any client -> Server 
+```
 /da?value&tags
+```
 etc...
 
-=== Server -> Any client ===
+# Server -> Any client
 
 namespace :
+```
 {
 	"full_path" : "/a/b"
 	"type": "f"
 	"access": 1
 	"contents" : [ ]
 }
-
+```
 === Server -> Synchronized websocket client ===
+```
 path_added :
 {
 	"path_added" : {
@@ -78,11 +82,11 @@ attributes_changed_array :
 		  "tags": ["some" "tags"] },
     ]
 }
+```
 
+# OSC changes
 
-+ OSC changes
-
-Streaming osc : rajouter listen=true&http si on veut un streaming via websockets ?
+Streaming osc : rajouter `listen=true&http` si on veut un streaming via websockets ?
 
 Removal root node ?
 
