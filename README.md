@@ -1,3 +1,15 @@
+# This work has been integrated into the ossia library
+
+Please refer to the following repository : https://github.com/OSSIA/API
+
+
+
+
+
+
+
+
+
 ![coppa 
 logo](https://github.com/jcelerier/coppa/blob/master/logo_new.jpg) 
 
